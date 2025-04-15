@@ -26,7 +26,6 @@
 ## 코드 컨벤션
 
 ##### [BE Code Convention](https://eroul-ri.tistory.com/26)
-- backend/include/GoogleStyle.xml 사용
 
 ##### 🔤 문자열을 처리할 때는 쌍따옴표(")를 사용하도록 합니다.
 
