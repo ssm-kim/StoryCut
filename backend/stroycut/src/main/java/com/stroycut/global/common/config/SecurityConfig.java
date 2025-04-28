@@ -26,8 +26,8 @@ public class SecurityConfig {
     @Value("${app.baseUrl}")
     private String baseUrl;
 
-    @Value("${app.clientUrl}")
-    private String clientUrl;
+//    @Value("${app.clientUrl}")
+//    private String clientUrl;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,7 +36,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests((auth) -> auth
-                .requestMatchers(PublicEndpoint.getAll().toArray(new String[0])).permitAll()
+                .requestMatchers("/api/**").permitAll() // MCP 관련 엔드포인트 추가
+                // .requestMatchers(PublicEndpoint.getAll().toArray(new String[0])).permitAll() // api 허용
                 .anyRequest().authenticated()
             )
             .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
