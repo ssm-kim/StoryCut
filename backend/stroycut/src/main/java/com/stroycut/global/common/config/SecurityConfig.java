@@ -4,7 +4,6 @@ import com.stroycut.domain.auth.filter.JwtAuthenticationFilter;
 import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.stroycut.domain.auth.service.CustomOAuth2UserService;
 import com.stroycut.global.common.filter.LoggingFilter;
-import com.stroycut.global.common.model.enums.PublicEndpoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -24,15 +24,15 @@ public class AuthService {
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 7 * 24 * 60 * 60; // 7일 (초 단위)
 
     @Transactional
-    public void saveRefreshToken(String email, String refreshToken) {
-        // Redis에 리프레시 토큰 저장 (키: email, 값: refreshToken)
+    public void saveRefreshToken(Long memberId, String refreshToken) {
+        // Redis에 리프레시 토큰 저장 (키: memberId, 값: refreshToken)
         redisTemplate.opsForValue().set(
-                "RT:" + email,
+                "RT:" + memberId,
                 refreshToken,
                 REFRESH_TOKEN_EXPIRE_TIME,
                 TimeUnit.SECONDS
         );
-        log.info("리프레시 토큰 저장 완료 - 사용자: {}", email);
+        log.info("리프레시 토큰 저장 완료 - 사용자 ID: {}", memberId);
     }
 
     @Transactional
@@ -42,11 +42,11 @@ public class AuthService {
             throw new RuntimeException("Invalid refresh token");
         }
 
-        // 리프레시 토큰에서 사용자 이메일 추출
-        String email = jwtUtil.getUserEmail(refreshToken);
+        // 리프레시 토큰에서 사용자 ID 추출
+        Long memberId = jwtUtil.getMemberId(refreshToken);
         
         // Redis에서 저장된 리프레시 토큰 가져오기
-        String savedRefreshToken = redisTemplate.opsForValue().get("RT:" + email);
+        String savedRefreshToken = redisTemplate.opsForValue().get("RT:" + memberId);
         
         // 저장된 리프레시 토큰과 일치하는지 확인
         if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
@@ -54,11 +54,11 @@ public class AuthService {
         }
 
         // 사용자 존재 여부 확인
-        memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + memberId));
 
         // 새로운 액세스 토큰 발급
-        String newAccessToken = jwtUtil.createAccessToken(email);
+        String newAccessToken = jwtUtil.createAccessToken(memberId);
         
         return TokenDto.builder()
                 .accessToken(newAccessToken)
@@ -73,11 +73,11 @@ public class AuthService {
             throw new RuntimeException("Invalid access token");
         }
 
-        // 토큰에서 사용자 이메일 추출
-        String email = jwtUtil.getUserEmail(accessToken);
+        // 토큰에서 사용자 ID 추출
+        Long memberId = jwtUtil.getMemberId(accessToken);
         
         // Redis에서 리프레시 토큰 삭제
-        redisTemplate.delete("RT:" + email);
+        redisTemplate.delete("RT:" + memberId);
         
         // 액세스 토큰 블랙리스트에 추가 (남은 유효 시간동안)
         // 토큰의 만료 시간 계산
@@ -91,12 +91,12 @@ public class AuthService {
             );
         }
         
-        log.info("로그아웃 처리 완료 - 사용자: {}", email);
+        log.info("로그아웃 처리 완료 - 사용자 ID: {}", memberId);
     }
 
     @Transactional(readOnly = true)
-    public Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    public Member getMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + memberId));
     }
 }

@@ -21,12 +21,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
+    public UserDetails loadUserByUsername(String memberId) throws UsernameNotFoundException {
+        Member member = memberRepository.findById(Long.parseLong(memberId))
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + memberId));
         
         return new User(
-                member.getEmail(), 
+                member.getId().toString(), // principal에 memberId 저장
                 "", // OAuth2 로그인만 지원하므로, 비밀번호는 빈 문자열
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"))
         );
