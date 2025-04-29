@@ -1,7 +1,7 @@
 package com.stroycut.domain.auth.service;
 
 import com.stroycut.domain.auth.model.dto.TokenDto;
-import com.stroycut.domain.auth.util.JwtTokenProvider;
+import com.stroycut.domain.auth.util.JWTUtil;
 import com.stroycut.domain.member.model.entity.Member;
 import com.stroycut.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JWTUtil jwtUtil;
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
     
@@ -38,12 +38,12 @@ public class AuthService {
     @Transactional
     public TokenDto refreshAccessToken(String refreshToken) {
         // 리프레시 토큰 유효성 검증
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtUtil.validateToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
         }
 
         // 리프레시 토큰에서 사용자 이메일 추출
-        String email = jwtTokenProvider.getUserEmail(refreshToken);
+        String email = jwtUtil.getUserEmail(refreshToken);
         
         // Redis에서 저장된 리프레시 토큰 가져오기
         String savedRefreshToken = redisTemplate.opsForValue().get("RT:" + email);
@@ -58,7 +58,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
         // 새로운 액세스 토큰 발급
-        String newAccessToken = jwtTokenProvider.createAccessToken(email);
+        String newAccessToken = jwtUtil.createAccessToken(email);
         
         return TokenDto.builder()
                 .accessToken(newAccessToken)
@@ -69,19 +69,19 @@ public class AuthService {
     @Transactional
     public void logout(String accessToken) {
         // 액세스 토큰 유효성 검증
-        if (!jwtTokenProvider.validateToken(accessToken)) {
+        if (!jwtUtil.validateToken(accessToken)) {
             throw new RuntimeException("Invalid access token");
         }
 
         // 토큰에서 사용자 이메일 추출
-        String email = jwtTokenProvider.getUserEmail(accessToken);
+        String email = jwtUtil.getUserEmail(accessToken);
         
         // Redis에서 리프레시 토큰 삭제
         redisTemplate.delete("RT:" + email);
         
         // 액세스 토큰 블랙리스트에 추가 (남은 유효 시간동안)
         // 토큰의 만료 시간 계산
-        long expiration = jwtTokenProvider.getExpirationTime(accessToken) - System.currentTimeMillis();
+        long expiration = jwtUtil.getExpirationTime(accessToken) - System.currentTimeMillis();
         if (expiration > 0) {
             redisTemplate.opsForValue().set(
                     "BL:" + accessToken,

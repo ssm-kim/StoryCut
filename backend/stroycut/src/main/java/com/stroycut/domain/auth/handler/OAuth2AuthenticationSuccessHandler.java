@@ -3,7 +3,7 @@ package com.stroycut.domain.auth.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stroycut.domain.auth.model.dto.TokenDto;
 import com.stroycut.domain.auth.service.AuthService;
-import com.stroycut.domain.auth.util.JwtTokenProvider;
+import com.stroycut.domain.auth.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JWTUtil jwtUtil;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
 
@@ -31,8 +31,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String email = oAuth2User.getAttribute("email");
         
         // 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(email);
-        String refreshToken = jwtTokenProvider.createRefreshToken(email);
+        String accessToken = jwtUtil.createAccessToken(email);
+        String refreshToken = jwtUtil.createRefreshToken(email);
         
         // 리프레시 토큰 저장
         authService.saveRefreshToken(email, refreshToken);
