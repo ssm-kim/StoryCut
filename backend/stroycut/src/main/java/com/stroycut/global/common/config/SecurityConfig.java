@@ -1,8 +1,10 @@
 package com.stroycut.global.common.config;
 
+import com.stroycut.domain.auth.filter.JwtAuthenticationFilter;
+import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
+import com.stroycut.domain.auth.service.CustomOAuth2UserService;
 import com.stroycut.global.common.filter.LoggingFilter;
 import com.stroycut.global.common.model.enums.PublicEndpoint;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,18 +18,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final LoggingFilter loggingFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Value("${app.baseUrl}")
     private String baseUrl;
-
-    @Value("${app.clientUrl}")
-    private String clientUrl;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,15 +40,23 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests((auth) -> auth
-                .requestMatchers(PublicEndpoint.getAll().toArray(new String[0])).permitAll()
+                .requestMatchers("/api/auth/**").permitAll() // 인증 관련 API 허용
+                .requestMatchers("/api/**").authenticated() // 기타 API는 인증 필요
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
             .sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .formLogin(form -> form.disable())
-            .httpBasic(httpBasic -> httpBasic.disable());
+            .httpBasic(httpBasic -> httpBasic.disable())
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -53,7 +65,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOriginPattern("*");
-//        config.setAllowedOrigins(Arrays.asList(baseUrl, clientUrl)); // 프론트엔드 주소
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);

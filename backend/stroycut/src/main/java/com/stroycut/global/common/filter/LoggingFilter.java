@@ -20,9 +20,9 @@ public class LoggingFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
 
-        // Swagger & Prometheus 요청은 로깅 제외
+        // Swagger & Prometheus & mcp 요청은 로깅 제외
         if (uri.startsWith("/swagger-ui") || uri.startsWith("/v3/api-docs") || uri.startsWith(
-            "/actuator/prometheus")) {
+            "/actuator/prometheus") || uri.startsWith("/api/mcp/")) {
             filterChain.doFilter(request, response);
             return;
         }
