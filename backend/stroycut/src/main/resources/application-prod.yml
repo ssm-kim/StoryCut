@@ -12,7 +12,7 @@ server:
   port: 9091
 
 app:
-  clientUrl: [serverURL]
+  baseUrl: [serverURL]
 
 logging:
   file:

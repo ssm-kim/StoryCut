@@ -25,6 +25,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
+        String uri = request.getRequestURI();
+        
+        // OAuth2 로그인 관련 경로는 JWT 인증 처리 건너뛰기
+        if (uri.startsWith("/login") || 
+            uri.startsWith("/oauth2/authorization") || 
+            uri.startsWith("/login/oauth2/code")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String token = jwtUtil.resolveToken(request);
         
         if (token != null && jwtUtil.validateToken(token)) {
@@ -38,5 +48,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         filterChain.doFilter(request, response);
+    }
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        
+        // 인증이 필요 없는 경로들은 필터 적용 제외
+        return uri.startsWith("/swagger-ui") || 
+               uri.startsWith("/v3/api-docs") || 
+               uri.startsWith("/api/auth") ||
+               uri.startsWith("/static") ||
+               uri.startsWith("/css") ||
+               uri.startsWith("/js") ||
+               uri.startsWith("/images") ||
+               uri.equals("/favicon.ico") ||
+               uri.equals("/") ||
+               uri.startsWith("/actuator") ||
+               uri.startsWith("/health");
     }
 }

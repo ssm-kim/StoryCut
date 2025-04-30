@@ -31,15 +31,25 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
         
-        // 이메일로 사용자 찾기
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        // 구글 응답 데이터 전체 출력 (디버깅용)
+        log.info("===== 구글 OAuth2 응답 데이터 시작 =====");
+        System.out.println("########## " + oAuth2User.toString());
+        oAuth2User.getAttributes().forEach((key, value) -> {
+            log.info("키: {}, 값: {}, 타입: {}", key, value, value != null ? value.getClass().getName() : "null");
+        });
+        log.info("===== 구글 OAuth2 응답 데이터 끝 =====");
+        
+        // Google의 고유 식별자(sub) 추출
+        String providerId = oAuth2User.getAttribute("sub");
+        
+        // providerId로 사용자 찾기 (이메일 대신 providerId로 조회)
+        Member member = memberRepository.findByProviderId(providerId)
+                .orElseThrow(() -> new RuntimeException("User not found with providerId: " + providerId));
         
         Long memberId = member.getId();
         
-        // 토큰 생성 - 이제 memberId를 사용
+        // 토큰 생성 - memberId 사용
         String accessToken = jwtUtil.createAccessToken(memberId);
         String refreshToken = jwtUtil.createRefreshToken(memberId);
         
@@ -56,11 +66,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         TokenDto tokenDto = TokenDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .memberId(memberId) // memberId도 클라이언트에 반환
                 .build();
         
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(tokenDto));
         
-        log.info("OAuth2 로그인 성공 - 사용자 ID: {}, 이메일: {}", memberId, email);
+        log.info("OAuth2 로그인 성공 - 사용자 ID: {}, providerId: {}", memberId, providerId);
     }
 }

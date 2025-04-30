@@ -4,6 +4,7 @@ import com.stroycut.domain.auth.filter.JwtAuthenticationFilter;
 import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.stroycut.domain.auth.service.CustomOAuth2UserService;
 import com.stroycut.global.common.filter.LoggingFilter;
+import com.stroycut.global.common.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,9 +39,27 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(restAuthenticationEntryPoint())
+            )
             .authorizeHttpRequests((auth) -> auth
-                .requestMatchers("/api/auth/**").permitAll() // 인증 관련 API 허용
-                .requestMatchers("/api/**").authenticated() // 기타 API는 인증 필요
+                // 인증 관련 API 허용
+                .requestMatchers("/api/auth/**").permitAll()
+                
+                // OAuth2 소셜 로그인 관련 경로 허용
+                .requestMatchers("/login", "/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
+                
+                // Swagger UI 관련 경로 허용
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                
+                // 정적 리소스 접근 허용
+                .requestMatchers("/", "/static/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                
+                // 헬스 체크, 모니터링 엔드포인트 허용
+                .requestMatchers("/actuator/**", "/health").permitAll()
+                
+                // 그 외 API 요청은 인증 필요
+                .requestMatchers("/api/**").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement((session) -> session
@@ -58,6 +77,11 @@ public class SecurityConfig {
             .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public RestAuthenticationEntryPoint restAuthenticationEntryPoint() {
+        return new RestAuthenticationEntryPoint();
     }
 
     @Bean

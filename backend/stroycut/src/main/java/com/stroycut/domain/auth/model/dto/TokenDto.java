@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class TokenDto {
     private String accessToken;
     private String refreshToken;
+    private Long memberId; // 클라이언트에 memberId 반환하여 사용자 정보 조회에 활용할 수 있도록 함
 }
