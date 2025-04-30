@@ -1,10 +1,11 @@
-package com.stroycut.global.common.config;
+package com.stroycut.global.config;
 
 import com.stroycut.domain.auth.filter.JwtAuthenticationFilter;
 import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.stroycut.domain.auth.service.CustomOAuth2UserService;
-import com.stroycut.global.common.filter.LoggingFilter;
-import com.stroycut.global.common.model.enums.PublicEndpoint;
+import com.stroycut.global.filter.LoggingFilter;
+import com.stroycut.global.model.enums.PublicEndpoint;
+import com.stroycut.global.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -29,6 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Value("${app.baseUrl}")
     private String baseUrl;
@@ -36,14 +39,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        // 명시적으로 공개 URL 목록 추출
+        List<String> publicUrls = PublicEndpoint.getAll();
+
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests((auth) -> auth
-                .requestMatchers("/api/auth/**").permitAll() // 인증 관련 API 허용
-                .requestMatchers("/api/**").authenticated() // 기타 API는 인증 필요
-                .anyRequest().authenticated()
+            // 인증 실패 시 401 반환하도록 설정
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(restAuthenticationEntryPoint)
             )
+            .authorizeHttpRequests((auth) -> {
+                // 명시적으로 공개 URL 처리 - String 배열을 사용해 패턴 일치 처리
+                publicUrls.forEach(url -> auth.requestMatchers(url).permitAll());
+                
+                // 정적 리소스 접근 허용
+                auth.requestMatchers("/", "/static/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll();
+                
+                // 그 외 API 요청은 인증 필요
+                auth.requestMatchers("/api/**").authenticated()
+                    .anyRequest().authenticated();
+            })
             .sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -67,8 +83,8 @@ public class SecurityConfig {
         config.addAllowedOriginPattern("*");
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowCredentials(true);
-
+        config.setAllowCredentials(false); // 자격 증명 처리 비활성화
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

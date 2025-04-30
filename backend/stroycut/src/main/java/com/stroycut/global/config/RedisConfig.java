@@ -1,4 +1,4 @@
-package com.stroycut.global.common.config;
+package com.stroycut.global.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,6 +44,4 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
-
-
 }

@@ -1,5 +1,4 @@
-package com.stroycut.global.common.model.dto;
-
+package com.stroycut.global.model.dto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Builder;

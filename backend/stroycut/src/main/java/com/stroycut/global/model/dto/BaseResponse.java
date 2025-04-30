@@ -1,6 +1,6 @@
-package com.stroycut.global.common.model.dto;
+package com.stroycut.global.model.dto;
 
-import static com.stroycut.global.common.model.dto.BaseResponseStatus.SUCCESS;
+import static com.stroycut.global.model.dto.BaseResponseStatus.SUCCESS;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

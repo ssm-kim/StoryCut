@@ -1,4 +1,4 @@
-package com.stroycut.global.common.model.enums;
+package com.stroycut.global.model.enums;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ public enum PublicEndpoint {
     SIGNIN("/signin"),
     LOGIN("/login"),
     FAVICON("/favicon.ico"),
-    MEMBER_PUBLIC("/api/member/public/**"),
+    MEMBER_PUBLIC("/api/auth/refresh"),
     OAUTH2("/oauth2/**"),
     ERROR("/error"),
     SWAGGER_UI("/swagger-ui/**"),

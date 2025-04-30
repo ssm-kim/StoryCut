@@ -1,6 +1,6 @@
-package com.stroycut.global.common.exception.exception;
+package com.stroycut.global.exception;
 
-import com.stroycut.global.common.model.dto.BaseResponseStatus;
+import com.stroycut.global.model.dto.BaseResponseStatus;
 import lombok.Getter;
 
 @Getter

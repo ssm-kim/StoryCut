@@ -1,6 +1,6 @@
-package com.stroycut.global.common.model.entity;
+package com.stroycut.global.model.entity;
 
-import com.stroycut.global.common.model.enums.Status;
+import com.stroycut.global.model.enums.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -18,7 +18,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @MappedSuperclass
 @EntityListeners(value = {AuditingEntityListener.class})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-
 public abstract class BaseEntity {
 
     @CreatedDate

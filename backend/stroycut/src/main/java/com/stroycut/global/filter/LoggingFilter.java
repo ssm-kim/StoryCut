@@ -1,4 +1,4 @@
-package com.stroycut.global.common.filter;
+package com.stroycut.global.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

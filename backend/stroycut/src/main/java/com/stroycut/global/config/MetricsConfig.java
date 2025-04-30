@@ -1,4 +1,4 @@
-package com.stroycut.global.common.config;
+package com.stroycut.global.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;

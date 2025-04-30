@@ -1,4 +1,4 @@
-package com.stroycut.global.common.Util;
+package com.stroycut.global.util;
 
 import jakarta.servlet.http.Cookie;
 import org.springframework.stereotype.Component;
