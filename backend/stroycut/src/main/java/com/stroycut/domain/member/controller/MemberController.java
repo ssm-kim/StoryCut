@@ -18,11 +18,6 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    /**
-     * 현재 로그인한 사용자의 상세 정보를 조회합니다.
-     * @param userDetails 인증된 사용자 정보 (CustomUserDetails 객체)
-     * @return 회원 정보 응답
-     */
     @GetMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
@@ -31,12 +26,6 @@ public class MemberController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
-    /**
-     * 현재 로그인한 사용자의 정보를 업데이트합니다.
-     * @param userDetails 인증된 사용자 정보 (CustomUserDetails 객체)
-     * @param updateRequest 업데이트할 정보
-     * @return 업데이트된 회원 정보 응답
-     */
     @PutMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,

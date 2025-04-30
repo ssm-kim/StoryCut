@@ -43,30 +43,33 @@ public class SecurityConfig {
                 .authenticationEntryPoint(restAuthenticationEntryPoint())
             )
             .authorizeHttpRequests((auth) -> auth
-                // 인증 관련 API 허용
-                .requestMatchers("/api/auth/**").permitAll()
-                
-                // OAuth2 소셜 로그인 관련 경로 허용
-                .requestMatchers("/login", "/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
-                
-                // Swagger UI 관련 경로 허용
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
-                
-                // 정적 리소스 접근 허용
-                .requestMatchers("/", "/static/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                
-                // 헬스 체크, 모니터링 엔드포인트 허용
-                .requestMatchers("/actuator/**", "/health").permitAll()
-                
-                // 그 외 API 요청은 인증 필요
+                // 공개 엔드포인트 그룹 - 인증 없이 접근 가능한 모든 경로
+                .requestMatchers(
+                    // API 공개 엔드포인트
+                    "/api/auth/**",
+
+                    // OAuth2 소셜 로그인 관련 경로
+                    "/login", "/oauth2/authorization/**", "/login/oauth2/code/**",
+
+                    // Swagger UI 관련 경로
+                    "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**",
+
+                    // 정적 리소스
+                    "/", "/static/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
+
+                    // 헬스 체크 및 모니터링
+                    "/actuator/**", "/health"
+                ).permitAll()
+
+                // 보호된 API 엔드포인트 - 인증 필요
                 .requestMatchers("/api/**").authenticated()
+
+                // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
             .sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .formLogin(form -> form.disable())
-            .httpBasic(httpBasic -> httpBasic.disable())
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)

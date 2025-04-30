@@ -25,16 +25,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        String uri = request.getRequestURI();
-        
-        // OAuth2 로그인 관련 경로는 JWT 인증 처리 건너뛰기
-        if (uri.startsWith("/login") || 
-            uri.startsWith("/oauth2/authorization") || 
-            uri.startsWith("/login/oauth2/code")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        
         String token = jwtUtil.resolveToken(request);
         
         if (token != null && jwtUtil.validateToken(token)) {
@@ -65,6 +55,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                uri.equals("/favicon.ico") ||
                uri.equals("/") ||
                uri.startsWith("/actuator") ||
-               uri.startsWith("/health");
+               uri.startsWith("/health") ||
+               uri.startsWith("/login") || 
+               uri.startsWith("/oauth2/authorization") || 
+               uri.startsWith("/login/oauth2/code");
     }
 }
