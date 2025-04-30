@@ -1,13 +1,28 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 
     // Kotlin 직렬화를 위한 플러그인 추가
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
     // Room을 위한 KSP 플러그인
-    id("com.google.devtools.ksp") version "1.9.21-1.0.15"
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
 }
+
+// build.gradle.kts 파일 내에서
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream ->
+        localProperties.load(stream)
+    }
+}
+
+// local.properties에서 특정 값 가져오기
+val sdkDir = localProperties.getProperty("sdk.dir") ?: ""
+val BASE_URL = localProperties.getProperty("BASE_URL") ?: ""
 
 android {
     namespace = "com.ssafy.storycut"
@@ -21,6 +36,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "BASE_URL", "\"$BASE_URL\"")
     }
 
     buildTypes {
@@ -64,6 +80,7 @@ dependencies {
 
     // 구글 로그인
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+
     // 서버 통신
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
@@ -73,5 +90,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.1")
     implementation("androidx.room:room-ktx:2.7.1")
     ksp("androidx.room:room-compiler:2.7.1") // Room 어노테이션 프로세서
+
+    // navigation
+    implementation("androidx.navigation:navigation-compose:2.8.9")
 
 }
