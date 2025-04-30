@@ -1,6 +1,6 @@
-package com.stroycut.global.common.config;
+package com.stroycut.global.config;
 
-
+import com.stroycut.global.model.enums.PublicEndpoint;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -21,13 +21,13 @@ public class SpringdocConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        Server httpsServer = new Server();
-        httpsServer.setUrl(baseUrl);
-        httpsServer.setDescription("HTTPS Server");
+        // 상대 경로를 사용하여 CORS 이슈 방지
+        Server localServer = new Server();
+        localServer.setUrl("/");
+        localServer.setDescription("Local Server");
 
         return new OpenAPI()
-            .servers(List.of(httpsServer))
-            .components(new Components())
+            .servers(List.of(localServer))
             .info(new Info()
                 .title("Storycut API")
                 .version("1.0")
@@ -50,13 +50,22 @@ public class SpringdocConfig {
 //            .removeIf(name -> name.startsWith("BaseResponse"));
 //    }
 
-    // OpenApiCustomiser를 이용해, "/api/member/public" 경로를 제외한 엔드포인트에 자동으로 보안 요구사항 추가
+    // OpenApiCustomiser를 이용해, 공개 API를 제외한 엔드포인트에 자동으로 보안 요구사항 추가
     @Bean
     public OpenApiCustomizer securityOpenApiCustomiser() {
         return openApi -> {
+            List<String> publicUrls = PublicEndpoint.getAll();
+            
             openApi.getPaths().forEach((path, pathItem) -> {
-                // public 경로가 포함된 경우는 건너뜁니다.
-                if (!path.matches("^/api/[^/]+/public.*")) {
+                // 공개 URL에 해당하는 경로는 보안 요구사항 추가하지 않음
+                boolean isPublicPath = publicUrls.stream()
+                    .anyMatch(url -> {
+                        // /** 패턴 처리
+                        String urlPattern = url.replace("/**", "");
+                        return path.startsWith(urlPattern) || path.matches(urlPattern.replace("*", ".*"));
+                    });
+                
+                if (!isPublicPath) {
                     pathItem.readOperations().forEach(operation -> {
                         operation.addSecurityItem(new SecurityRequirement().addList("JWT"));
                     });

@@ -20,7 +20,7 @@ logging:
   file:
     name: logs/app.log
   level:
-    org.springframework.security: ERROR  # Security 관련 로그 안 띄움
+    org.springframework.security: DEBUG  # Security 관련 로그 안 띄움
     # org.springframework.security: DEBUG  # Security 관련 로그 줄이기
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG  # 요청 로그 줄이기
     com.finbattle.global.common.filter.JWTFilter: DEBUG  # JWT 필터 로깅 최소화
