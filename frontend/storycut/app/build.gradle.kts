@@ -7,8 +7,11 @@ plugins {
 
     // Kotlin 직렬화를 위한 플러그인 추가
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
+
     // Room을 위한 KSP 플러그인
-    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
+
 }
 
 // build.gradle.kts 파일 내에서
@@ -57,6 +60,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,7 +83,17 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // 구글 로그인
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    // Credential Manager (Google 로그인 대체)
+    implementation("androidx.credentials:credentials:1.5.0")
+    // optional - needed for credentials support from play services, for devices running
+    // Android 13 and below.
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+
+    implementation ("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    //
+    implementation ("com.google.android.gms:play-services-auth:20.7.0'")
+
 
     // 서버 통신
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -92,6 +106,8 @@ dependencies {
     ksp("androidx.room:room-compiler:2.7.1") // Room 어노테이션 프로세서
 
     // navigation
-    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("com.google.dagger:hilt-android:2.56.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    ksp("com.google.dagger:hilt-compiler:2.56.2")
 
 }
