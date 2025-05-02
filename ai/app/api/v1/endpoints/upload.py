@@ -1,5 +1,5 @@
 from typing import List, Union
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
 from app.api.v1.services.upload_service import (
@@ -18,7 +18,7 @@ router = APIRouter()
 
 @router.post(
     "/images",
-    response_model=Union[ImageUploadResponse, LocalErrorResponse],
+    response_model=ImageUploadResponse,
     responses={
         400: {
             "model": LocalErrorResponse,
@@ -36,23 +36,15 @@ async def upload_images(files: List[UploadFile] = File(...)):
             "message": "요청에 성공하였습니다.",
             "result": {"imageUrls": image_urls},
         }
-
-    except RuntimeError as e:
-        return JSONResponse(
+    except ValueError as e:
+        raise HTTPException(
             status_code=400,
-            content={
-                "isSuccess": False,
-                "code": 400,
-                "message": str(e),
-                "result": None,
-            },
+            detail=f"이미지 업로드 실패: {str(e)}"
         )
 
-
-# 🎥 영상 업로드
 @router.post(
     "/video",
-    response_model=Union[VideoUploadResponse, S3ErrorResponse],
+    response_model=VideoUploadResponse,
     responses={
         500: {
             "model": S3ErrorResponse,
@@ -61,7 +53,7 @@ async def upload_images(files: List[UploadFile] = File(...)):
     },
     summary="영상 업로드"
 )
-async def upload_video(file: UploadFile = File(...),s3_client=Depends(get_s3_client)):
+async def upload_video(file: UploadFile = File(...), s3_client=Depends(get_s3_client)):
     try:
         video_url = save_uploaded_video(file, s3_client)
         return {
@@ -70,14 +62,8 @@ async def upload_video(file: UploadFile = File(...),s3_client=Depends(get_s3_cli
             "message": "요청에 성공하였습니다.",
             "result": {"originalVideoUrl": video_url},
         }
-
     except Exception as e:
-        return JSONResponse(
+        raise HTTPException(
             status_code=500,
-            content={
-                "isSuccess": False,
-                "code": 500,
-                "message": f"S3 업로드 실패: {str(e)}",
-                "result": None,
-            },
+            detail=f"S3 업로드 실패: {str(e)}"
         )
