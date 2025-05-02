@@ -19,6 +19,12 @@ public enum BaseResponseStatus {
     ALREADY_MEMBER_ROOM(false, HttpStatus.BAD_REQUEST, 2002, "이미 방에 참여 중입니다."),
     NOT_VALID_PASSWORD(false, HttpStatus.BAD_REQUEST, 2003, "비밀번호가 일치하지 않습니다."),
 
+
+    // 3000~ 3999 : 비디오 관련 에러
+    NOT_FOUND_VIDEO(false, HttpStatus.NOT_FOUND, 3000, "해당 비디오가 존재하지 않습니다."),
+    NOT_VALID_VIDEO(false, HttpStatus.BAD_REQUEST, 3001, "비디오가 유효하지 않습니다."),
+
+
     ;
 
     private final boolean isSuccess;

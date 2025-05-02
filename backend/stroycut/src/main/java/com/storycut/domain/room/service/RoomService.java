@@ -22,7 +22,7 @@ public interface RoomService {
      * @param memberId 공유방을 생성하는 회원의 ID (방장)
      * @param request 공유방 생성에 필요한 정보를 담은 요청 객체
      * @return 생성된 공유방 정보를 담은 응답 객체
-     * @throws com.storycut.global.exception.InvalidValueException 유효하지 않은 요청 값이 있는 경우
+     * @throws com.storycut.global.exception.BusinessException 유효하지 않은 요청 값이 있는 경우
      */
     RoomResponse createRoom(Long memberId, RoomCreateRequest request);
     
