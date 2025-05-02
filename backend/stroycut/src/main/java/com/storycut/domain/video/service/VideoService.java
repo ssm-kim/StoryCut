@@ -28,7 +28,7 @@ public interface VideoService {
      * 
      * @param videoId 조회할 비디오의 ID
      * @return 비디오 정보를 담은 응답 객체
-     * @throws com.storycut.global.exception.BusinessException 해당 비디오가 존재하지 않는 경우
+     * @throws com.storycut.global.exception.BusinessException 해당 비디오가 존재하지 않는 경우(3000)
      */
     VideoResponse getVideo(Long videoId);
     
