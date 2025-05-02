@@ -6,7 +6,6 @@ import com.stroycut.domain.room.dto.request.RoomUpdateRequest;
 import com.stroycut.domain.room.dto.response.RoomMemberResponse;
 import com.stroycut.domain.room.dto.response.RoomResponse;
 import com.stroycut.global.model.dto.BaseResponse;
-import com.stroycut.global.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
