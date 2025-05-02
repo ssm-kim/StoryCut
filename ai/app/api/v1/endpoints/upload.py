@@ -61,10 +61,7 @@ async def upload_images(files: List[UploadFile] = File(...)):
     },
     summary="영상 업로드"
 )
-async def upload_video(
-    file: UploadFile = File(...),
-    s3_client=Depends(get_s3_client)
-):
+async def upload_video(file: UploadFile = File(...),s3_client=Depends(get_s3_client)):
     try:
         video_url = save_uploaded_video(file, s3_client)
         return {
