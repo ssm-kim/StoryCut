@@ -1,12 +1,14 @@
 package com.stroycut.domain.auth.controller;
 
-import org.springframework.stereotype.Controller;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 소셜 로그인 관련 컨트롤러
  */
-@Controller
+@RestController
+@RequiredArgsConstructor
 public class LoginController {
 
     /**
