@@ -6,7 +6,6 @@ import com.stroycut.domain.room.dto.request.RoomUpdateRequest;
 import com.stroycut.domain.room.dto.response.RoomMemberResponse;
 import com.stroycut.domain.room.dto.response.RoomResponse;
 import com.stroycut.global.model.dto.BaseResponse;
-import com.stroycut.global.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +24,7 @@ public interface RoomAPI {
      */
     @PostMapping
     ResponseEntity<BaseResponse<RoomResponse>> createRoom(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @Valid @RequestBody RoomCreateRequest request);
 
     /**
@@ -33,14 +32,14 @@ public interface RoomAPI {
      */
     @GetMapping
     ResponseEntity<BaseResponse<List<RoomResponse>>> getMyRooms(
-            @AuthenticationPrincipal AuthUser authUser);
+            @AuthenticationPrincipal CustomUserDetails authUser);
 
     /**
      * 공유방 수정 API
      */
     @PatchMapping
     ResponseEntity<BaseResponse<RoomResponse>> updateRoom(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @RequestParam Long roomId,
             @Valid @RequestBody RoomUpdateRequest request);
 
@@ -49,7 +48,7 @@ public interface RoomAPI {
      */
     @DeleteMapping
     ResponseEntity<BaseResponse<String>> deleteRoom(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @RequestParam Long roomId);
 
     /**
@@ -57,7 +56,7 @@ public interface RoomAPI {
      */
     @PostMapping("/invite")
     ResponseEntity<BaseResponse<RoomMemberResponse>> inviteMember(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @RequestParam Long roomId,
             @Valid @RequestBody RoomInviteRequest request);
 
@@ -66,7 +65,7 @@ public interface RoomAPI {
      */
     @PostMapping("/enter")
     ResponseEntity<BaseResponse<RoomResponse>> enterRoom(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @RequestParam Long roomId,
             @RequestParam(required = false) String password);
 
@@ -75,7 +74,7 @@ public interface RoomAPI {
      */
     @PostMapping("/leave")
     ResponseEntity<BaseResponse<String>> leaveRoom(
-            @AuthenticationPrincipal AuthUser authUser,
+            @AuthenticationPrincipal CustomUserDetails authUser,
             @RequestParam Long roomId);
 
     /**

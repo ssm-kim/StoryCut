@@ -5,7 +5,6 @@ import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.stroycut.domain.auth.service.CustomOAuth2UserService;
 import com.stroycut.global.filter.LoggingFilter;
 import com.stroycut.global.model.enums.PublicEndpoint;
-import com.stroycut.global.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +30,6 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Value("${app.baseUrl}")
     private String baseUrl;
@@ -45,10 +43,6 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            // 인증 실패 시 401 반환하도록 설정
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(restAuthenticationEntryPoint)
-            )
             .authorizeHttpRequests((auth) -> {
                 // 명시적으로 공개 URL 처리 - String 배열을 사용해 패턴 일치 처리
                 publicUrls.forEach(url -> auth.requestMatchers(url).permitAll());
