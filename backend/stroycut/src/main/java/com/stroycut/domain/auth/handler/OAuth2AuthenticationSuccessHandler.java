@@ -66,7 +66,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         TokenDto tokenDto = TokenDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .memberId(memberId) // memberId도 클라이언트에 반환
                 .build();
         
         response.setContentType("application/json;charset=UTF-8");

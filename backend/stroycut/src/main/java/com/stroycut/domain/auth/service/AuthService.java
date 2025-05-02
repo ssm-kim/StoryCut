@@ -63,7 +63,6 @@ public class AuthService {
         return TokenDto.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken) // 기존 리프레시 토큰 유지
-                .memberId(memberId) // memberId도 함께 반환
                 .build();
     }
 

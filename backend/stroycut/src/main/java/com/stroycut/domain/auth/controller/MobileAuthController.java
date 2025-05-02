@@ -34,7 +34,8 @@ public class MobileAuthController {
         
         // ID 토큰 검증 및 JWT 토큰 발급
         TokenDto tokenDto = mobileAuthService.processGoogleLogin(request.getIdToken());
-        
+        log.info("토큰이요",tokenDto.getAccessToken());
+        System.out.println("토큰ㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁ"+  tokenDto.getAccessToken());
         return ResponseEntity.ok(new BaseResponse<>(tokenDto));
     }
 }

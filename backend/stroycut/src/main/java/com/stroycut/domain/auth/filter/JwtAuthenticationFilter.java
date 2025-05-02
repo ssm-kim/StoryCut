@@ -59,5 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                uri.startsWith("/login") || 
                uri.startsWith("/oauth2/authorization") || 
                uri.startsWith("/login/oauth2/code");
+//                || uri.startsWith("/api/auth/google/mobile");
     }
 }

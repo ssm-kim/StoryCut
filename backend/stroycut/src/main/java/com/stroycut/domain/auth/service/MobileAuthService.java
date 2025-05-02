@@ -66,7 +66,6 @@ public class MobileAuthService {
             return TokenDto.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
-                    .memberId(memberId)
                     .build();
             
         } catch (Exception e) {
