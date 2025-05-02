@@ -1,24 +1,24 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# 📌 .env 경로를 현재 파일 기준으로 상위에서 명확히 지정
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+load_dotenv(dotenv_path=ENV_PATH)
+
 
 class Settings:
-    # 📦 DB 설정
-    # DB_HOST: str = os.getenv("DB_HOST", "localhost")
-    # DB_PORT: str = os.getenv("DB_PORT", "3306")
-    # DB_USERNAME: str = os.getenv("DB_USERNAME", "root")
-    # DB_PASSWORD: str = os.getenv("DB_PASSWORD", "1234")
-    # DB_NAME: str = os.getenv("DB_NAME", "storycut")
+    """
+    🔧 .env 파일 기반 설정 클래스
+    AWS, DB 등 프로젝트 전역 환경 변수들을 여기에서 관리
+    """
 
-    @property
-    def SQLALCHEMY_DATABASE_URL(self) -> str:
-        return f"mysql+pymysql://{self.DB_USERNAME}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    def __init__(self):
+        # ☁️ AWS S3 설정
+        self.AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
+        self.S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "my-shortcut-bucket")
+        self.AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+        self.AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-    # ☁️ S3 설정
-    AWS_REGION: str = os.getenv("AWS_REGION", "ap-northeast-2")
-    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "my-shortcut-bucket")
-    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 settings = Settings()

@@ -5,7 +5,7 @@ from typing import List
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from app.core.config import settings
-
+from app.dependencies.s3 import get_s3_client
 
 UPLOAD_DIR = "app/images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -30,16 +30,12 @@ def save_uploaded_images(files: List[UploadFile]) -> List[str]:
 
 
 # === S3 영상 저장 ===
-s3_client = boto3.client(
-    "s3",
-    region_name=settings.AWS_REGION,
-    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-)
-
-def save_uploaded_video(file: UploadFile) -> str:
+def save_uploaded_video(file: UploadFile, s3_client=None) -> str:
     ext = file.filename.split(".")[-1]
     filename = f"videos/video_{uuid4().hex}.{ext}"
+
+    if s3_client is None:
+        s3_client = get_s3_client()  # 기본값으로 의존성 직접 해결
 
     try:
         s3_client.upload_fileobj(

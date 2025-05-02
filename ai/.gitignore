@@ -35,7 +35,7 @@ dist/
 pip-wheel-metadata/
 
 # ▶️ FastAPI static/media/uploads (선택적)
-images/
+app/images/
 shortcut/backend/image/
 
 # ▶️ 기타 테스트 결과
