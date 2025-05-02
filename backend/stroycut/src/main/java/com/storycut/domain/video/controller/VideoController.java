@@ -29,12 +29,6 @@ public class VideoController implements VideoAPI {
     }
     
     @Override
-    public BaseResponse<List<VideoResponse>> getAllVideos() {
-        List<VideoResponse> responses = videoService.getAllVideos();
-        return new BaseResponse<>(responses);
-    }
-    
-    @Override
     public BaseResponse<List<VideoResponse>> getMyVideos(CustomUserDetails authUser) {
         List<VideoResponse> responses = videoService.getMemberVideos(authUser.getMemberId());
         return new BaseResponse<>(responses);

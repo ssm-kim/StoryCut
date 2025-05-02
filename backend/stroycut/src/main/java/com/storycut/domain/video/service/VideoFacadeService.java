@@ -42,17 +42,6 @@ public class VideoFacadeService implements VideoService {
     }
     
     @Override
-    public List<VideoResponse> getAllVideos() {
-        // 모든 비디오 조회
-        List<Video> videos = videoDetailService.findVideosByMemberId(null);
-        
-        // 응답 생성
-        return videos.stream()
-                .map(videoDetailService::mapToResponse)
-                .collect(Collectors.toList());
-    }
-    
-    @Override
     public List<VideoResponse> getMemberVideos(Long memberId) {
         // 회원의 비디오 목록 조회
         List<Video> videos = videoDetailService.findVideosByMemberId(memberId);

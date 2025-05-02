@@ -31,13 +31,6 @@ public interface VideoService {
      * @throws com.storycut.global.exception.BusinessException 해당 비디오가 존재하지 않는 경우(3000)
      */
     VideoResponse getVideo(Long videoId);
-    
-    /**
-     * 모든 비디오 목록을 조회합니다.
-     * 
-     * @return 비디오 목록
-     */
-    List<VideoResponse> getAllVideos();
 
     /**
      * 특정 회원이 업로드한 비디오 목록을 조회합니다.

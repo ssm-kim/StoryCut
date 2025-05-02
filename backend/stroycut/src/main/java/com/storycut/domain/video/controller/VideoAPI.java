@@ -24,13 +24,9 @@ public interface VideoAPI {
     @Operation(summary = "비디오 상세 조회", description = "비디오 ID로 비디오 정보를 조회합니다.")
     BaseResponse<VideoResponse> getVideo(@PathVariable Long videoId);
     
-    @GetMapping
-    @Operation(summary = "모든 비디오 목록 조회", description = "모든 비디오 목록을 조회합니다.")
-    BaseResponse<List<VideoResponse>> getAllVideos();
-    
     @GetMapping("/member")
     @Operation(summary = "내 비디오 목록 조회", description = "회원이 업로드한 비디오 목록을 조회합니다.")
-    BaseResponse<List<VideoResponse>> getMyVideos(@AuthenticationPrincipal CustomUserDetails authUser;
+    BaseResponse<List<VideoResponse>> getMyVideos(@AuthenticationPrincipal CustomUserDetails authUser);
     
     @GetMapping("/edited/{originalVideoId}")
     @Operation(summary = "편집된 비디오 목록 조회", description = "원본 비디오를 기반으로 편집된 비디오 목록을 조회합니다.")

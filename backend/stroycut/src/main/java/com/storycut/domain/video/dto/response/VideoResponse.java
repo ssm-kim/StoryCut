@@ -15,10 +15,9 @@ import java.time.LocalDateTime;
 public class VideoResponse {
     private Long videoId;
     private Long memberId;
-    private String videoFileName;
+    private String videoName;
     private String videoUrl;
     private String thumbnail;
-    private String status;
     private Long originalVideoId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -27,10 +26,9 @@ public class VideoResponse {
         return VideoResponse.builder()
                 .videoId(video.getId())
                 .memberId(video.getMemberId())
-                .videoFileName(video.getVideoFileName())
+                .videoName(video.getVideoName())
                 .videoUrl(video.getVideoUrl())
                 .thumbnail(video.getThumbnail())
-                .status(video.getStatus())
                 .originalVideoId(video.getOriginalVideoId())
                 .createdAt(video.getCreatedAt())
                 .updatedAt(video.getUpdatedAt())
