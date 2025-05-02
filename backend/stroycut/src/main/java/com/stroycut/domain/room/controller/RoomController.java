@@ -7,7 +7,6 @@ import com.stroycut.domain.room.dto.response.RoomMemberResponse;
 import com.stroycut.domain.room.dto.response.RoomResponse;
 import com.stroycut.domain.room.service.RoomService;
 import com.stroycut.global.model.dto.BaseResponse;
-import com.stroycut.global.security.AuthUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,73 +23,64 @@ public class RoomController implements RoomAPI {
     
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> createRoom(
-            @AuthenticationPrincipal AuthUser authUser,
-            @Valid @RequestBody RoomCreateRequest request) {
+            CustomUserDetails authUser, RoomCreateRequest request) {
         
-        RoomResponse response = roomService.createRoom(authUser.getId(), request);
+        RoomResponse response = roomService.createRoom(authUser.getMemberId(), request);
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
     @Override
     public ResponseEntity<BaseResponse<List<RoomResponse>>> getMyRooms(
-            @AuthenticationPrincipal AuthUser authUser) {
+            CustomUserDetails authUser) {
         
-        List<RoomResponse> response = roomService.getMyRooms(authUser.getId());
+        List<RoomResponse> response = roomService.getMyRooms(authUser.getMemberId());
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> updateRoom(
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long roomId,
-            @Valid @RequestBody RoomUpdateRequest request) {
+            CustomUserDetails authUser, Long roomId, RoomUpdateRequest request) {
         
-        RoomResponse response = roomService.updateRoom(authUser.getId(), roomId, request);
+        RoomResponse response = roomService.updateRoom(authUser.getMemberId(), roomId, request);
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
     @Override
     public ResponseEntity<BaseResponse<String>> deleteRoom(
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long roomId) {
+            CustomUserDetails authUser, Long roomId) {
         
-        roomService.deleteRoom(authUser.getId(), roomId);
+        roomService.deleteRoom(authUser.getMemberId(), roomId);
         return ResponseEntity.ok(new BaseResponse<> (roomId + "방이 삭제되었습니다."));
     }
 
     @Override
     public ResponseEntity<BaseResponse<RoomMemberResponse>> inviteMember(
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long roomId,
-            @Valid @RequestBody RoomInviteRequest request) {
+            CustomUserDetails authUser, Long roomId, RoomInviteRequest request) {
         
         RoomMemberResponse response = roomService.inviteMember(
-                authUser.getId(), roomId, request.inviteMemberId());
+                authUser.getMemberId(), roomId, request.inviteMemberId());
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> enterRoom(
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long roomId,
-            @RequestParam(required = false) String password) {
+            CustomUserDetails authUser, Long roomId, String password) {
         
-        RoomResponse response = roomService.enterRoom(authUser.getId(), roomId, password);
+        RoomResponse response = roomService.enterRoom(authUser.getMemberId(), roomId, password);
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
     @Override
     public ResponseEntity<BaseResponse<String>> leaveRoom(
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long roomId) {
+            CustomUserDetails authUser, Long roomId) {
         
-        roomService.leaveRoom(authUser.getId(), roomId);
+        roomService.leaveRoom(authUser.getMemberId(), roomId);
         return ResponseEntity.ok(new BaseResponse<> (roomId + "번 방에서 나갔습니다."));
     }
 
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> getRoomDetail(
-            @PathVariable Long roomId) {
+            Long roomId) {
         
         RoomResponse response = roomService.getRoomDetail(roomId);
         return ResponseEntity.ok(new BaseResponse<> (response));
@@ -98,7 +88,7 @@ public class RoomController implements RoomAPI {
 
     @Override
     public ResponseEntity<BaseResponse<List<RoomMemberResponse>>> getRoomMembers(
-            @PathVariable Long roomId) {
+            Long roomId) {
         
         List<RoomMemberResponse> response = roomService.getRoomMembers(roomId);
         return ResponseEntity.ok(new BaseResponse<> (response));
