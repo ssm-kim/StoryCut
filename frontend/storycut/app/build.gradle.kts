@@ -91,9 +91,8 @@ dependencies {
 
     implementation ("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
-    //
-    implementation ("com.google.android.gms:play-services-auth:20.7.0'")
-
+    // Data Store
+    implementation ("androidx.datastore:datastore-preferences:1.1.4")
 
     // 서버 통신
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
