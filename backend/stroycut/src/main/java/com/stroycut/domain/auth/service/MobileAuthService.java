@@ -7,12 +7,14 @@ import com.stroycut.domain.auth.model.dto.TokenDto;
 import com.stroycut.domain.auth.util.JWTUtil;
 import com.stroycut.domain.member.model.entity.Member;
 import com.stroycut.domain.member.repository.MemberRepository;
+import com.stroycut.global.common.exception.exception.BusinessException;
+import com.stroycut.global.common.model.dto.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,11 +37,6 @@ public class MobileAuthService {
     // 구글 토큰 검증 URL
     private static final String GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
     
-    /**
-     * 안드로이드 앱에서 전송한 구글 ID 토큰 처리
-     * @param idToken 구글 로그인 후 앱에서 받은 ID 토큰
-     * @return 액세스 토큰, 리프레시 토큰, 멤버 ID를 포함한 응답 객체
-     */
     @Transactional
     public TokenDto processGoogleLogin(String idToken) {
         try {
@@ -60,24 +57,20 @@ public class MobileAuthService {
             // 5. 리프레시 토큰 저장
             authService.saveRefreshToken(memberId, refreshToken);
             
-            log.info("모바일 구글 로그인 성공 - 멤버 ID: {}, 이메일: {}", memberId, userInfo.getEmail());
+            log.info("구글 로그인 성공 - 멤버 ID: {}, 이메일: {}", memberId, userInfo.getEmail());
             
             // 6. 토큰 정보 반환
             return TokenDto.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .build();
-            
+
         } catch (Exception e) {
-            log.error("모바일 구글 로그인 실패", e);
-            throw new RuntimeException("모바일 구글 로그인 처리 중 오류 발생", e);
+            log.error("구글 로그인 실패", e);
+            throw new BusinessException(BaseResponseStatus.GOOGLE_LOGIN_ERROR);
         }
     }
-    
-    /**
-     * 구글 ID 토큰 검증
-     * 실제 서비스에서는 WebClient로 구글 API 검증, 개발/테스트 시에는 간소화된 검증 사용
-     */
+
     private Map<String, Object> verifyGoogleIdToken(String idToken) {
         try {
             // 방법 1: 실제 서비스 환경 - 구글 API로 검증
@@ -91,7 +84,7 @@ public class MobileAuthService {
                         .bodyToMono(Map.class)
                         .block();  // 동기적 처리
             }
-            
+
             // 방법 2: 개발/테스트 환경 - 토큰 파싱만 진행
             // JWT 형식 (header.payload.signature)에서 페이로드 부분만 디코딩
             String[] parts = idToken.split("\\.");
@@ -104,7 +97,7 @@ public class MobileAuthService {
             
         } catch (Exception e) {
             log.error("구글 ID 토큰 검증 실패", e);
-            throw new RuntimeException("구글 ID 토큰 검증 실패", e);
+            throw new BusinessException(BaseResponseStatus.TOKEN_VERIFICATION_FAILED);
         }
     }
     
@@ -120,8 +113,8 @@ public class MobileAuthService {
             // JSON 파싱
             return objectMapper.readValue(decodedPayload, Map.class);
         } catch (Exception e) {
-            log.warn("토큰 파싱 실패, 더미 데이터 사용", e);
-            return createDummyUserInfo();
+            log.warn("토큰 페이로드 JSON 파싱 실패", e);
+            throw new BusinessException(BaseResponseStatus.INVALID_ID_TOKEN);
         }
     }
     

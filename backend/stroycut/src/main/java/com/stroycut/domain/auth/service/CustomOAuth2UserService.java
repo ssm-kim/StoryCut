@@ -57,7 +57,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuth2UserInfo userInfo = new GoogleOAuth2UserInfo(attributes);
 
         // 사용자 정보 업데이트 또는 생성
-        Member member = saveOrUpdateMember(userInfo);
+        saveOrUpdateMember(userInfo);
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
@@ -92,7 +92,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     .name(userInfo.getName())
                     .nickname(userInfo.getName()) // 초기 닉네임은 이름과 동일하게 설정
                     .profileImg(userInfo.getImageUrl())
-                    .phoneNumber("") // 초기값은 빈 문자열, 나중에 사용자가 업데이트 가능
                     .providerId(providerId) // OAuth 제공자의 고유 ID 저장
                     .build();
             

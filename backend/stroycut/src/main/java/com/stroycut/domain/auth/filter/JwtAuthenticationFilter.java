@@ -1,6 +1,7 @@
 package com.stroycut.domain.auth.filter;
 
 import com.stroycut.domain.auth.util.JWTUtil;
+import com.stroycut.global.common.model.enums.PublicEndpoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,9 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Authentication authentication = jwtUtil.getAuthentication(token);
             // SecurityContext에 Authentication 객체를 저장합니다.
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug("Security Context에 '{}' 인증 정보를 저장했습니다.", authentication.getName());
+            log.debug("사용자 '{}' 인증 정보 저장 완료", authentication.getName());
         } else {
-            log.debug("유효한 JWT 토큰이 없습니다.");
+            log.debug("토큰 없음 또는 유효하지 않은 토큰");
         }
         
         filterChain.doFilter(request, response);
@@ -44,21 +45,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
         
-        // 인증이 필요 없는 경로들은 필터 적용 제외
-        return uri.startsWith("/swagger-ui") || 
-               uri.startsWith("/v3/api-docs") || 
-               uri.startsWith("/api/auth") ||
-               uri.startsWith("/static") ||
-               uri.startsWith("/css") ||
-               uri.startsWith("/js") ||
-               uri.startsWith("/images") ||
-               uri.equals("/favicon.ico") ||
-               uri.equals("/") ||
-               uri.startsWith("/actuator") ||
-               uri.startsWith("/health") ||
-               uri.startsWith("/login") || 
-               uri.startsWith("/oauth2/authorization") || 
-               uri.startsWith("/login/oauth2/code");
-//                || uri.startsWith("/api/auth/google/mobile");
+        // PublicEndpoint에 정의된 공개 URL에 대해서는 필터 적용 제외
+        for (String pattern : PublicEndpoint.getAll()) {
+            // 와일드카드(**)가 포함된 패턴 처리
+            if (pattern.endsWith("/**")) {
+                String prefix = pattern.substring(0, pattern.length() - 3);
+                if (uri.startsWith(prefix)) {
+                    return true;
+                }
+            } 
+            // 정확한 경로 매치
+            else if (uri.equals(pattern)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

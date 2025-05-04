@@ -4,6 +4,7 @@ import com.stroycut.domain.auth.filter.JwtAuthenticationFilter;
 import com.stroycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.stroycut.domain.auth.service.CustomOAuth2UserService;
 import com.stroycut.global.common.filter.LoggingFilter;
+import com.stroycut.global.common.model.enums.PublicEndpoint;
 import com.stroycut.global.common.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -35,6 +37,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // 명시적으로 공개 URL 목록 추출
+        List<String> publicUrls = PublicEndpoint.getAll();
 
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -42,31 +46,14 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(restAuthenticationEntryPoint())
             )
-            .authorizeHttpRequests((auth) -> auth
-                // 공개 엔드포인트 그룹 - 인증 없이 접근 가능한 모든 경로
-                .requestMatchers(
-                    // API 공개 엔드포인트
-                    "/api/auth/**",
-
-                    // OAuth2 소셜 로그인 관련 경로
-                    "/login", "/oauth2/authorization/**", "/login/oauth2/code/**",
-
-                    // Swagger UI 관련 경로
-                    "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**",
-
-                    // 정적 리소스
-                    "/", "/static/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
-
-                    // 헬스 체크 및 모니터링
-                    "/actuator/**", "/health"
-                ).permitAll()
-
+            .authorizeHttpRequests((auth) -> {
+                // 명시적으로 공개 URL 처리 - forEach를 사용해 각 URL 패턴 처리
+                publicUrls.forEach(url -> auth.requestMatchers(url).permitAll());
+                
                 // 보호된 API 엔드포인트 - 인증 필요
-                .requestMatchers("/api/**").authenticated()
-
-                // 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                auth.requestMatchers("/api/**").authenticated()
+                    .anyRequest().authenticated();
+            })
             .sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )

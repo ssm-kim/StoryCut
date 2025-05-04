@@ -4,6 +4,8 @@ import com.stroycut.domain.auth.model.dto.TokenDto;
 import com.stroycut.domain.auth.util.JWTUtil;
 import com.stroycut.domain.member.model.entity.Member;
 import com.stroycut.domain.member.repository.MemberRepository;
+import com.stroycut.global.common.exception.exception.BusinessException;
+import com.stroycut.global.common.model.dto.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,7 +41,7 @@ public class AuthService {
     public TokenDto refreshAccessToken(String refreshToken) {
         // 리프레시 토큰 유효성 검증
         if (!jwtUtil.validateToken(refreshToken)) {
-            throw new RuntimeException("Invalid refresh token");
+            throw new BusinessException(BaseResponseStatus.INVALID_ID_TOKEN);
         }
 
         // 리프레시 토큰에서 사용자 ID 추출
@@ -50,12 +52,12 @@ public class AuthService {
         
         // 저장된 리프레시 토큰과 일치하는지 확인
         if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
-            throw new RuntimeException("Refresh token not found or not matched");
+            throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_FAILED);
         }
 
         // 사용자 존재 여부 확인
-        memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + memberId));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
 
         // 새로운 액세스 토큰 발급
         String newAccessToken = jwtUtil.createAccessToken(memberId);
@@ -70,7 +72,7 @@ public class AuthService {
     public void logout(String accessToken) {
         // 액세스 토큰 유효성 검증
         if (!jwtUtil.validateToken(accessToken)) {
-            throw new RuntimeException("Invalid access token");
+            throw new BusinessException(BaseResponseStatus.INVALID_ID_TOKEN);
         }
 
         // 토큰에서 사용자 ID 추출
@@ -97,6 +99,6 @@ public class AuthService {
     @Transactional(readOnly = true)
     public Member getMemberById(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + memberId));
+                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
     }
 }

@@ -6,6 +6,8 @@ import com.stroycut.domain.auth.service.AuthService;
 import com.stroycut.domain.auth.util.JWTUtil;
 import com.stroycut.domain.member.model.entity.Member;
 import com.stroycut.domain.member.repository.MemberRepository;
+import com.stroycut.global.common.exception.exception.BusinessException;
+import com.stroycut.global.common.model.dto.BaseResponseStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +47,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         
         // providerId로 사용자 찾기 (이메일 대신 providerId로 조회)
         Member member = memberRepository.findByProviderId(providerId)
-                .orElseThrow(() -> new RuntimeException("User not found with providerId: " + providerId));
+                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
         
         Long memberId = member.getId();
         

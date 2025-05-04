@@ -18,6 +18,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    // 회원 상세 정보 조회
     @GetMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
@@ -26,12 +27,13 @@ public class MemberController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
-    @PutMapping("/detail")
+    // 회원 정보 업데이트
+    @PatchMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody MemberDto.UpdateRequest updateRequest) {
         Long memberId = userDetails.getMemberId();
-        log.info("내 정보 업데이트 요청 - 사용자 ID: {}", memberId);
+        log.info("내 정보 업데이트 요청 - 사용자 ID: {}, 닉네임: {}", memberId, updateRequest.getNickname());
         MemberDto.Response response = memberService.updateMember(memberId, updateRequest);
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
