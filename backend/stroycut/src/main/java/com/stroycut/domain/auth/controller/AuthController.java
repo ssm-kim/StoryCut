@@ -54,10 +54,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> logout(@RequestHeader("Authorization") String accessToken) {
-        log.info("로그아웃 요청 - 사용자 ID: {}", jwtUtil.getMemberId(accessToken));
         // Bearer 접두사 제거 (공백 포함)
-        accessToken = accessToken.substring(7);
+        accessToken = accessToken.replace("Bearer ", "");
+        log.info("로그아웃 요청 - 사용자 ID: {}", jwtUtil.getMemberId(accessToken));
+
         authService.logout(accessToken);
-        return ResponseEntity.ok(new BaseResponse<>(null));
+        return ResponseEntity.ok(new BaseResponse<>());
     }
 }

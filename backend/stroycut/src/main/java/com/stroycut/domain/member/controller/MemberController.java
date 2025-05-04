@@ -20,7 +20,8 @@ public class MemberController {
 
     // 회원 상세 정보 조회
     @GetMapping("/detail")
-    public ResponseEntity<BaseResponse<MemberDto.Response>> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<BaseResponse<MemberDto.Response>> getMyInfo(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
         log.info("내 정보 요청 - 사용자 ID: {}, 이메일: {}", memberId, userDetails.getEmail());
         MemberDto.Response response = memberService.getMemberInfo(memberId);
@@ -36,5 +37,15 @@ public class MemberController {
         log.info("내 정보 업데이트 요청 - 사용자 ID: {}, 닉네임: {}", memberId, updateRequest.getNickname());
         MemberDto.Response response = memberService.updateMember(memberId, updateRequest);
         return ResponseEntity.ok(new BaseResponse<>(response));
+    }
+    
+    // 계정 탈퇴
+    @DeleteMapping()
+    public ResponseEntity<BaseResponse<Void>> deleteMyAccount(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        log.info("계정 탈퇴 요청 - 사용자 ID: {}, 이메일: {}", memberId, userDetails.getEmail());
+        memberService.deleteMember(memberId);
+        return ResponseEntity.ok(new BaseResponse<>());
     }
 }
