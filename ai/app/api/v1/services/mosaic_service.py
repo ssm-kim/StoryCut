@@ -37,7 +37,7 @@ def get_detections(frame, target_embeddings):
             max_sim = max(similarities)
             x1, y1, x2, y2 = map(int, boxes[i])
             w, h = x2 - x1, y2 - y1
-            label = 'target' if max_sim > 0.4 else 'others'
+            label = 'target' if max_sim > 0.3 else 'others'
             detections.append(([x1, y1, w, h], 0.99, label))
     return detections
 
