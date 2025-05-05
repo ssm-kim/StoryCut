@@ -1,4 +1,0 @@
-file 'app/vimosaic/segment_0_b29e810a462f489589cc4ecba76e78fb.mp4'
-file 'app/vimosaic/segment_1_143fc7e74ad1461b89b93f880721a0c5.mp4'
-file 'app/vimosaic/segment_2_9af7f591669240c4913e16fd528cc856.mp4'
-file 'app/vimosaic/segment_3_79948d211a9f4a58b1b3c0ea455deb1f.mp4'
