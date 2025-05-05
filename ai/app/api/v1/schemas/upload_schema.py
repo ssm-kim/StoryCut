@@ -43,26 +43,10 @@ class VideoUploadResponse(BaseModel):
             }
         }
 
-class S3ErrorResponse(BaseModel):
-    isSuccess: bool = Field(default=False, example=False)
-    code: int = Field(..., example=500)
-    message: str = Field(..., example="S3 업로드 실패")
-    result: Optional[None] = Field(default=None, example=None)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "isSuccess": False,
-                "code": 500,
-                "message": "S3 업로드 실패",
-                "result": None
-            }
-        }
-
-class LocalErrorResponse(BaseModel):
+class ErrorResponse(BaseModel):
     isSuccess: bool = Field(default=False, example=False)
     code: int = Field(..., example=400)
-    message: str = Field(..., example="파일 처리 오류: 로컬 저장 실패")
+    message: str = Field(..., example="에러 메시지")
     result: Optional[None] = Field(default=None, example=None)
 
     class Config:
@@ -70,7 +54,8 @@ class LocalErrorResponse(BaseModel):
             "example": {
                 "isSuccess": False,
                 "code": 400,
-                "message": "파일 처리 오류: 로컬 저장 실패",
+                "message": "에러 메시지",
                 "result": None
             }
         }
+

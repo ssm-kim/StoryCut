@@ -36,6 +36,7 @@ pip-wheel-metadata/
 
 # ▶️ FastAPI static/media/uploads (선택적)
 app/images/
+app/vimosaic/
 shortcut/backend/image/
 
 # ▶️ 기타 테스트 결과
