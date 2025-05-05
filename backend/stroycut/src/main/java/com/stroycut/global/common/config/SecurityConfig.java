@@ -35,6 +35,10 @@ public class SecurityConfig {
     @Value("${app.baseUrl}")
     private String baseUrl;
 
+    // 추후 웹 로그인 필요 시 true 변경하면 됨
+    @Value("${app.auth.web-enabled:true}")
+    private boolean webAuthEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 명시적으로 공개 URL 목록 추출
@@ -56,13 +60,19 @@ public class SecurityConfig {
             })
             .sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService)
-                )
-                .successHandler(oAuth2AuthenticationSuccessHandler)
-            )
+            );
+
+            if (webAuthEnabled) {
+                http
+                    .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                            .userService(customOAuth2UserService)
+                        )
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                );
+            }
+
+        http
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class);
 
