@@ -26,6 +26,7 @@ logging:
     org.springframework.web: WARN  # Spring Web 관련 로그 최소화
     org.apache.coyote.http11: WARN  # Tomcat 요청 로그 줄이기
     org.apache.tomcat: WARN  # Tomcat 관련 상세 로그 줄이기
+    com.stroycut.api.mcp: OFF  # MCP 관련 패키지의 로그 레벨을 OFF로 설정 (패키지 경로는 실제 구조에 맞게 조정)
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
