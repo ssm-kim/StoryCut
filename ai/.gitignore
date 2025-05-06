@@ -36,8 +36,9 @@ pip-wheel-metadata/
 
 # ▶️ FastAPI static/media/uploads (선택적)
 app/images/
+app/vimosaic/
 shortcut/backend/image/
-
+app/videos/
 # ▶️ 기타 테스트 결과
 htmlcov/
 coverage.xml

@@ -2,18 +2,26 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class ImageUploadResult(BaseModel):
-    imageUrls: List[str]
+    image_urls: List[str] = Field(..., alias="imageUrls")
+
+    class Config:
+        populate_by_name = True
 
 class VideoUploadResult(BaseModel):
-    originalVideoUrl: str
+    original_video_url: str = Field(..., alias="originalVideoUrl")
+
+    class Config:
+        populate_by_name = True
 
 class ImageUploadResponse(BaseModel):
-    isSuccess: bool
+    is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
     result: Optional[ImageUploadResult]
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": True,
@@ -26,12 +34,14 @@ class ImageUploadResponse(BaseModel):
         }
 
 class VideoUploadResponse(BaseModel):
-    isSuccess: bool
+    is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
     result: Optional[VideoUploadResult]
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": True,
@@ -43,34 +53,20 @@ class VideoUploadResponse(BaseModel):
             }
         }
 
-class S3ErrorResponse(BaseModel):
-    isSuccess: bool = Field(default=False, example=False)
-    code: int = Field(..., example=500)
-    message: str = Field(..., example="S3 업로드 실패")
-    result: Optional[None] = Field(default=None, example=None)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "isSuccess": False,
-                "code": 500,
-                "message": "S3 업로드 실패",
-                "result": None
-            }
-        }
-
-class LocalErrorResponse(BaseModel):
-    isSuccess: bool = Field(default=False, example=False)
+class ErrorResponse(BaseModel):
+    is_success: bool = Field(default=False, alias="isSuccess", example=False)
     code: int = Field(..., example=400)
-    message: str = Field(..., example="파일 처리 오류: 로컬 저장 실패")
+    message: str = Field(..., example="에러 메시지")
     result: Optional[None] = Field(default=None, example=None)
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": False,
                 "code": 400,
-                "message": "파일 처리 오류: 로컬 저장 실패",
+                "message": "에러 메시지",
                 "result": None
             }
         }
