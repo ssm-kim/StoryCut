@@ -1,9 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends,Form
-from app.api.v1.services.upload_service import save_uploaded_images, save_uploaded_video
-from app.api.v1.services.mosaic_service import run_mosaic_pipeline
-from app.dependencies.s3 import get_s3_client
-from app.api.v1.schemas.upload_schema import ImageUploadResponse, VideoUploadResponse, ErrorResponse
-from typing import List 
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from typing import List
+
+from app.api.v1.services.upload_service import save_uploaded_images, save_uploaded_video_local
+from app.api.v1.schemas.upload_schema import (
+    ImageUploadResponse, VideoUploadResponse, ErrorResponse,
+    ImageUploadResult, VideoUploadResult
+)
 
 router = APIRouter()
 
@@ -21,14 +23,13 @@ router = APIRouter()
 async def upload_images(files: List[UploadFile] = File(...)):
     try:
         image_urls = save_uploaded_images(files)
-        return {
-            "isSuccess": True,
-            "code": 200,
-            "message": "요청에 성공하였습니다.",
-            "result": {"imageUrls": image_urls},
-        }
+        return ImageUploadResponse(
+            is_success=True,
+            code=200,
+            message="요청에 성공하였습니다.",
+            result=ImageUploadResult(image_urls=image_urls)
+        )
     except Exception as e:
-        # HTTPException 사용
         raise HTTPException(
             status_code=400,
             detail=f"이미지 업로드 실패: {str(e)}"
@@ -41,24 +42,26 @@ async def upload_images(files: List[UploadFile] = File(...)):
     responses={
         400: {
             "model": ErrorResponse,
-            "description": "S3 업로드 실패: 인증 오류, 네트워크 문제 등"
+            "description": "로컬 영상 저장 실패"
+        },
+        500: {
+            "model": ErrorResponse,
+            "description": "서버 내부 오류"
         }
     },
-    summary="영상 업로드"
+    summary="영상 업로드 (로컬 저장)"
 )
-async def upload_video(file: UploadFile = File(...), s3_client=Depends(get_s3_client)):
+async def upload_video(file: UploadFile = File(...)):
     try:
-        video_url = save_uploaded_video(file, s3_client)
-        return {
-            "isSuccess": True,
-            "code": 200,
-            "message": "요청에 성공하였습니다.",
-            "result": {"originalVideoUrl": video_url},
-        }
+        video_url = save_uploaded_video_local(file)
+        return VideoUploadResponse(
+            is_success=True,
+            code=200,
+            message="요청에 성공하였습니다.",
+            result=VideoUploadResult(original_video_url=video_url)
+        )
     except Exception as e:
-        # HTTPException 사용
         raise HTTPException(
             status_code=500,
-            detail=f"S3 업로드 실패: {str(e)}"
+            detail=f"로컬 업로드 실패: {str(e)}"
         )
-

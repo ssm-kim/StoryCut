@@ -2,18 +2,26 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class ImageUploadResult(BaseModel):
-    imageUrls: List[str]
+    image_urls: List[str] = Field(..., alias="imageUrls")
+
+    class Config:
+        populate_by_name = True
 
 class VideoUploadResult(BaseModel):
-    originalVideoUrl: str
+    original_video_url: str = Field(..., alias="originalVideoUrl")
+
+    class Config:
+        populate_by_name = True
 
 class ImageUploadResponse(BaseModel):
-    isSuccess: bool
+    is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
     result: Optional[ImageUploadResult]
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": True,
@@ -26,12 +34,14 @@ class ImageUploadResponse(BaseModel):
         }
 
 class VideoUploadResponse(BaseModel):
-    isSuccess: bool
+    is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
     result: Optional[VideoUploadResult]
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": True,
@@ -44,12 +54,14 @@ class VideoUploadResponse(BaseModel):
         }
 
 class ErrorResponse(BaseModel):
-    isSuccess: bool = Field(default=False, example=False)
+    is_success: bool = Field(default=False, alias="isSuccess", example=False)
     code: int = Field(..., example=400)
     message: str = Field(..., example="에러 메시지")
     result: Optional[None] = Field(default=None, example=None)
 
     class Config:
+        validate_by_name = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "isSuccess": False,
@@ -58,4 +70,3 @@ class ErrorResponse(BaseModel):
                 "result": None
             }
         }
-

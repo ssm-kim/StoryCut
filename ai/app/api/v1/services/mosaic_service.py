@@ -95,7 +95,7 @@ def process_video_segment(input_path, target_embeddings, output_path, start_fram
         width, height = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
 
-        tracker = DeepSort(max_age=50, n_init=3)  # ✅ 여기서 인스턴스화
+        tracker = DeepSort(max_age=50, n_init=3)
 
         frame_idx = start_frame
         detections = []
@@ -112,7 +112,7 @@ def process_video_segment(input_path, target_embeddings, output_path, start_fram
             process_tracks(frame, tracks, track_id_to_class)
             out.write(frame)
             frame_idx += 1
-            if(frame_idx%100==0):
+            if frame_idx % 100 == 0:
                 print(frame_idx)
 
         cap.release()
@@ -143,6 +143,30 @@ def add_audio_to_video(video_no_audio_path, original_video_path, output_path):
     except subprocess.CalledProcessError as e:
         print(f" 오디오 추가 실패: {e}")
 
+def gpu_encode_video(input_path: str, output_path: str, bitrate="10M", preset="fast"):
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"입력 파일이 존재하지 않습니다: {input_path}")
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", input_path,
+        "-c:v", "h264_nvenc",
+        "-preset", preset,
+        "-b:v", bitrate,
+        output_path
+    ]
+
+    print(" GPU 인코딩 시작...")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        error_msg = f" 인코딩 실패:\n{result.stderr}"
+        print(error_msg)
+        raise RuntimeError(error_msg)
+    else:
+        print(f"✅ 인코딩 완료: {output_path}")
+
+
 def split_frames(total_frames, num_segments):
     ranges = []
     step = total_frames // num_segments
@@ -151,54 +175,67 @@ def split_frames(total_frames, num_segments):
         end = total_frames if i == num_segments - 1 else (i + 1) * step
         ranges.append((start, end))
     return ranges
-
 def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interval: int = 5, num_segments: int = 3) -> str:
-    target_embeddings = []
-    for path in target_paths[:2]:  # 최대 2명만 허용
-        img = cv2.imread(path)
-        _, embeddings = detect_faces(img)
-        if not embeddings.any():
-            raise ValueError(f"타깃 얼굴을 찾을 수 없습니다: {path}")
-        target_embeddings.append(embeddings[0])
+    segment_paths = []
+    merged_output = ""
+    final_output = ""
+    encoded_output = ""
 
-    cap = cv2.VideoCapture(input_path)
-    if not cap.isOpened():
-        raise RuntimeError("비디오 파일을 열 수 없습니다.")
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    cap.release()
-
-    segment_ranges = split_frames(total_frames, num_segments)
-    segment_paths = [f"{UPLOAD_DIR}/segment_{i}_{uuid4().hex}.mp4" for i in range(num_segments)]
-    merged_output = f"{UPLOAD_DIR}/merged_{uuid4().hex}.mp4"
-    final_output = f"{UPLOAD_DIR}/final_{uuid4().hex}.mp4"
-
-    processes = []
-    for i, (start, end) in enumerate(segment_ranges):
-        p = Process(target=process_video_segment,
-                    args=(input_path, target_embeddings, segment_paths[i], start, end, detect_interval))
-        p.start()
-        processes.append(p)
-    for p in processes:
-        p.join()
-    merge_video_segments(merged_output, segment_paths)
-    add_audio_to_video(merged_output, input_path, final_output)
-
-    # 임시 세그먼트 및 병합본 삭제
-    for path in segment_paths + [merged_output]:
-        try:
-            if os.path.exists(path):
-                os.remove(path)
-        except Exception as e:
-            print(f"임시파일 삭제 오류: {e}")
-
-    # 입력 영상 및 타깃 이미지 삭제
     try:
-        if os.path.exists(input_path):
-            os.remove(input_path)
-        for t_path in target_paths:
-            if os.path.exists(t_path):
-                os.remove(t_path)
-    except Exception as e:
-        print(f"입력 파일 삭제 오류: {e}")
+        # 타깃 얼굴 임베딩 추출
+        target_embeddings = []
+        for path in target_paths[:2]:
+            img = cv2.imread(path)
+            if img is None:
+                raise FileNotFoundError(f"이미지를 불러올 수 없습니다: {path}")
+            _, embeddings = detect_faces(img)
+            if not embeddings.any():
+                raise ValueError(f"타깃 얼굴을 찾을 수 없습니다: {path}")
+            target_embeddings.append(embeddings[0])
 
-    return final_output
+        #  비디오 정보 확인
+        cap = cv2.VideoCapture(input_path)
+        if not cap.isOpened():
+            raise RuntimeError(f"비디오 파일을 열 수 없습니다: {input_path}")
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+
+        #  세그먼트 분할
+        segment_ranges = split_frames(total_frames, num_segments)
+        segment_paths = [f"{UPLOAD_DIR}/segment_{i}_{uuid4().hex}.mp4" for i in range(num_segments)]
+        merged_output = f"{UPLOAD_DIR}/merged_{uuid4().hex}.mp4"
+        final_output = f"{UPLOAD_DIR}/final_{uuid4().hex}.mp4"
+        encoded_output = f"{UPLOAD_DIR}/encoded_{uuid4().hex}.mp4"
+
+        # 병렬 처리
+        processes = []
+        for i, (start, end) in enumerate(segment_ranges):
+            p = Process(target=process_video_segment,
+                        args=(input_path, target_embeddings, segment_paths[i], start, end, detect_interval))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+
+        #  병합 및 오디오 추가
+        merge_video_segments(merged_output, segment_paths)
+        add_audio_to_video(merged_output, input_path, final_output)
+
+        # GPU 인코딩
+        gpu_encode_video(final_output, encoded_output)
+
+        return encoded_output
+
+    except Exception as e:
+        print(f" 전체 파이프라인 실패: {e}")
+        raise
+
+    finally:
+        #  임시 파일 정리
+        temp_files = segment_paths + [merged_output, final_output, input_path] + target_paths
+        for path in temp_files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception as e:
+                print(f"임시파일 삭제 오류: {e}")
