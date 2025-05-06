@@ -40,120 +40,167 @@ class AuthViewModel @Inject constructor(
     private val _userState = MutableStateFlow<UserInfo?>(null)
     val userState: StateFlow<UserInfo?> = _userState.asStateFlow()
 
-    // 초기화 시 Room DB에서 사용자 정보 불러오기
+    // 초기화 시 Room DB에서 사용자 정보와 토큰 유효성 확인
     init {
-        // 토큰 확인 후 자동 로그인 시도
-        checkTokenAndAutoLogin()
-    }
-    
-    // 토큰 확인 및 자동 로그인 시도
-    private fun checkTokenAndAutoLogin() {
+        // 매번 앱이 실행될 때마다 토큰 체크를 하도록 설정
         viewModelScope.launch {
+            // 로컬 DB에서 사용자 정보 조회
             try {
-                // 액세스 토큰 확인
-                val accessToken = tokenManager.accessToken.first()
-                
-                if (!accessToken.isNullOrEmpty()) {
-                    Log.d(TAG, "액세스 토큰 발견, 자동 로그인 시도")
-                    
-                    // 사용자 정보 가져오기 시도
-                    tryLoadUserInfo()
+                val user = userRepository.getCurrentUser().first()
+                if (user != null) {
+                    Log.d(TAG, "초기화: Room DB에서 사용자 정보 발견: $user")
+                    _userState.value = user
                 } else {
-                    Log.d(TAG, "액세스 토큰 없음, 리프레시 토큰 확인")
-                    
-                    // 리프레시 토큰 확인
-                    val refreshToken = tokenManager.refreshToken.first()
-                    
-                    if (!refreshToken.isNullOrEmpty()) {
-                        Log.d(TAG, "리프레시 토큰 발견, 토큰 갱신 시도")
-                        
-                        // 토큰 갱신 시도
-                        val newTokens = authRepository.refreshAccessToken()
-                        
-                        if (newTokens != null) {
-                            Log.d(TAG, "토큰 갱신 성공, 사용자 정보 가져오기 시도")
-                            
-                            // 사용자 정보 가져오기 시도
-                            tryLoadUserInfo()
-                        } else {
-                            Log.e(TAG, "토큰 갱신 실패, Room DB에서 사용자 정보 조회")
-                            
-                            // Room DB에서 사용자 정보 조회
-                            loadUserFromDatabase()
-                        }
-                    } else {
-                        Log.d(TAG, "리프레시 토큰도 없음, Room DB에서 사용자 정보 조회")
-                        
-                        // Room DB에서 사용자 정보 조회
-                        loadUserFromDatabase()
-                    }
+                    Log.d(TAG, "초기화: Room DB에 사용자 정보 없음")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "토큰 확인 중 오류", e)
-                
-                // 오류 발생 시 Room DB에서 사용자 정보 조회
-                loadUserFromDatabase()
+                Log.e(TAG, "초기화: Room DB에서 사용자 정보 조회 중 오류", e)
+            }
+            
+            // 토큰 유효성 확인 (로컬 사용자 정보와 도 반드시 실행)
+            checkTokenValidity()
+        }
+    }
+    
+    // 로컬 DB에서 사용자 정보 조회 (초기화용)
+    private fun loadUserFromDatabaseSilently() {
+        viewModelScope.launch {
+            try {
+                val user = userRepository.getCurrentUser().first()
+                if (user != null) {
+                    Log.d(TAG, "초기화: Room DB에서 사용자 정보 발견: $user")
+                    _userState.value = user
+                    
+                    // 토큰 유효성도 함께 확인
+                    checkTokenValidity()
+                } else {
+                    Log.d(TAG, "초기화: Room DB에 사용자 정보 없음")
+                    _userState.value = null
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "초기화: Room DB에서 사용자 정보 조회 중 오류", e)
+                _userState.value = null
             }
         }
     }
     
-    // 사용자 정보 가져오기 시도
-    private fun tryLoadUserInfo() {
+    // 토큰 유효성 확인 - 스플래시에서 호출할 수 있도록 public으로 변경
+    fun checkTokenValidity() {
         viewModelScope.launch {
             try {
-                val userInfo = authRepository.getUserInfo()
+                val accessToken = tokenManager.accessToken.first()
                 
-                if (userInfo != null) {
-                    // 사용자 정보 업데이트
-                    _userState.value = userInfo
-                    _uiState.value = AuthUiState.Success("자동 로그인 성공")
-                    Log.d(TAG, "서버에서 사용자 정보 가져오기 성공: $userInfo")
+                if (!accessToken.isNullOrEmpty()) {
+                    Log.d(TAG, "액세스 토큰 발견, 유효성 확인")
                     
-                    // Room DB에 사용자 정보 저장
-                    saveUserToDatabase(userInfo)
-                } else {
-                    Log.e(TAG, "서버에서 사용자 정보를 가져오는 데 실패")
-                    
-                    // 서버에서 사용자 정보를 가져오지 못한 경우 Room DB에서 조회
-                    loadUserFromDatabase()
+                    // 백그라운드에서 서버 정보 갱신 시도 (UI 영향 없이)
+                    try {
+                        val serverUserInfo = authRepository.getUserInfo()
+                        if (serverUserInfo != null) {
+                            // 서버에서 최신 정보를 가져왔다면 로컬 DB와 상태 업데이트
+                            _userState.value = serverUserInfo
+                            saveUserToDatabase(serverUserInfo)
+                            Log.d(TAG, "토큰 유효함: 서버에서 사용자 정보 갱신 성공: $serverUserInfo")
+                        }
+                    } catch (e: Exception) {
+                        // 토큰이 만료되었거나 서버 오류일 수 있음
+                        Log.e(TAG, "액세스 토큰으로 서버 접근 실패, 리프레시 토큰 확인", e)
+                        
+                        // 리프레시 토큰 확인
+                        val refreshToken = tokenManager.refreshToken.first()
+                        if (!refreshToken.isNullOrEmpty()) {
+                            try {
+                                val newTokens = authRepository.refreshAccessToken()
+                                if (newTokens != null) {
+                                    Log.d(TAG, "토큰 갱신 성공")
+                                    
+                                    // 토큰이 갱신되었으므로 서버에서 사용자 정보 다시 가져오기
+                                    val userInfo = authRepository.getUserInfo()
+                                    if (userInfo != null) {
+                                        _userState.value = userInfo
+                                        saveUserToDatabase(userInfo)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "리프레시 토큰으로 갱신 실패", e)
+                                // userState는 로컬 DB의 정보로 유지
+                            }
+                        }
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "서버에서 사용자 정보 가져오기 중 오류", e)
-                
-                // 오류 발생 시 Room DB에서 사용자 정보 조회
-                loadUserFromDatabase()
+                Log.e(TAG, "토큰 체크 과정에서 오류 발생", e)
+                // userState는 로컬 DB의 정보로 유지
             }
         }
     }
     
     // 마이페이지에서 사용할 Room DB 최신 사용자 정보 갱신 메서드
     fun refreshUserInfoFromRoom() {
-        loadUserFromDatabase()
+        viewModelScope.launch {
+            try {
+                // 먼저 로컬 DB에서 사용자 정보 가져오기 시도
+                val localUser = userRepository.getCurrentUser().first()
+                
+                if (localUser != null) {
+                    // 로컬에서 사용자 정보를 찾았다면 상태 업데이트
+                    _userState.value = localUser
+                    Log.d(TAG, "Room DB에서 사용자 정보 불러오기 성공: $localUser")
+                    
+                    // 백그라운드에서 서버 정보 갱신 시도 (UI 차단 없이)
+                    try {
+                        val serverUserInfo = authRepository.getUserInfo()
+                        if (serverUserInfo != null) {
+                            // 서버에서 최신 정보를 가져왔다면 로컬 DB와 상태 업데이트
+                            _userState.value = serverUserInfo
+                            saveUserToDatabase(serverUserInfo)
+                            Log.d(TAG, "서버에서 사용자 정보 갱신 성공: $serverUserInfo")
+                        }
+                    } catch (e: Exception) {
+                        // 서버 통신 실패 시 로컬 데이터로만 유지
+                        Log.e(TAG, "서버에서 사용자 정보 갱신 실패, 로컬 데이터 유지", e)
+                    }
+                } else {
+                    // 로컬에 사용자 정보가 없다면 서버에서 가져오기 시도
+                    Log.d(TAG, "Room DB에 사용자 정보 없음, 서버에서 가져오기 시도")
+                    try {
+                        val serverUserInfo = authRepository.getUserInfo()
+                        if (serverUserInfo != null) {
+                            // 서버에서 정보를 가져왔다면 로컬 DB와 상태 업데이트
+                            _userState.value = serverUserInfo
+                            saveUserToDatabase(serverUserInfo)
+                            Log.d(TAG, "서버에서 사용자 정보 가져오기 성공: $serverUserInfo")
+                        } else {
+                            Log.e(TAG, "서버에서 사용자 정보 가져오기 실패")
+                            // userState는 null 유지
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "서버에서 사용자 정보 가져오기 중 오류", e)
+                        // userState는 null 유지
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "사용자 정보 갱신 중 오류 발생", e)
+            }
+        }
     }
     
     // Room DB에서 사용자 정보 불러오기
     private fun loadUserFromDatabase() {
         viewModelScope.launch {
             try {
-                // Room DB에서 가장 최신 사용자 정보를 가져오기 위해 first()를 사용
-                // Flow에서 최신값을 반드시 가져온다
+                // Room DB에서 가장 최신 사용자 정보를 가져오기 위해 first() 사용
                 val user = userRepository.getCurrentUser().first()
                 if (user != null) {
                     _userState.value = user
-                    // init과 새로고침 메서드를 구분하기 위해 상태를 업데이트하지 않음
-                    // _uiState.value = AuthUiState.Success("로그인 정보 복원 성공")
                     Log.d(TAG, "Room DB에서 사용자 정보 불러오기 성공: $user")
                 } else {
                     Log.d(TAG, "Room DB에 저장된 사용자 정보 없음")
-                    // 서버에서 사용자 정보를 다시 가져오기 시도
-                    try {
-                        getUserInfo()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "서버에서 사용자 정보 가져오기 실패", e)
-                    }
+                    _userState.value = null
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Room DB에서 사용자 정보 불러오기 실패", e)
+                _userState.value = null
             }
         }
     }
@@ -211,14 +258,12 @@ class AuthViewModel @Inject constructor(
                     saveUserToDatabase(userInfo)
                 } else {
                     // 사용자 정보를 가져오는데 실패했지만, 로그인은 성공
-                    // 이 경우에도 메인 화면으로 이동할 수 있도록 성공 상태로 변경
                     _uiState.value = AuthUiState.Success("로그인 성공했지만 사용자 정보를 가져오는데 실패했습니다.")
                     Log.e(TAG, "사용자 정보 가져오기 실패")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "사용자 정보 가져오기 중 오류 발생", e)
                 // 사용자 정보를 가져오는데 실패했지만, 로그인은 성공
-                // 이 경우에도 메인 화면으로 이동할 수 있도록 성공 상태로 변경
                 _uiState.value = AuthUiState.Success("로그인 성공했지만 사용자 정보를 가져오는데 실패했습니다.")
             }
         }
@@ -236,21 +281,44 @@ class AuthViewModel @Inject constructor(
         }
     }
     
-    // 로그아웃
+    // 로그아웃 - 개선된 오류 처리 및 토큰 삭제 확인
     fun logout() {
         viewModelScope.launch {
             try {
+                // TokenManager에서 먼저 토큰 삭제
+                tokenManager.clearTokens()
+                Log.d(TAG, "로그아웃: TokenManager에서 토큰 삭제 성공")
+                
                 // Room DB에서 사용자 정보 삭제
                 userRepository.logout()
+                Log.d(TAG, "로그아웃: Room DB에서 사용자 정보 삭제 성공")
                 
                 // 상태 초기화
                 _userState.value = null
                 _tokenState.value = null
                 _uiState.value = AuthUiState.Initial
                 
-                Log.d(TAG, "로그아웃 성공")
+                Log.d(TAG, "로그아웃 완료: 모든 상태 갱신 완료")
             } catch (e: Exception) {
                 Log.e(TAG, "로그아웃 중 오류 발생", e)
+                
+                // 오류가 발생해도 사용자 상태는 null로 강제 설정
+                _userState.value = null
+                _tokenState.value = null
+                _uiState.value = AuthUiState.Initial
+                
+                // 개별 실패 시도
+                try {
+                    tokenManager.clearTokens()
+                } catch (tokenEx: Exception) {
+                    Log.e(TAG, "토큰 삭제 중 오류", tokenEx)
+                }
+                
+                try {
+                    userRepository.logout()
+                } catch (userEx: Exception) {
+                    Log.e(TAG, "사용자 정보 삭제 중 오류", userEx)
+                }
             }
         }
     }

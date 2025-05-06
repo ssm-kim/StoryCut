@@ -56,8 +56,18 @@ class AuthInterceptor @Inject constructor(
                     
                 return chain.proceed(newRequest)
             } else {
-                Log.e(TAG, "토큰 갱신 실패. 인증 오류 응답 반환")
-                // 토큰 갱신 실패 시 원본 401 응답 반환
+            Log.e(TAG, "토큰 갱신 실패. 인증 오류 응답 반환")
+            
+            // 토큰 갱신 실패 시 저장된 토큰 삭제
+            runBlocking {
+                try {
+                    tokenManager.clearTokens()
+                    Log.d(TAG, "토큰 갱신 실패로 로컬 토큰 삭제 완료")
+                } catch (e: Exception) {
+                    Log.e(TAG, "토큰 삭제 중 오류 발생", e)
+                }
+            }
+            // 토큰 갱신 실패 시 원본 401 응답 반환
             }
         }
         

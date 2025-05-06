@@ -3,6 +3,7 @@ package com.ssafy.storycut.ui.mypage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.auth.AuthViewModel
@@ -27,6 +29,7 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 @Composable
 fun MyPageScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
+    navController: NavController? = null
 //    postViewModel: PostViewModel = hiltViewModel()
 ) {
     val userInfo by authViewModel.userState.collectAsState()
@@ -36,8 +39,23 @@ fun MyPageScreen(
         authViewModel.refreshUserInfoFromRoom()
 //        postViewModel.fetchMyPosts()
     }
+    
+    // userInfo가 null인 경우 로딩 상태 표시
+    if (userInfo == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "사용자 정보를 불러오는 중...")
+            }
+        }
+        return
+    }
 
-    // userInfo가 null이 아닌 전제 조건
+    // userInfo가 null이 아닌 경우에만 아래 코드 실행
     Column(modifier = Modifier.fillMaxSize()) {
         // 설정 아이콘
         Row(
@@ -60,22 +78,20 @@ fun MyPageScreen(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            userInfo?.let { user ->
-                AsyncImage(
-                    model = user.profileImg,
-                    contentDescription = "프로필 이미지",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
-                )
-            }
+            AsyncImage(
+                model = userInfo?.profileImg,
+                contentDescription = "프로필 이미지",
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray)
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column {
-                Text(text = userInfo!!.name, fontWeight = FontWeight.Bold)
-                Text(text = userInfo!!.email, style = MaterialTheme.typography.bodySmall)
+                Text(text = userInfo?.name ?: "사용자", fontWeight = FontWeight.Bold)
+                Text(text = userInfo?.email ?: "이메일 없음", style = MaterialTheme.typography.bodySmall)
 //                Text(text = "게시글 : ${postList.size}개")
             }
         }

@@ -16,6 +16,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +42,9 @@ fun GoogleSignInScreen(
     val context = LocalContext.current // 현재 컨텍스트 가져오기
     val credentialManager = remember { CredentialManager.create(context) } // CredentialManager 인스턴스 생성 및 remember로 재구성 방지
     val scrollState = rememberScrollState() // 스크롤 상태 기억
+    
+    // AuthViewModel의 uiState를 컴포즈로 수집
+    val authUiState by viewModel.uiState.collectAsState()
 
     // 메인 컬럼 레이아웃
     Column(
@@ -92,30 +97,33 @@ fun GoogleSignInScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // 로딩 상태에서만 로딩 인디케이터 표시
-        if (viewModel.uiState.value is AuthUiState.Loading) {
-            CircularProgressIndicator(
-                color = Color(0xFF4285F4) // 구글 블루 색상
-            )
-        }
-
-        // 오류 상태에서만 오류 메시지 표시
-        if (viewModel.uiState.value is AuthUiState.Error) {
-            val errorState = viewModel.uiState.value as AuthUiState.Error
+        when (authUiState) {
+            is AuthUiState.Loading -> {
+                CircularProgressIndicator(
+                    color = Color(0xFF4285F4) // 구글 블루 색상
+                )
+            }
             
-            Text(
-                text = "로그인 실패", 
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFEA4335) // 구글 레드 색상
-            )
+            is AuthUiState.Error -> {
+                val errorState = authUiState as AuthUiState.Error
+                
+                Text(
+                    text = "로그인 실패", 
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFEA4335) // 구글 레드 색상
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = errorState.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF5F6368)
-            )
+                Text(
+                    text = errorState.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF5F6368)
+                )
+            }
+            
+            else -> {} // Initial, Success 상태에서는 아무것도 표시하지 않음
         }
     }
 }

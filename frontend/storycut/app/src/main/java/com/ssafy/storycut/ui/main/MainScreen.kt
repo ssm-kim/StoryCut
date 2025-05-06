@@ -70,7 +70,7 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
         Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = BottomNavItem.MyPage.route // 시작 화면을 마이페이지로 설정
+                startDestination = BottomNavItem.Home.route // 시작 화면을 홈으로 변경
             ) {
                 // 각 화면에 대한 컴포저블 정의
                 composable(BottomNavItem.Home.route) {
@@ -83,8 +83,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                     ShortsScreen()
                 }
                 composable(BottomNavItem.MyPage.route) {
-                    // 마이페이지에 MainScreen에서 받은 AuthViewModel 전달
-                    MyPageScreen(authViewModel = authViewModel)
+                    // 마이페이지에 MainScreen에서 받은 AuthViewModel과 NavController 전달
+                    MyPageScreen(
+                        authViewModel = authViewModel,
+                        navController = navController
+                    )
                 }
             }
         }
