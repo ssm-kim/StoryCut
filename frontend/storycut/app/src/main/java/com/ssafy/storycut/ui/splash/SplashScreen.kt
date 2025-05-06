@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,10 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
+import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.unit.dp
 
 private const val TAG = "SplashScreen"
 
@@ -51,9 +56,24 @@ fun SplashScreen(navController: NavHostController, authViewModel: AuthViewModel)
     }
 
     // 스플래시 화면 UI
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-        // 로고 이미지를 추가할 수 있음
-        // Image(painter = painterResource(id = R.drawable.splash_logo), contentDescription = "Logo")
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.layout.Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "앱 로고",
+                modifier = Modifier.size(360.dp) // 로고 크기 조절
+            )
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 32.dp) // 로고와 간격
+            )
+        }
     }
 }
