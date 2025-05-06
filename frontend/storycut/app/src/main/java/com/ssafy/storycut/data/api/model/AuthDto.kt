@@ -1,6 +1,5 @@
 package com.ssafy.storycut.data.api.model
 
-import java.util.Date
 
 /**
  * 사용자 정보 모델

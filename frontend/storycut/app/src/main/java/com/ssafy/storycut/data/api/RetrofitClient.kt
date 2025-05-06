@@ -1,6 +1,7 @@
 package com.ssafy.storycut.data.api
 
 import com.google.gson.GsonBuilder
+import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -8,7 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-private const val BASE_URL = "http://10.0.2.2:8080/"
+private const val BASE_URL = BuildConfig.BASE_URL
 
 object RetrofitClient {
     // 로깅 인터셉터 설정 - 개발 빌드에서만 BODY 레벨, 릴리스에서는 NONE

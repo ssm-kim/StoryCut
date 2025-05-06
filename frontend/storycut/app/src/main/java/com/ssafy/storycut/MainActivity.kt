@@ -21,17 +21,23 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthUiState
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import com.ssafy.storycut.ui.auth.LoginScreen
 import com.ssafy.storycut.ui.main.MainScreen
 import com.ssafy.storycut.ui.splash.SplashScreen
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var tokenManager: TokenManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(tokenManager)
                 }
             }
         }
@@ -49,11 +55,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(tokenManager: TokenManager) {
     val navController = rememberNavController()
     // 여기서 AuthViewModel을 생성하여 앱 전체에서 공유
     val authViewModel = hiltViewModel<AuthViewModel>()
-    
+
     // NavHost 설정
     NavHost(
         navController = navController,
@@ -66,7 +72,10 @@ fun AppNavigation() {
             LoginScreen(navController, authViewModel)
         }
         composable("main") {
-            MainScreen(authViewModel)
+            MainScreen(
+                authViewModel = authViewModel,
+                tokenManager = tokenManager
+            )
         }
     }
 }

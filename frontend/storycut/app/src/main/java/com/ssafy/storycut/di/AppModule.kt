@@ -2,6 +2,7 @@ package com.ssafy.storycut.di
 
 import android.content.Context
 import com.ssafy.storycut.data.api.service.AuthApiService
+import com.ssafy.storycut.data.api.service.VideoApiService
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService
@@ -68,13 +69,24 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthApiService(okHttpClient: OkHttpClient): AuthApiService {
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideVideoApiService(retrofit: Retrofit): VideoApiService {
+        return retrofit.create(VideoApiService::class.java)
     }
 
     // TODO: BASE_URL을 BuildConfig Field에서 가져오도록 수정 권장

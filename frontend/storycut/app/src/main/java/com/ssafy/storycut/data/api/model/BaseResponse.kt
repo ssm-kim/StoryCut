@@ -6,10 +6,3 @@ data class BaseResponse<T>(
     val message: String,
     val result: T? = null
 )
-
-data class GoogleLoginRequest(val idToken: String)
-
-data class TokenResult(
-    val accessToken: String,
-    val refreshToken: String
-)

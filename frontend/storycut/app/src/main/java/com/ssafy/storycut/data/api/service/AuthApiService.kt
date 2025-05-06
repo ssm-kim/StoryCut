@@ -20,4 +20,7 @@ interface AuthApiService {
     // 토큰 갱신 API 추가
     @POST("api/auth/refresh")
     suspend fun refreshToken(@Header("Authorization") refreshToken: String): Response<BaseResponse<TokenResult>>
+
+    @POST("api/auth/logout")
+    suspend fun logout(@Header("Authorization") authorization: String): Response<BaseResponse<Unit>>
 }

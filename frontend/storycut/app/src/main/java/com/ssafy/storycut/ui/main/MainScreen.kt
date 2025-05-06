@@ -16,14 +16,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import com.ssafy.storycut.ui.edit.EditScreen
 import com.ssafy.storycut.ui.home.HomeScreen
 import com.ssafy.storycut.ui.mypage.MyPageScreen
 import com.ssafy.storycut.ui.shorts.ShortsScreen
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @Composable
-fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
+fun MainScreen(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    tokenManager: TokenManager
+) {
     val navController = rememberNavController()
     
     // 내비게이션 아이템 리스트
@@ -86,7 +92,8 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                     // 마이페이지에 MainScreen에서 받은 AuthViewModel과 NavController 전달
                     MyPageScreen(
                         authViewModel = authViewModel,
-                        navController = navController
+                        navController = navController,
+                        tokenManager = tokenManager
                     )
                 }
             }
