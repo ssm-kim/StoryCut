@@ -3,8 +3,10 @@ package com.ssafy.storycut.data.repository
 import android.util.Log
 import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.GoogleLoginRequest
+import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +17,8 @@ private const val TAG = "AuthRepository"
 class AuthRepository @Inject constructor(
     private val tokenManager: TokenManager
 ) {
+    // 현재 로그인한 사용자 정보를 저장
+    private var currentUser: UserInfo? = null
 
     /**
      * 구글 로그인 토큰을 서버로 전송하는 함수
@@ -44,6 +48,9 @@ class AuthRepository @Inject constructor(
                             // 토큰 정보 반환
                             val tokenPair = Pair(accessToken, refreshToken)
 
+                            // 토큰이 저장되면 사용자 정보 가져오기
+                            val userInfoResult = getUserInfo()
+                            
                             withContext(Dispatchers.Main) {
                                 onComplete("성공", tokenPair)
                             }
@@ -76,5 +83,105 @@ class AuthRepository @Inject constructor(
                 }
             }
         }
+    }
+    
+    /**
+     * 사용자 정보를 가져오는 함수
+     * @return 성공 시 UserInfo, 실패 시 null
+     */
+    suspend fun getUserInfo(): UserInfo? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 저장된 토큰 가져오기
+                val token = tokenManager.accessToken.first()
+                if (token.isNullOrEmpty()) {
+                    Log.e(TAG, "토큰이 없습니다.")
+                    return@withContext null
+                }
+                
+                val authHeader = "Bearer $token"
+                val response = RetrofitClient.authService.getUserInfo(authHeader)
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody != null && responseBody.isSuccess) {
+                        // 사용자 정보를 가져오는데 성공
+                        val userInfo = responseBody.result
+                        if (userInfo != null) {
+                            // 사용자 정보 저장
+                            currentUser = userInfo
+                            return@withContext userInfo
+                        }
+                    }
+                    Log.e(TAG, "사용자 정보를 가져오는데 실패: ${responseBody?.message}")
+                } else {
+                    // HTTP 오류
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "사용자 정보 HTTP 오류: ${response.code()} - $errorBody")
+                }
+                
+                return@withContext null
+            } catch (e: Exception) {
+                Log.e(TAG, "사용자 정보를 가져오는 중 예외 발생", e)
+                return@withContext null
+            }
+        }
+    }
+    
+    /**
+     * 리프레시 토큰을 사용하여 액세스 토큰을 갱신하는 함수
+     * @return 성공 시 토큰 쌍, 실패 시 null
+     */
+    suspend fun refreshAccessToken(): Pair<String, String>? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 저장된 리프레시 토큰 가져오기
+                val refreshToken = tokenManager.refreshToken.first()
+                if (refreshToken.isNullOrEmpty()) {
+                    Log.e(TAG, "리프레시 토큰이 없습니다.")
+                    return@withContext null
+                }
+                
+                // 리프레시 토큰 헤더 설정
+                val authHeader = "Bearer $refreshToken"
+                val response = RetrofitClient.authService.refreshToken(authHeader)
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody != null && responseBody.isSuccess) {
+                        // 토큰 갱신 성공
+                        val result = responseBody.result
+                        if (result != null) {
+                            val newAccessToken = result.accessToken
+                            val newRefreshToken = result.refreshToken
+                            
+                            // 새 토큰 저장
+                            tokenManager.saveTokens(newAccessToken, newRefreshToken)
+                            Log.d(TAG, "토큰 갱신 성공")
+                            
+                            return@withContext Pair(newAccessToken, newRefreshToken)
+                        }
+                    }
+                    Log.e(TAG, "토큰 갱신 실패: ${responseBody?.message}")
+                } else {
+                    // HTTP 오류
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "토큰 갱신 HTTP 오류: ${response.code()} - $errorBody")
+                }
+                
+                return@withContext null
+            } catch (e: Exception) {
+                Log.e(TAG, "토큰 갱신 중 예외 발생", e)
+                return@withContext null
+            }
+        }
+    }
+    
+    /**
+     * 현재 로그인한 사용자 정보 반환
+     * @return 사용자 정보
+     */
+    fun getCurrentUser(): UserInfo? {
+        return currentUser
     }
 }

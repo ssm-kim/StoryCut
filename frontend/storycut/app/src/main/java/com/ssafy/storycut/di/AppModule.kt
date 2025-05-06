@@ -22,7 +22,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // TODO: BASE_URL을 local.properties 또는 BuildConfig Field에서 가져오도록 수정 권장
     private const val BASE_URL = "http://10.0.2.2:8080/"
 
     @Provides
@@ -43,16 +42,12 @@ object AppModule {
         return AuthRepository(tokenManager)
     }
 
-    // 제거: AuthInterceptor가 이제 생성자 주입을 받으므로 이 Provides 함수는 필요 없습니다.
-    /*
+    // AuthInterceptor를 생성하는 Provides 메서드 추가
     @Provides
     @Singleton
-    fun provideAuthInterceptor(tokenManager: TokenManager): AuthInterceptor {
-        val interceptor = AuthInterceptor()
-        interceptor.tokenManager = tokenManager // 이제 필요 없는 수동 설정
-        return interceptor
+    fun provideAuthInterceptor(tokenManager: TokenManager, authRepository: AuthRepository): AuthInterceptor {
+        return AuthInterceptor(tokenManager, authRepository)
     }
-    */
 
     @Provides
     @Singleton

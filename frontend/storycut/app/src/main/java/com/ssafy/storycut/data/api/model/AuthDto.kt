@@ -1,11 +1,15 @@
 package com.ssafy.storycut.data.api.model
 
+import java.util.Date
+
 /**
  * 사용자 정보 모델
  */
 data class UserInfo(
-    val userId: String,
     val email: String,
     val name: String,
-    val profileImageUrl: String?
+    val nickname: String,
+    val profileImg: String,
+    val createdAt: String,
+    val updatedAt: String
 )
