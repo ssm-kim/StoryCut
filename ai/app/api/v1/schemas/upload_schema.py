@@ -1,18 +1,24 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+
+# ✅ 이미지 업로드 결과
 class ImageUploadResult(BaseModel):
     image_urls: List[str] = Field(..., alias="imageUrls")
 
     class Config:
         populate_by_name = True
 
+
+# ✅ 영상 업로드 결과
 class VideoUploadResult(BaseModel):
-    original_video_url: str = Field(..., alias="originalVideoUrl")
+    video_id: int = Field(..., alias="videoId")
 
     class Config:
         populate_by_name = True
 
+
+# ✅ 이미지 업로드 응답
 class ImageUploadResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
@@ -28,11 +34,15 @@ class ImageUploadResponse(BaseModel):
                 "code": 200,
                 "message": "이미지 업로드 성공",
                 "result": {
-                    "imageUrls": ["app/images/db6ae97fc8e4443b92bdb782162e474f.png"]
+                    "imageUrls": [
+                        "app/images/db6ae97fc8e4443b92bdb782162e474f.png"
+                    ]
                 }
             }
         }
 
+
+# ✅ 영상 업로드 응답
 class VideoUploadResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
@@ -48,11 +58,13 @@ class VideoUploadResponse(BaseModel):
                 "code": 200,
                 "message": "영상 업로드 성공",
                 "result": {
-                    "originalVideoUrl": "https://s3.amazonaws.com/bucket/video.mp4"
+                    "videoId": 1
                 }
             }
         }
 
+
+# ✅ 공통 에러 응답
 class ErrorResponse(BaseModel):
     is_success: bool = Field(default=False, alias="isSuccess", example=False)
     code: int = Field(..., example=400)
