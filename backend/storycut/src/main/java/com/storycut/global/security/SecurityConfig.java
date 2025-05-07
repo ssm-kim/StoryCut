@@ -1,11 +1,10 @@
-package com.storycut.global.config;
+package com.storycut.global.security;
 
-import com.storycut.domain.auth.filter.JwtAuthenticationFilter;
+import com.storycut.global.security.filter.JwtAuthenticationFilter;
 import com.storycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.storycut.domain.auth.service.CustomOAuth2UserService;
-import com.storycut.global.filter.LoggingFilter;
+import com.storycut.global.security.filter.LoggingFilter;
 import com.storycut.global.model.enums.PublicEndpoint;
-import com.storycut.global.common.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

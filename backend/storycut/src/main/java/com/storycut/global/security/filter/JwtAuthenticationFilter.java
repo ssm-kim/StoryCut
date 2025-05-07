@@ -1,4 +1,4 @@
-package com.storycut.domain.auth.filter;
+package com.storycut.global.security.filter;
 
 import com.storycut.domain.auth.util.JWTUtil;
 import com.storycut.global.model.enums.PublicEndpoint;
