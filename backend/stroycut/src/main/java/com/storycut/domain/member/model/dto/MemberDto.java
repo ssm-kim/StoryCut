@@ -15,22 +15,19 @@ public class MemberDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Response {
-        private Long id;
+
         private String email;
         private String name;
         private String nickname;
-        private String phoneNumber;
         private String profileImg;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
         public static Response fromEntity(Member member) {
             return Response.builder()
-                .id(member.getId())
                 .email(member.getEmail())
                 .name(member.getName())
                 .nickname(member.getNickname())
-                .phoneNumber(member.getPhoneNumber())
                 .profileImg(member.getProfileImg())
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
@@ -44,7 +41,6 @@ public class MemberDto {
     @AllArgsConstructor
     public static class UpdateRequest {
         private String nickname;
-        private String phoneNumber;
-        private String profileImg;
+        // private String profileImg; // 시간 남으면
     }
 }

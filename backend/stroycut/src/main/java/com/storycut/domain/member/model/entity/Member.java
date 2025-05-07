@@ -29,12 +29,6 @@ public class Member extends BaseEntity {
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "password")
-    private String password;
-
-    @Column(name = "phone_number", nullable = false)
-    private String phoneNumber;
-
     @Column(name = "profile_img", nullable = false)
     private String profileImg;
 
@@ -45,11 +39,15 @@ public class Member extends BaseEntity {
         this.nickname = nickname;
     }
 
-    public void updatePhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
     public void updateProfileImg(String profileImg) {
         this.profileImg = profileImg;
+    }
+    
+    public void updateEmail(String email) {
+        this.email = email;
+    }
+    
+    public void updateName(String name) {
+        this.name = name;
     }
 }

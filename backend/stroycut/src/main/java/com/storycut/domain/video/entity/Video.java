@@ -32,7 +32,7 @@ public class Video extends BaseEntity {
     
     @Column(name = "original_video_id")
     private Long originalVideoId;
-    
+
     @Builder
     public Video(Long memberId, String videoName, String videoUrl,
                 String thumbnail, Long originalVideoId) {

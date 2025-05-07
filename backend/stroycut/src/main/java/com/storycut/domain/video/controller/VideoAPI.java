@@ -1,5 +1,6 @@
 package com.storycut.domain.video.controller;
 
+import com.storycut.domain.auth.model.CustomUserDetails;
 import com.storycut.domain.video.dto.request.VideoUploadRequest;
 import com.storycut.domain.video.dto.response.VideoResponse;
 import com.storycut.global.model.dto.BaseResponse;

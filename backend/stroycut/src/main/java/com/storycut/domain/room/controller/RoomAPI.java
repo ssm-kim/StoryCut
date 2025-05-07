@@ -1,5 +1,6 @@
 package com.storycut.domain.room.controller;
 
+import com.storycut.domain.auth.model.CustomUserDetails;
 import com.storycut.domain.room.dto.request.RoomCreateRequest;
 import com.storycut.domain.room.dto.request.RoomInviteRequest;
 import com.storycut.domain.room.dto.request.RoomUpdateRequest;

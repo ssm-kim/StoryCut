@@ -14,7 +14,4 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
     
     List<Video> findByOriginalVideoId(Long originalVideoId);
     
-    List<Video> findByStatus(String status);
-    
-    Optional<Video> findByIdAndMemberId(Long videoId, Long memberId);
 }

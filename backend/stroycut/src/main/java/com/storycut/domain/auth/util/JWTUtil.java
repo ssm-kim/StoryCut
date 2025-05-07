@@ -41,19 +41,19 @@ public class JWTUtil {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Access 토큰 생성
-    public String createAccessToken(String userEmail) {
-        return createToken(userEmail, ACCESS_TOKEN_EXPIRE_TIME);
+    // Access 토큰 생성 - memberId 사용
+    public String createAccessToken(Long memberId) {
+        return createToken(String.valueOf(memberId), ACCESS_TOKEN_EXPIRE_TIME);
     }
 
-    // Refresh 토큰 생성
-    public String createRefreshToken(String userEmail) {
-        return createToken(userEmail, REFRESH_TOKEN_EXPIRE_TIME);
+    // Refresh 토큰 생성 - memberId 사용
+    public String createRefreshToken(Long memberId) {
+        return createToken(String.valueOf(memberId), REFRESH_TOKEN_EXPIRE_TIME);
     }
 
     // 토큰 생성 공통 메소드
-    private String createToken(String userEmail, long expireTime) {
-        Claims claims = Jwts.claims().subject(userEmail).build();
+    private String createToken(String subject, long expireTime) {
+        Claims claims = Jwts.claims().subject(subject).build();
         Date now = new Date();
         Date expiredDate = new Date(now.getTime() + expireTime);
 
@@ -68,6 +68,7 @@ public class JWTUtil {
     // Request 헤더에서 토큰 추출
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(7);
         }
@@ -85,19 +86,21 @@ public class JWTUtil {
         }
     }
 
-    // 토큰에서 사용자 정보 추출
-    public String getUserEmail(String token) {
-        return Jwts.parser()
+    // 토큰에서 멤버 ID 추출
+    public Long getMemberId(String token) {
+        String memberId = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+        
+        return Long.parseLong(memberId);
     }
 
     // 인증 객체 생성
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(this.getUserEmail(token));
+        UserDetails userDetails = userDetailsService.loadUserByUsername(this.getMemberId(token).toString());
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
     

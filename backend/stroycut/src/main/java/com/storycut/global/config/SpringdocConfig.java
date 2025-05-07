@@ -26,6 +26,9 @@ public class SpringdocConfig {
         localServer.setUrl("/");
         localServer.setDescription("Local Server");
 
+        // Security 요구사항 추가 (전역 설정)
+        SecurityRequirement securityRequirement = new SecurityRequirement().addList("JWT");
+
         return new OpenAPI()
             .servers(List.of(localServer))
             .info(new Info()
@@ -41,7 +44,9 @@ public class SpringdocConfig {
                     .name("Authorization")
                     .description("JWT Access 토큰을 입력하세요. 예: eyJhbGciOiJ...")
                 )
-            );
+            )
+            // 전역 보안 요구사항 추가
+            .addSecurityItem(securityRequirement);
     }
 
 //    @Bean

@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storycut.domain.auth.model.dto.TokenDto;
 import com.storycut.domain.auth.service.AuthService;
 import com.storycut.domain.auth.util.JWTUtil;
+import com.storycut.domain.member.model.entity.Member;
+import com.storycut.domain.member.repository.MemberRepository;
+import com.storycut.global.exception.BusinessException;
+import com.storycut.global.model.dto.BaseResponseStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,28 +27,43 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JWTUtil jwtUtil;
     private final AuthService authService;
+    private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
+
+        // 구글 응답 데이터 전체 출력 (디버깅용)
+        log.info("===== 구글 OAuth2 응답 데이터 시작 =====");
+        oAuth2User.getAttributes().forEach((key, value) -> {
+            log.info("키: {}, 값: {}, 타입: {}", key, value, value != null ? value.getClass().getName() : "null");
+        });
+        log.info("===== 구글 OAuth2 응답 데이터 끝 =====");
+
+        // Google의 고유 식별자(sub) 추출
+        String providerId = oAuth2User.getAttribute("sub");
+
+        // providerId로 사용자 찾기 (이메일 대신 providerId로 조회)
+        Member member = memberRepository.findByProviderId(providerId)
+                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
         
-        // 토큰 생성
-        String accessToken = jwtUtil.createAccessToken(email);
-        String refreshToken = jwtUtil.createRefreshToken(email);
+        Long memberId = member.getId();
+
+        // 토큰 생성 - memberId 사용
+        String accessToken = jwtUtil.createAccessToken(memberId);
+        String refreshToken = jwtUtil.createRefreshToken(memberId);
         
         // 리프레시 토큰 저장
-        authService.saveRefreshToken(email, refreshToken);
+        authService.saveRefreshToken(memberId, refreshToken);
         
         // 모바일 앱으로 리다이렉트 또는 토큰 응답
-        // 앱에서는 URL 스키마 또는 딥링크를 사용할 수 있습니다.
         String targetUrl = UriComponentsBuilder.fromUriString("stroycut://oauth2/redirect")
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
                 
-        // 또는 JSON 응답으로 처리할 수도 있습니다.
+        // JSON 응답으로 처리
         TokenDto tokenDto = TokenDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -53,6 +72,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(tokenDto));
         
-        log.info("OAuth2 로그인 성공 - 사용자 이메일: {}", email);
+        log.info("OAuth2 로그인 성공 - 사용자 ID: {}, providerId: {}", memberId, providerId);
     }
 }
