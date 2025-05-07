@@ -36,7 +36,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // 구글 응답 데이터 전체 출력 (디버깅용)
         log.info("===== 구글 OAuth2 응답 데이터 시작 =====");
-        System.out.println("########## " + oAuth2User.toString());
         oAuth2User.getAttributes().forEach((key, value) -> {
             log.info("키: {}, 값: {}, 타입: {}", key, value, value != null ? value.getClass().getName() : "null");
         });

@@ -69,9 +69,6 @@ public class JWTUtil {
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
 
-        // 디버깅용 로그 추가
-        System.out.println("Authorization 헤더: " + bearerToken);
-
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(7);
         }
