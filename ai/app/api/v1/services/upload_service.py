@@ -50,25 +50,25 @@ def save_uploaded_video_local(file: UploadFile) -> str:
 
 
 # === S3 영상 저장 (파일명 지정) ===
-def save_uploaded_video(file: UploadFile, filename: str, s3_client=None) -> str:
-    s3_key = f"videos/{filename}"
-
+def save_uploaded_video(local_path: str, filename: str, s3_client=None) -> str:
     if s3_client is None:
         s3_client = get_s3_client()
 
     try:
-        s3_client.upload_fileobj(
-            file.file,
-            settings.S3_BUCKET_NAME,
-            s3_key,
-            ExtraArgs={"ContentType": file.content_type}
-        )
+        with open(local_path, "rb") as f:
+            s3_key = f"videos/{filename}"
+            s3_client.upload_fileobj(
+                f,
+                settings.S3_BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": "video/mp4"}
+            )
         return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
 
     except (BotoCoreError, ClientError, Exception) as e:
         raise RuntimeError(f"S3 업로드 실패: {str(e)}")
 
-
+    
 # === 썸네일 생성 및 S3 업로드 ===
 def generate_and_upload_thumbnail(local_video_filename: str, s3_client=None) -> str:
     try:

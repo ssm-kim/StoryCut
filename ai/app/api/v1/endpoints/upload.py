@@ -35,8 +35,7 @@ async def upload_images(files: List[UploadFile] = File(...)):
         raise HTTPException(status_code=400, detail=f"이미지 업로드 실패: {str(e)}")
 
 
-# ✅ 영상 업로드 (썸네일 포함)
-@router.post("/upload-video/", response_model=VideoUploadResponse)
+@router.post("/upload-video", response_model=VideoUploadResponse)
 async def upload_video(
     file: UploadFile = File(...),
     authorization: str = Header(..., alias="Authorization")
@@ -44,13 +43,13 @@ async def upload_video(
     try:
         # 1. 로컬 저장
         video_name = save_uploaded_video_local(file)
+        local_path = os.path.join("app/videos", video_name)
 
         # 2. 썸네일 생성 + S3 업로드
         thumbnail_url = generate_and_upload_thumbnail(video_name)
 
-        # 3. 영상 S3 업로드
-        file.file.seek(0)
-        s3_url = save_uploaded_video(file, video_name)
+        # 3. 영상 S3 업로드 (파일 경로 전달)
+        s3_url = save_uploaded_video(local_path, video_name)
 
         # 4. Spring Boot 전송
         spring_response = await post_video_to_springboot(
@@ -63,13 +62,11 @@ async def upload_video(
         )
 
         # 5. 응답
-        video_id = spring_response.result.video_id
-
         return VideoUploadResponse(
             is_success=True,
             code=200,
             message="영상 업로드 성공",
-            result=VideoUploadResult(video_id=video_id)
+            result=VideoUploadResult(video_id=spring_response.result.video_id)
         )
 
     except Exception as e:
