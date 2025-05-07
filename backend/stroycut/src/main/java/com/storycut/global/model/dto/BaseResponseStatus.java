@@ -26,7 +26,8 @@ public enum BaseResponseStatus {
     USER_NOT_FOUND(false, HttpStatus.NOT_FOUND, 1004, "사용자를 찾을 수 없습니다."),
     TOKEN_GENERATION_FAILED(false, HttpStatus.INTERNAL_SERVER_ERROR, 1005, "토큰 생성에 실패했습니다."),
     REFRESH_TOKEN_FAILED(false, HttpStatus.UNAUTHORIZED, 1006, "리프레시 토큰 처리에 실패했습니다."),
-
+    INVALID_AUTH_STATE(false, HttpStatus.BAD_REQUEST, 1007, "유효하지 않은 인증 상태입니다."),
+    YOUTUBE_AUTH_REQUIRED(false, HttpStatus.FORBIDDEN, 1008, "유튜브 권한이 필요합니다."),
 
     // 2000~ 2999 : 방 관련 에러
     NOT_FOUND_ROOM(false, HttpStatus.NOT_FOUND, 2000, "해당 방이 존재하지 않습니다."),
@@ -34,13 +35,14 @@ public enum BaseResponseStatus {
     ALREADY_MEMBER_ROOM(false, HttpStatus.BAD_REQUEST, 2002, "이미 방에 참여 중입니다."),
     NOT_VALID_PASSWORD(false, HttpStatus.BAD_REQUEST, 2003, "비밀번호가 일치하지 않습니다."),
 
-
     // 3000~ 3999 : 비디오 관련 에러
     NOT_FOUND_VIDEO(false, HttpStatus.NOT_FOUND, 3000, "해당 비디오가 존재하지 않습니다."),
     NOT_VALID_VIDEO(false, HttpStatus.BAD_REQUEST, 3001, "비디오가 유효하지 않습니다."),
-
-
-    ;
+    
+    // 4000~ 4999 : 유튜브 API 관련 에러
+    YOUTUBE_API_ERROR(false, HttpStatus.INTERNAL_SERVER_ERROR, 4000, "유튜브 API 호출 중 오류가 발생했습니다."),
+    YOUTUBE_UPLOAD_FAILED(false, HttpStatus.INTERNAL_SERVER_ERROR, 4001, "유튜브 업로드에 실패했습니다."),
+    YOUTUBE_ACCESS_DENIED(false, HttpStatus.FORBIDDEN, 4002, "유튜브 권한이 거부되었습니다.");
 
     private final boolean isSuccess;
     @JsonIgnore

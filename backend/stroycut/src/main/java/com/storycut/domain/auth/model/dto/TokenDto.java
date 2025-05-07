@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenDto {
+    // StoryCut 서버 JWT 토큰
     private String accessToken;
     private String refreshToken;
+    
+    // 구글 API 사용을 위한 토큰 (필요한 경우에만 포함)
+    private String googleAccessToken;
 }
