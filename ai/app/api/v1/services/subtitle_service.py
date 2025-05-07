@@ -9,6 +9,11 @@ import uuid
 base_dir = "app/subtitle"
 os.makedirs(base_dir, exist_ok=True)
 
+# ✅ 전역에서 Whisper 모델 1회만 로드
+if not torch.cuda.is_available():
+    raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
+whisper_model = whisper.load_model("medium").to("cuda")
+
 def get_video_resolution(video_path: str) -> tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -24,26 +29,20 @@ def format_time_ass(seconds: float) -> str:
     return f"{h:01}:{m:02}:{s:02}.{cs:02}"
 
 def subtitles(video_path: str) -> str:
-    if not torch.cuda.is_available():
-        raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
-
     uid = uuid.uuid4().hex
     audio_path = os.path.join(base_dir, f"{uid}_temp_audio.wav")
     ass_path = os.path.join(base_dir, f"{uid}_subtitle.ass")
-    ffmpeg_ass_path = ass_path.replace("\\", "/")  # ✅ FFmpeg용 경로
+    ffmpeg_ass_path = ass_path.replace("\\", "/")
     output_path = os.path.join(base_dir, f"{uid}_subtitled.mp4").replace("\\", "/")
 
     # 1. 오디오 추출
     subprocess.run([
         "ffmpeg", "-y", "-i", video_path,
         "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", audio_path
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # 2. Whisper 모델 로드
-    model = whisper.load_model("medium").to("cuda")
-
-    # 3. 자막 추출
-    result = model.transcribe(
+    # 2. 자막 추출
+    result = whisper_model.transcribe(
         audio_path,
         language="ko",
         task="transcribe",
@@ -52,13 +51,13 @@ def subtitles(video_path: str) -> str:
         no_speech_threshold=0.5
     )
 
-    # 4. 해상도 및 스타일 계산
+    # 3. 해상도 및 스타일 계산
     width, height = get_video_resolution(video_path)
     base_ref = max(width, height)
     fontsize = max(16, int(48 * base_ref / 1080))
     margin_v = max(10, int(30 * base_ref / 1080 * (2.2 if height > width else 1)))
 
-    # 5. ASS 자막 생성
+    # 4. ASS 자막 생성
     with open(ass_path, "w", encoding="utf-8") as f:
         f.write("[Script Info]\n")
         f.write(f"PlayResX: {width}\nPlayResY: {height}\nScriptType: v4.00+\n\n")
@@ -84,20 +83,21 @@ def subtitles(video_path: str) -> str:
             end = format_time_ass(seg["end"])
             f.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{text}\n")
 
-    # 6. 영상에 자막 입히기
-    result = subprocess.run([
-        "ffmpeg", "-y", "-i", video_path,
-        "-vf", f"ass={ffmpeg_ass_path}",
-        "-c:v", "libx264", "-c:a", "aac", "-b:a", "192k", output_path
-    ], capture_output=True, text=True)
+    # 5. 영상에 자막 입히기
+    try:
+        subprocess.run([
+            "ffmpeg", "-y", "-i", video_path,
+            "-vf", f"ass={ffmpeg_ass_path}",
+            "-c:v", "libx264", "-c:a", "aac", "-b:a", "192k", output_path
+        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"❌ FFmpeg 처리 실패: {e}")
 
-    if result.returncode != 0:
-        print("❌ FFmpeg 에러 발생:")
-        print(result.stderr)
-        raise RuntimeError("FFmpeg 처리 실패")
-
-    # 7. 임시 파일 삭제
-    os.remove(audio_path)
-    os.remove(ass_path)
+    # 6. 임시 파일 삭제
+    for path in [audio_path, ass_path]:
+        try:
+            os.remove(path)
+        except Exception as e:
+            print(f"⚠️ 임시 파일 삭제 중 오류: {e}")
 
     return output_path
