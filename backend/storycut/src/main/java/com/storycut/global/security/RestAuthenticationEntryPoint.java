@@ -1,4 +1,4 @@
-package com.storycut.global.common.security;
+package com.storycut.global.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
