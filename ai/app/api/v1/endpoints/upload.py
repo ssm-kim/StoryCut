@@ -15,7 +15,6 @@ from app.api.v1.schemas.upload_schema import (
 router = APIRouter()
 
 
-# ✅ 이미지 업로드
 @router.post(
     "/images",
     response_model=ImageUploadResponse,
@@ -35,7 +34,7 @@ async def upload_images(files: List[UploadFile] = File(...)):
         raise HTTPException(status_code=400, detail=f"이미지 업로드 실패: {str(e)}")
 
 
-@router.post("/upload-video", response_model=VideoUploadResponse)
+@router.post("/videos", response_model=VideoUploadResponse)
 async def upload_video(
     file: UploadFile = File(...),
     authorization: str = Header(..., alias="Authorization")
@@ -70,4 +69,4 @@ async def upload_video(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"❌ 처리 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f" 처리 실패: {str(e)}")
