@@ -1,6 +1,10 @@
 package com.storycut.global.security.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storycut.domain.auth.util.JWTUtil;
+import com.storycut.domain.auth.util.JWTUtil.TokenStatus;
+import com.storycut.global.model.dto.BaseResponse;
+import com.storycut.global.model.dto.BaseResponseStatus;
 import com.storycut.global.model.enums.PublicEndpoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,6 +26,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -29,10 +34,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         String token = jwtUtil.resolveToken(request);
 
-        if (token != null && jwtUtil.validateToken(token)) {
-            Authentication authentication = jwtUtil.getAuthentication(token);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (token != null) {
+            TokenStatus tokenStatus = jwtUtil.checkToken(token);
+
+            if (tokenStatus == TokenStatus.VALID) {
+                // 유효한 토큰의 경우 인증 정보 설정
+                Authentication authentication = jwtUtil.getAuthentication(token);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else if (tokenStatus == TokenStatus.EXPIRED) {
+                // 만료된 토큰에 대한 특별 처리
+                log.debug("만료된 토큰: {}", token);
+
+                // 401 Unauthorized 응답 설정
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+
+                // 응답 바디 설정
+                BaseResponse<Void> errorResponse = new BaseResponse<>(BaseResponseStatus.JWT_ACCESS_TOKEN_EXPIRED);
+                response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+                return; // 필터 체인 진행하지 않음
+            }
+            // INVALID 상태는 별도 처리 안 함 (인증 없이 요청 진행)
         }
+
         
         filterChain.doFilter(request, response);
     }

@@ -21,13 +21,13 @@ public enum BaseResponseStatus {
 
     // 소셜 로그인 관련 오류 코드 (1000~1999)
     GOOGLE_LOGIN_ERROR(false, HttpStatus.INTERNAL_SERVER_ERROR, 1001, "구글 로그인 처리 중 오류가 발생했습니다."),
-    INVALID_ID_TOKEN(false, HttpStatus.BAD_REQUEST, 1002, "유효하지 않은 ID 토큰입니다."),
-    TOKEN_VERIFICATION_FAILED(false, HttpStatus.UNAUTHORIZED, 1003, "토큰 검증에 실패했습니다."),
-    USER_NOT_FOUND(false, HttpStatus.NOT_FOUND, 1004, "사용자를 찾을 수 없습니다."),
-    TOKEN_GENERATION_FAILED(false, HttpStatus.INTERNAL_SERVER_ERROR, 1005, "토큰 생성에 실패했습니다."),
-    REFRESH_TOKEN_FAILED(false, HttpStatus.UNAUTHORIZED, 1006, "리프레시 토큰 처리에 실패했습니다."),
-    INVALID_AUTH_STATE(false, HttpStatus.BAD_REQUEST, 1007, "유효하지 않은 인증 상태입니다."),
-    YOUTUBE_AUTH_REQUIRED(false, HttpStatus.FORBIDDEN, 1008, "유튜브 권한이 필요합니다."),
+    INVALID_JWT_TOKEN(false, HttpStatus.UNAUTHORIZED, 1002, "유효하지 않은 JWT 토큰입니다."),
+    JWT_ACCESS_TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED, 1003, "JWT Access Token이 만료되었습니다."),
+    TOKEN_VERIFICATION_FAILED(false, HttpStatus.UNAUTHORIZED, 1004, "토큰 검증에 실패했습니다."),
+    USER_NOT_FOUND(false, HttpStatus.NOT_FOUND, 1005, "사용자를 찾을 수 없습니다."),
+    TOKEN_GENERATION_FAILED(false, HttpStatus.INTERNAL_SERVER_ERROR, 1006, "토큰 생성에 실패했습니다."),
+    REFRESH_TOKEN_INVALID(false, HttpStatus.UNAUTHORIZED, 1007, "유효하지 않은 리프레시 토큰입니다."),
+    GOOGLE_ACCESS_TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED, 1008, "구글 액세스 토큰이 만료되었습니다."),
 
     // 2000~ 2999 : 방 관련 에러
     NOT_FOUND_ROOM(false, HttpStatus.NOT_FOUND, 2000, "해당 방이 존재하지 않습니다."),

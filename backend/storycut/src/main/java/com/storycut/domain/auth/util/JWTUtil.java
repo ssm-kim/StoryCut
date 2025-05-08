@@ -25,7 +25,8 @@ public class JWTUtil {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1시간
+    // private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1시간
+    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 30; // 30초
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7일
 
     private final UserDetailsService userDetailsService;
@@ -39,6 +40,13 @@ public class JWTUtil {
     public void init() {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // 토큰 상태를 나타내는 열거형
+    public enum TokenStatus {
+        VALID,      // 유효한 토큰
+        EXPIRED,    // 만료된 토큰
+        INVALID     // 유효하지 않은 토큰 (서명 불일치, 형식 오류 등)
     }
 
     /**
@@ -75,24 +83,34 @@ public class JWTUtil {
      * Request 헤더에서 토큰 추출
      */
     public String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+        String accessToken = request.getHeader(AUTHORIZATION_HEADER);
 
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(7);
+        if (StringUtils.hasText(accessToken) && accessToken.startsWith(BEARER_PREFIX)) {
+            return accessToken.replace("Bearer ", "");
         }
         return null;
     }
 
     /**
-     * 토큰 유효성 검증
+     * 토큰 유효성 검증 - 기존 메서드 (하위 호환성 유지)
      */
     public boolean validateToken(String token) {
+        return checkToken(token) == TokenStatus.VALID;
+    }
+
+    /**
+     * 토큰 상태 확인 (유효, 만료, 유효하지 않음)
+     */
+    public TokenStatus checkToken(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
+            return TokenStatus.VALID;
+        } catch (ExpiredJwtException e) {
+            log.debug("만료된 JWT 토큰: {}", e.getMessage());
+            return TokenStatus.EXPIRED;
         } catch (JwtException | IllegalArgumentException e) {
-            log.debug("JWT 토큰 검증 실패: {}", e.getMessage());
-            return false;
+            log.debug("유효하지 않은 JWT 토큰: {}", e.getMessage());
+            return TokenStatus.INVALID;
         }
     }
 
