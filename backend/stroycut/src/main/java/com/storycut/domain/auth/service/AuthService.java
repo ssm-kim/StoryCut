@@ -107,10 +107,21 @@ public class AuthService {
             return null;
         }
         
-        // 상태 토큰 사용 후 삭제 (재사용 방지)
-        redisTemplate.delete("STATE:" + state);
+        // 상태 토큰은 토큰 교환 성공 후에 삭제하도록 수정
+        // redisTemplate.delete("STATE:" + state);
         
         return Long.valueOf(memberIdStr);
+    }
+    
+    /**
+     * 인증 상태 토큰 삭제
+     */
+    @Transactional
+    public void deleteAuthState(String state) {
+        if (state != null) {
+            redisTemplate.delete("STATE:" + state);
+            log.info("인증 상태 토큰 삭제 완료 - 상태: {}", state);
+        }
     }
     
     /**

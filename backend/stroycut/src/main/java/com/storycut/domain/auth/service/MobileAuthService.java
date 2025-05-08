@@ -153,19 +153,14 @@ public class MobileAuthService {
      * OAuth2 인증 코드로 구글 토큰 교환
      */
     @Transactional
-    public TokenDto exchangeAuthCodeForTokens(String code, String state) {
+    public TokenDto exchangeAuthCodeForTokens(String code, Long memberId) {
         try {
-            log.info("구글 인증 코드로 토큰 교환 시작");
+            log.info("구글 인증 코드로 토큰 교환 시작 - 사용자 ID: {}", memberId);
             
-            // 1. 상태 토큰 검증
-            Long memberId = authService.validateAuthState(state);
-            if (memberId == null) {
-                throw new BusinessException(BaseResponseStatus.INVALID_AUTH_STATE);
-            }
-            
-            // 2. PKCE 코드 검증기 가져오기
+            // 1. PKCE 코드 검증기 가져오기
             String codeVerifier = authService.getPkceVerifier(memberId);
             if (codeVerifier == null || codeVerifier.isEmpty()) {
+                log.error("PKCE 코드 검증기를 찾을 수 없음 - 사용자 ID: {}", memberId);
                 throw new BusinessException(BaseResponseStatus.UNAUTHORIZED);
             }
             
@@ -181,12 +176,14 @@ public class MobileAuthService {
                 // 리프레시 토큰 암호화 저장
                 authService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
                 
+                log.info("개발 모드: 더미 구글 토큰 생성 완료 - 사용자 ID: {}", memberId);
+                
                 return TokenDto.builder()
                         .googleAccessToken(googleAccessToken)
                         .build();
             }
             
-            // 3. Google Token API 호출을 위한 파라미터 준비
+            // 2. Google Token API 호출을 위한 파라미터 준비
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("client_id", GOOGLE_CLIENT_ID);
             formData.add("client_secret", GOOGLE_CLIENT_SECRET);
@@ -195,7 +192,7 @@ public class MobileAuthService {
             formData.add("grant_type", "authorization_code");
             formData.add("redirect_uri", BASE_URL + "/api/auth/oauth2/callback");
             
-            // 4. WebClient를 사용하여 Google Token API 호출
+            // 3. WebClient를 사 용하여 GoogleToken API 호출
             WebClient webClient = WebClient.builder().build();
             Map<String, Object> response = webClient.post()
                     .uri(GOOGLE_TOKEN_URL)
@@ -210,20 +207,20 @@ public class MobileAuthService {
                 throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
             }
             
-            // 5. 토큰 추출
+            // 4. 토큰 추출
             String googleAccessToken = (String) response.get("access_token");
             String googleRefreshToken = (String) response.get("refresh_token");
             
-            // 6. 사용자 정보 업데이트 및 토큰 저장
+            // 5. 사용자 정보 업데이트 및 토큰 저장
             Member member = authService.getMemberById(memberId);
             member.updateGoogleAccessToken(googleAccessToken);
             
             // 리프레시 토큰은 암호화하여 저장
             authService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
             
-            log.info("구글 토큰 교환 성공 - 액세스 토큰과 리프레시 토큰 발급됨");
+            log.info("구글 토큰 교환 성공 - 액세스 토큰과 리프레시 토큰 발급됨 - 사용자 ID: {}", memberId);
             
-            // 7. 액세스 토큰만 반환 (리프레시 토큰은 서버에 안전하게 저장)
+            // 6. 액세스 토큰만 반환 (리프레시 토큰은 서버에 안전하게 저장)
             return TokenDto.builder()
                     .googleAccessToken(googleAccessToken)
                     .build();

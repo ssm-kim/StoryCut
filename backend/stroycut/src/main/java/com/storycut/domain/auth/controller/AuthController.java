@@ -84,23 +84,30 @@ public class AuthController {
         // 상태 토큰 검증 및 사용자 ID 획득
         Long memberId = authService.validateAuthState(state);
         if (memberId == null) {
-            log.error("인증 상태 검증 실패 - 잘못된 state: {}", state);
+            log.error("인증 상태 검증 실패 - 잘못된 state 값");
             return new RedirectView(baseUrl + "/auth/error?error=invalid_state");
         }
         
         try {
             // 인증 코드로 토큰 교환
-            TokenDto tokenDto = mobileAuthService.exchangeAuthCodeForTokens(code, state);
-            log.info("구글 OAuth2 토큰 교환 성공 - 사용자 ID: {}", memberId);
+            TokenDto tokenDto = mobileAuthService.exchangeAuthCodeForTokens(code, memberId);
+            log.info("구글 토큰 전체 : {}", tokenDto.toString());
+            log.info("구글 OAuth2 토큰 교환 성공 - 사용자 ID: {} 구글 액세스 토큰 : {}", memberId, tokenDto.getGoogleAccessToken());
             
-            // 성공 페이지로 리다이렉트 (앱에서 딥링크로 처리)
-            return new RedirectView(baseUrl + "/auth/success?token=" + tokenDto.getGoogleAccessToken());
+            // 토큰 교환 성공 후 상태 토큰 삭제
+            authService.deleteAuthState(state);
+            
+            // 로컬용
+            // return new RedirectView(baseUrl + "/auth/success?token=" + tokenDto.getGoogleAccessToken());
+
+            // 운영용
+            return new RedirectView("storycut://auth/success?token=" + tokenDto.getGoogleAccessToken());
         } catch (Exception e) {
             log.error("구글 OAuth2 토큰 교환 실패", e);
             return new RedirectView(baseUrl + "/auth/error?error=token_exchange_failed");
         }
     }
-    
+
     /**
      * 유튜브 권한 확인 엔드포인트
      * 사용자가 유튜브 권한을 가지고 있는지 확인
