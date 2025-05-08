@@ -33,7 +33,7 @@ public class SecurityConfig {
 
     // 앱은 모든 환경에서 사용하지만, 웹 인증은 테스트용으로만 활성화합니다.
     // 프로덕션에서는 false로 설정하여 비활성화할 수 있습니다.
-    @Value("${app.auth.web-enabled:false}")
+    @Value("${app.auth.web-enabled:true}")
     private boolean webAuthEnabled;
 
     @Bean

@@ -155,30 +155,26 @@ public class TokenService {
      */
     @Transactional
     public TokenDto refreshAccessToken(String refreshToken) {
+        // 리프레시 토큰 상태 확인
         JWTUtil.TokenStatus tokenStatus = jwtUtil.checkToken(refreshToken);
         
-        // 리프레시 토큰 상태에 따른 처리
-        if (tokenStatus == JWTUtil.TokenStatus.INVALID) {
+        // 토큰 상태에 따른 처리
+        if (tokenStatus == JWTUtil.TokenStatus.EXPIRED) {
+            throw new BusinessException(BaseResponseStatus.JWT_REFRESH_TOKEN_EXPIRED);
+        } else if (tokenStatus != JWTUtil.TokenStatus.VALID) {
             throw new BusinessException(BaseResponseStatus.INVALID_JWT_TOKEN);
         }
-        
-        Long memberId;
-        try {
-            memberId = jwtUtil.getMemberId(refreshToken);
-        } catch (Exception e) {
-            throw new BusinessException(BaseResponseStatus.INVALID_JWT_TOKEN);
-        }
-        
-        String savedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
-        
+
+        // 유효한 토큰에서 멤버 ID 추출
+        Long memberId = jwtUtil.getMemberId(refreshToken);
+
         // 저장된 리프레시 토큰과 일치하는지 확인
+        String savedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
         if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
             throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_INVALID);
         }
 
-        // 사용자 존재 여부 확인 및 새로운 액세스 토큰 발급
-        memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
+        // 새 액세스 토큰 발급
         String newAccessToken = jwtUtil.createAccessToken(memberId);
         
         return TokenDto.builder()
@@ -203,12 +199,12 @@ public class TokenService {
             
             return dummyToken;
         }
-        
+
         // Redis에서 암호화된 구글 리프레시 토큰 가져오기
         String encryptedGoogleRefreshToken = redisTemplate.opsForValue().get(GOOGLE_REFRESH_TOKEN_PREFIX + memberId);
         
         if (encryptedGoogleRefreshToken == null || encryptedGoogleRefreshToken.isEmpty()) {
-            throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_INVALID);
+            throw new BusinessException(BaseResponseStatus.GOOGLE_REFRESH_TOKEN_NOT_FOUND);
         }
         
         try {
@@ -233,30 +229,37 @@ public class TokenService {
                     .block();
             
             if (response == null || !response.containsKey("access_token")) {
-                throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
+                throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
             }
-            
+
             String newGoogleAccessToken = (String) response.get("access_token");
-            
+
             // 새 액세스 토큰을 Member 엔티티에 저장
             Member member = getMemberById(memberId);
             member.updateGoogleAccessToken(newGoogleAccessToken);
             memberRepository.save(member);
-            
+
             return newGoogleAccessToken;
         } catch (WebClientResponseException e) {
             // Google API 응답 오류 처리
             log.error("구글 토큰 갱신 API 오류: {}", e.getMessage());
-            
+
             if (e.getStatusCode().is4xxClientError()) {
+                // 401 또는 400 오류가 발생하면 리프레시 토큰이 유효하지 않거나 만료된 것으로 판단
+                if (e.getStatusCode().value() == 400 && e.getResponseBodyAsString().contains("invalid_grant")) {
+                    // 'invalid_grant' 오류는 보통 리프레시 토큰이 만료되었거나 취소되었음을 의미
+                    throw new BusinessException(BaseResponseStatus.GOOGLE_REFRESH_TOKEN_EXPIRED);
+                }
+                // 그 외 클라이언트 오류는 액세스 토큰 만료로 처리
                 throw new BusinessException(BaseResponseStatus.GOOGLE_ACCESS_TOKEN_EXPIRED);
             }
-            throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
+            // 5xx 등 서버 오류는 일반 갱신 실패로 처리
+            throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("구글 액세스 토큰 갱신 중 오류 발생", e);
-            throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
+            throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
         }
     }
 

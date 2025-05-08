@@ -25,8 +25,9 @@ public class JWTUtil {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    // private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1시간
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 30; // 30초
+
+    // private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 30; // 30초
+    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1시간
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7일
 
     private final UserDetailsService userDetailsService;
