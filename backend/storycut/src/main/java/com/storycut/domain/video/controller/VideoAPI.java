@@ -35,10 +35,10 @@ public interface VideoAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 비디오가 업로드됨",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값이 있는 경우"),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+        @ApiResponse(responseCode = "400", description = "비디오가 유효하지 않습니다. (3001)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)")
     })
     BaseResponse<VideoResponse> uploadVideo(
         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser,
@@ -53,9 +53,9 @@ public interface VideoAPI {
         description = "비디오 ID로 비디오 정보를 조회합니다."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 비디오 정보를 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "404", description = "해당 비디오가 존재하지 않는 경우(3000)")
+        @ApiResponse(responseCode = "404", description = "해당 비디오가 존재하지 않습니다. (3000)")
     })
     BaseResponse<VideoResponse> getVideo(
         @Parameter(description = "조회할 비디오 ID", required = true) @PathVariable Long videoId);
@@ -70,9 +70,9 @@ public interface VideoAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 비디오 목록을 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)")
     })
     BaseResponse<List<VideoResponse>> getMyVideos(
         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser);
@@ -86,9 +86,9 @@ public interface VideoAPI {
         description = "원본 비디오를 기반으로 편집된 비디오 목록을 조회합니다."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 편집된 비디오 목록을 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "404", description = "원본 비디오가 존재하지 않는 경우")
+        @ApiResponse(responseCode = "404", description = "해당 비디오가 존재하지 않습니다. (3000)")
     })
     BaseResponse<List<VideoResponse>> getEditedVideos(
         @Parameter(description = "원본 비디오 ID", required = true) @PathVariable Long originalVideoId);
@@ -102,9 +102,9 @@ public interface VideoAPI {
         description = "비디오 다운로드를 위한 정보를 조회합니다. 클라이언트는 반환된 URL을 사용하여 다운로드할 수 있습니다."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 다운로드 정보를 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "404", description = "해당 비디오가 존재하지 않는 경우(3000)")
+        @ApiResponse(responseCode = "404", description = "해당 비디오가 존재하지 않습니다. (3000)")
     })
     BaseResponse<VideoResponse> getVideoDownloadInfo(
         @Parameter(description = "다운로드할 비디오 ID", required = true) @PathVariable Long videoId);

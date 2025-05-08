@@ -38,10 +38,10 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방이 생성됨",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값이 있는 경우"),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+        @ApiResponse(responseCode = "400", description = "입력값을 확인해주세요. (400)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)")
     })
     @PostMapping
     ResponseEntity<BaseResponse<RoomResponse>> createRoom(
@@ -57,9 +57,9 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방 목록을 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)")
     })
     @GetMapping
     ResponseEntity<BaseResponse<List<RoomResponse>>> getMyRooms(
@@ -74,12 +74,12 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방 정보가 수정됨",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값이 있는 경우"),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-        @ApiResponse(responseCode = "403", description = "방장이 아닌 경우"),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "400", description = "입력값을 확인해주세요. (400)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @PatchMapping
     ResponseEntity<BaseResponse<RoomResponse>> updateRoom(
@@ -96,11 +96,11 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방이 삭제됨",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-        @ApiResponse(responseCode = "403", description = "방장이 아닌 경우"),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @DeleteMapping
     ResponseEntity<BaseResponse<String>> deleteRoom(
@@ -116,12 +116,12 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 멤버 초대됨",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "이미 참여 중인 멤버인 경우"),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-        @ApiResponse(responseCode = "403", description = "방장이 아닌 경우"),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "400", description = "이미 방에 참여 중입니다. (2002)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @PostMapping("/invite")
     ResponseEntity<BaseResponse<RoomMemberResponse>> inviteMember(
@@ -138,11 +138,11 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방에 입장함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "비밀번호가 일치하지 않는 경우"),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "400", description = "비밀번호가 일치하지 않습니다. (2003)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @PostMapping("/enter")
     ResponseEntity<BaseResponse<RoomResponse>> enterRoom(
@@ -159,10 +159,10 @@ public interface RoomAPI {
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방에서 나감",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @PostMapping("/leave")
     ResponseEntity<BaseResponse<String>> leaveRoom(
@@ -177,9 +177,9 @@ public interface RoomAPI {
         description = "공유방의 상세 정보를 조회합니다."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방 상세 정보를 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @GetMapping("/detail/{roomId}")
     ResponseEntity<BaseResponse<RoomResponse>> getRoomDetail(
@@ -193,9 +193,9 @@ public interface RoomAPI {
         description = "공유방 참여자 목록을 조회합니다."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "성공적으로 공유방 참여자 목록을 조회함",
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "404", description = "해당 공유방이 존재하지 않는 경우")
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
     @GetMapping("/members/{roomId}")
     ResponseEntity<BaseResponse<List<RoomMemberResponse>>> getRoomMembers(
