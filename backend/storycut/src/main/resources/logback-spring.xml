@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- 기존 로깅 설정 포함 (콘솔 및 파일 로그) -->
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <!-- 변수 설정 -->
+  <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+  <springProperty scope="context" name="activeProfile" source="spring.profiles.active"/>
+
+  <!-- 콘솔 로그 패턴 -->
+  <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"/>
+
+  <!-- 콘솔 로그 설정 (기존 로그 유지) -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+      <charset>utf8</charset>
+    </encoder>
+  </appender>
+
+  <!-- 파일 로그 설정 (기존 로그 유지) -->
+  <springProfile name="prod">
+    <property name="LOG_FILE" value="/logs/app.log"/>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${LOG_FILE}</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.gz</fileNamePattern>
+        <maxHistory>7</maxHistory>
+      </rollingPolicy>
+      <encoder>
+        <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        <charset>utf8</charset>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <springProfile name="local">
+    <property name="LOG_FILE" value="logs/app.log"/>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${LOG_FILE}</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.gz</fileNamePattern>
+        <maxHistory>3</maxHistory>
+      </rollingPolicy>
+      <encoder>
+        <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        <charset>utf8</charset>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <!-- Logstash 전송 설정 -->
+  <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+    <destination>logstash:5044</destination>
+    <!-- 네트워크 연결 실패 시 재연결 설정 -->
+    <reconnectionDelay>1 second</reconnectionDelay>
+    <keepAliveDuration>5 minutes</keepAliveDuration>
+
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <!-- 애플리케이션 정보 추가 -->
+      <customFields>{"application":"${springAppName}","environment":"${activeProfile}"}</customFields>
+      <includeMdc>true</includeMdc>
+      <includeContext>true</includeContext>
+
+      <!-- SQL 로그 등의 멀티라인 메시지 처리 -->
+      <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+        <pattern>
+          {
+          "message": "%msg",
+          "raw_message": "%m"
+          }
+        </pattern>
+      </provider>
+
+      <!-- 스택 트레이스 포맷 지정 -->
+      <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+        <maxDepthPerThrowable>30</maxDepthPerThrowable>
+        <maxLength>8192</maxLength>
+        <shortenedClassNameLength>36</shortenedClassNameLength>
+        <rootCauseFirst>true</rootCauseFirst>
+        <exclude>sun\.reflect\..*</exclude>
+        <exclude>org\.apache\.tomcat\..*</exclude>
+        <exclude>org\.apache\.catalina\..*</exclude>
+        <exclude>org\.apache\.coyote\..*</exclude>
+      </throwableConverter>
+    </encoder>
+  </appender>
+
+  <!-- P6Spy 로그 설정 (SQL 쿼리 로그) -->
+  <logger name="p6spy" level="INFO" additivity="false">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="LOGSTASH" />
+    <springProfile name="prod,local">
+      <appender-ref ref="FILE" />
+    </springProfile>
+  </logger>
+
+  <!-- 예외 처리 관련 로그 설정 -->
+  <logger name="com.storycut.global.exception" level="ERROR" additivity="false">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="LOGSTASH" />
+    <springProfile name="prod,local">
+      <appender-ref ref="FILE" />
+    </springProfile>
+  </logger>
+
+  <!-- 프로덕션 환경 설정 -->
+  <springProfile name="prod">
+    <root level="WARN">
+      <appender-ref ref="CONSOLE" />
+      <appender-ref ref="FILE" />
+      <appender-ref ref="LOGSTASH" />
+    </root>
+
+    <!-- 애플리케이션 패키지 로그 설정 -->
+    <logger name="com.storycut" level="INFO" additivity="false">
+      <appender-ref ref="CONSOLE" />
+      <appender-ref ref="FILE" />
+      <appender-ref ref="LOGSTASH" />
+    </logger>
+
+    <!-- application-prod.yml에 지정된 로그 레벨 적용 -->
+    <logger name="org.springframework.security" level="WARN" />
+    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="WARN" />
+    <logger name="org.springframework.web" level="WARN" />
+    <logger name="org.apache.coyote.http11" level="WARN" />
+    <logger name="org.apache.tomcat" level="WARN" />
+  </springProfile>
+
+  <!-- 로컬 환경 설정 -->
+  <springProfile name="local">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE" />
+      <appender-ref ref="FILE" />
+      <appender-ref ref="LOGSTASH" />
+    </root>
+
+    <!-- 애플리케이션 패키지 로그 설정 -->
+    <logger name="com.storycut" level="DEBUG" additivity="false">
+      <appender-ref ref="CONSOLE" />
+      <appender-ref ref="FILE" />
+      <appender-ref ref="LOGSTASH" />
+    </logger>
+
+    <!-- application-local.yml에 지정된 로그 레벨 적용 -->
+    <logger name="org.springframework.security" level="WARN" />
+    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="DEBUG" />
+    <logger name="com.stroycut.domain.auth.filter" level="DEBUG" />
+    <logger name="org.springframework.web" level="WARN" />
+    <logger name="org.apache.coyote.http11" level="WARN" />
+    <logger name="org.apache.tomcat" level="WARN" />
+    <logger name="com.stroycut.api.mcp" level="OFF" />
+  </springProfile>
+</configuration>
