@@ -108,26 +108,39 @@ public interface RoomAPI {
         @Parameter(description = "삭제할 공유방 ID", required = true) @RequestParam Long roomId);
 
     /**
-     * 공유방 초대 API
+     * 공유방 초대코드 생성 API
      */
     @Operation(
-        summary = "공유방 초대",
-        description = "공유방에 새로운 멤버를 초대합니다. 방장만 초대할 수 있습니다.",
+        summary = "공유방 초대코드 생성",
+        description = "방장이 초대 버튼을 누르면 6자리 초대코드를 생성하고 10분간 유효한 상태로 Redis에 저장합니다.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
+        @ApiResponse(responseCode = "200", description = "초대코드가 생성되었습니다.",
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-        @ApiResponse(responseCode = "400", description = "이미 방에 참여 중입니다. (2002)"),
-        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
-        @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
-        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
+        @ApiResponse(responseCode = "403", description = "방의 호스트가 아닙니다."),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다.")
     })
     @PostMapping("/invite")
-    ResponseEntity<BaseResponse<RoomMemberResponse>> inviteMember(
+    ResponseEntity<BaseResponse<String>> makeInviteCode(
         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser,
-        @Parameter(description = "초대할 공유방 ID", required = true) @RequestParam Long roomId,
-        @Valid @RequestBody RoomInviteRequest request);
+        @Parameter(description = "초대코드를 생성할 공유방 ID", required = true) @RequestParam Long roomId);
+
+    /**
+     * 초대코드로 방 조회 (roomId 조회) API
+     */
+    @Operation(
+        summary = "초대코드로 공유방 ID 조회",
+        description = "초대코드를 사용해 입장할 공유방의 ID를 반환합니다. 초대코드는 Redis에 10분간 유효합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "공유방 ID 조회 성공",
+            content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+        @ApiResponse(responseCode = "404", description = "유효하지 않거나 만료된 초대코드입니다. (2004)")
+    })
+    @GetMapping("/decode")
+    ResponseEntity<BaseResponse<Long>> decodeInviteCode(
+        @Parameter(description = "입력할 6자리 초대코드", required = true) @RequestParam String inviteCode);
 
     /**
      * 공유방 입장 API

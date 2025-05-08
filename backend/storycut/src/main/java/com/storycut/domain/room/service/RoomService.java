@@ -55,30 +55,43 @@ public interface RoomService {
      * @throws com.storycut.global.exception.BusinessException 해당 공유방이 존재하지 않거나 방장이 아닌 경우
      */
     void deleteRoom(Long memberId, Long roomId);
-    
+
     /**
-     * 공유방에 새로운 멤버를 초대합니다.
-     * 방장만 멤버를 초대할 수 있습니다.
-     * 
-     * @param hostMemberId 초대를 요청하는 회원의 ID (방장)
-     * @param roomId 멤버를 초대할 공유방의 ID
-     * @param inviteMemberId 초대할 회원의 ID
-     * @return 초대된 멤버의 정보를 담은 응답 객체
-     * @throws com.storycut.global.exception.BusinessException 해당 공유방이 존재하지 않거나 방장이 아닌 경우
-     * @throws com.storycut.global.exception.BusinessException 이미 참여 중인 멤버인 경우
+     * 공유방 초대코드를 생성합니다.
+     *
+     * 방장이 초대 버튼을 눌렀을 때 호출되며, 랜덤 6자리 코드를 Redis에 10분간 저장합니다.
+     * 해당 코드는 다른 사용자가 방에 입장할 때 사용됩니다.
+     *
+     * @param hostMemberId 초대코드를 생성할 방의 방장 ID
+     * @param roomId 초대코드를 생성할 공유방 ID
+     * @return 6자리 초대코드 문자열
+     * @throws com.storycut.global.exception.BusinessException 방장 권한이 없을 경우
      */
-    RoomMemberResponse inviteMember(Long hostMemberId, Long roomId, Long inviteMemberId);
-    
+    String generateInviteCode(Long hostMemberId, Long roomId);
+
     /**
-     * 공유방에 입장합니다.
-     * 비밀번호가 설정된 공유방은 비밀번호 검증을 통과해야 입장할 수 있습니다.
-     * 
-     * @param memberId 입장을 요청하는 회원의 ID
-     * @param roomId 입장할 공유방의 ID
-     * @param password 공유방 입장 비밀번호 (null 가능)
-     * @return 입장한 공유방 정보를 담은 응답 객체
-     * @throws com.storycut.global.exception.BusinessException 해당 공유방이 존재하지 않는 경우
-     * @throws com.storycut.global.exception.BusinessException 비밀번호가 일치하지 않는 경우
+     * 초대코드를 사용해 공유방 ID를 조회합니다.
+     *
+     * Redis에 저장된 초대코드로부터 공유방 ID를 반환합니다.
+     * 유효하지 않거나 만료된 초대코드일 경우 예외를 발생시킵니다.
+     *
+     * @param inviteCode 초대코드 (6자리)
+     * @return 공유방 ID
+     * @throws com.storycut.global.exception.BusinessException 초대코드가 유효하지 않을 경우
+     */
+    Long enterByCode(String inviteCode);
+
+    /**
+     * 비밀번호를 입력하여 공유방에 입장합니다.
+     *
+     * 방에 참여 중이지 않은 사용자가 유효한 비밀번호를 입력하면 공유방에 입장되며,
+     * RoomMember로 추가됩니다. 이미 참여 중이면 예외를 발생시킵니다.
+     *
+     * @param memberId 입장하려는 사용자 ID
+     * @param roomId 입장하려는 공유방 ID
+     * @param password 공유방 비밀번호
+     * @return 입장 후 공유방 정보를 포함한 응답 객체
+     * @throws com.storycut.global.exception.BusinessException 비밀번호가 유효하지 않거나 이미 참여 중일 경우
      */
     RoomResponse enterRoom(Long memberId, Long roomId, String password);
     
