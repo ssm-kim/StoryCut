@@ -22,6 +22,8 @@ public class VideoUploadRequest {
     private String thumbnail;
     
     private Long originalVideoId;
+
+    private Boolean isBlur;
     
     public Video toEntity(Long memberId) {
         return Video.builder()
@@ -30,6 +32,7 @@ public class VideoUploadRequest {
                 .videoUrl(videoUrl)
                 .thumbnail(thumbnail)
                 .originalVideoId(originalVideoId)
+                .isBlur(isBlur)
                 .build();
     }
 }
