@@ -22,10 +22,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 웹 인증 서비스 - 토큰 관리 및 웹 테스트용 인증 처리
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class WebAuthService {
 
     private final JWTUtil jwtUtil;
     private final MemberRepository memberRepository;

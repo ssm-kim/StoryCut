@@ -41,17 +41,23 @@ public class JWTUtil {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Access 토큰 생성 - memberId 사용
+    /**
+     * Access 토큰 생성
+     */
     public String createAccessToken(Long memberId) {
         return createToken(String.valueOf(memberId), ACCESS_TOKEN_EXPIRE_TIME);
     }
 
-    // Refresh 토큰 생성 - memberId 사용
+    /**
+     * Refresh 토큰 생성
+     */
     public String createRefreshToken(Long memberId) {
         return createToken(String.valueOf(memberId), REFRESH_TOKEN_EXPIRE_TIME);
     }
 
-    // 토큰 생성 공통 메소드
+    /**
+     * 토큰 생성 공통 메소드
+     */
     private String createToken(String subject, long expireTime) {
         Claims claims = Jwts.claims().subject(subject).build();
         Date now = new Date();
@@ -65,7 +71,9 @@ public class JWTUtil {
                 .compact();
     }
 
-    // Request 헤더에서 토큰 추출
+    /**
+     * Request 헤더에서 토큰 추출
+     */
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
 
@@ -75,18 +83,22 @@ public class JWTUtil {
         return null;
     }
 
-    // 토큰 유효성 검증
+    /**
+     * 토큰 유효성 검증
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("Invalid JWT token", e);
+            log.debug("JWT 토큰 검증 실패: {}", e.getMessage());
             return false;
         }
     }
 
-    // 토큰에서 멤버 ID 추출
+    /**
+     * 토큰에서 멤버 ID 추출
+     */
     public Long getMemberId(String token) {
         String memberId = Jwts.parser()
                 .verifyWith(key)
@@ -98,13 +110,17 @@ public class JWTUtil {
         return Long.parseLong(memberId);
     }
 
-    // 인증 객체 생성
+    /**
+     * 인증 객체 생성
+     */
     public Authentication getAuthentication(String token) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(this.getMemberId(token).toString());
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
     
-    // 토큰 만료 시간 반환
+    /**
+     * 토큰 만료 시간 반환
+     */
     public long getExpirationTime(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)

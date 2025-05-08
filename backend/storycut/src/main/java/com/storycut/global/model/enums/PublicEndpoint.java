@@ -4,15 +4,15 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 인증이 필요 없는 공개 엔드포인트 정의
+ */
 @Getter
 @AllArgsConstructor
 public enum PublicEndpoint {
     // 인증 관련 경로
-    SIGNIN("/signin"),
-    LOGIN("/login"),
-    WEB_LOGIN("/web/login"),    // 웹 로그인 경로 추가
-    API_AUTH("/api/auth/**"),  // 모든 인증 API 경로 추가
-
+    AUTH_API("/api/auth/**"),   // 모든 인증 API 경로 (로그인, 토큰 갱신 등)
+    
     // OAuth2 관련 경로
     OAUTH2("/oauth2/**"),
     OAUTH2_AUTHORIZATION("/oauth2/authorization/**"),
@@ -40,9 +40,6 @@ public enum PublicEndpoint {
     SWAGGER_HTML("/swagger-ui.html"),
 
     // 모니터링 및 헬스 체크
-    ACTUATOR_HEALTH("/actuator/health"),
-    ACTUATOR_PROMETHEUS("/actuator/prometheus"),
-    GRAFANA("/grafana**"),
     ACTUATOR("/actuator/**"),
     HEALTH("/health");
 
