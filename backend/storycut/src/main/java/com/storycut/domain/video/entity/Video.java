@@ -33,13 +33,17 @@ public class Video extends BaseEntity {
     @Column(name = "original_video_id")
     private Long originalVideoId;
 
+    @Column(name = "is_blur")
+    private Boolean isBlur;
+
     @Builder
     public Video(Long memberId, String videoName, String videoUrl,
-                String thumbnail, Long originalVideoId) {
+                String thumbnail, Long originalVideoId, Boolean isBlur) {
         this.memberId = memberId;
         this.videoName = videoName;
         this.videoUrl = videoUrl;
         this.thumbnail = thumbnail;
         this.originalVideoId = originalVideoId;
+        this.isBlur = isBlur;
     }
 }
