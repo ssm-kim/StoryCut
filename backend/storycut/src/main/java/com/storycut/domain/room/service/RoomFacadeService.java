@@ -1,7 +1,6 @@
 package com.storycut.domain.room.service;
 
-import static com.storycut.global.model.dto.BaseResponseStatus.ALREADY_MEMBER_ROOM;
-import static com.storycut.global.model.dto.BaseResponseStatus.NOT_VALID_PASSWORD;
+import static com.storycut.global.model.dto.BaseResponseStatus.*;
 
 import com.storycut.domain.room.dto.request.RoomCreateRequest;
 import com.storycut.domain.room.dto.request.RoomUpdateRequest;
@@ -10,10 +9,13 @@ import com.storycut.domain.room.dto.response.RoomResponse;
 import com.storycut.domain.room.entity.Room;
 import com.storycut.domain.room.entity.RoomMember;
 import com.storycut.global.exception.BusinessException;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class RoomFacadeService implements RoomService {
     
     private final RoomDetailService roomDetailService;
     private final RoomMemberService roomMemberService;
+    private final RoomInviteService roomInviteService;
     
 
     @Override
@@ -85,51 +88,49 @@ public class RoomFacadeService implements RoomService {
         // 공유방 삭제 (cascade로 멤버도 함께 삭제됨)
         roomDetailService.deleteRoom(room);
     }
+
+
+    @Override
+    @Transactional
+    public String generateInviteCode(Long hostMemberId, Long roomId) {
+        // 방장 권한 확인
+        Room room = roomDetailService.findRoomByIdAndHostId(roomId, hostMemberId);
+        return roomInviteService.generateInviteCode(room.getId());
+    }
     
 
     @Override
     @Transactional
-    public RoomMemberResponse inviteMember(Long hostMemberId, Long roomId, Long inviteMemberId) {
-        // 방장 권한 확인과 함께 공유방 조회
-        Room room = roomDetailService.findRoomByIdAndHostId(roomId, hostMemberId);
-        
-        // 이미 참여 중인지 확인
-        if (roomMemberService.isMemberExists(roomId, inviteMemberId)) {
-            throw new BusinessException(ALREADY_MEMBER_ROOM);
+    public Long enterByCode(String inviteCode) {
+        if(inviteCode.length() != 6) {
+            throw new BusinessException(LENGTH_INVITE_CODE);
         }
-        
-        // 멤버 추가
-        RoomMember savedMember = roomMemberService.addMember(inviteMemberId, room);
-        
-        // 응답 생성
-        return roomMemberService.mapToResponse(savedMember);
+        return roomInviteService.decodeInviteCode(inviteCode);
     }
-    
 
     @Override
     @Transactional
     public RoomResponse enterRoom(Long memberId, Long roomId, String password) {
         // 공유방 조회
         Room room = roomDetailService.findRoomById(roomId);
-        
+
         // 비밀번호 검증
         if (!roomDetailService.validatePassword(room, password)) {
             throw new BusinessException(NOT_VALID_PASSWORD);
         }
-        
+
         // 이미 참여 중인지 확인
-        if (!roomMemberService.isMemberExists(roomId, memberId)) {
-            // 참여자 추가
-            roomMemberService.addMember(memberId, room);
+        if (roomMemberService.isMemberExists(roomId, memberId)) {
+            throw new BusinessException(ALREADY_MEMBER_ROOM);
         }
-        
+        roomMemberService.addMember(memberId, room);
+
         // 현재 참여자 수 조회
         int memberCount = roomMemberService.countMembersByRoomId(roomId);
-        
+
         // 응답 생성
         return roomDetailService.mapToResponse(room, memberCount);
     }
-    
 
     @Override
     @Transactional

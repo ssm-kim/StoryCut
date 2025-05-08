@@ -33,7 +33,8 @@ public enum BaseResponseStatus {
     NOT_VALID_HOST(false, HttpStatus.FORBIDDEN, 2001, "방의 호스트가 아니거나 이미 없는 방입니다."),
     ALREADY_MEMBER_ROOM(false, HttpStatus.BAD_REQUEST, 2002, "이미 방에 참여 중입니다."),
     NOT_VALID_PASSWORD(false, HttpStatus.BAD_REQUEST, 2003, "비밀번호가 일치하지 않습니다."),
-
+    INVALID_INVITE_CODE(false, HttpStatus.BAD_REQUEST, 2004, "유효하지 않거나 만료된 초대코드입니다."),
+    LENGTH_INVITE_CODE(false, HttpStatus.BAD_REQUEST, 2005, "초대코드는 6자리여야 합니다."),
 
     // 3000~ 3999 : 비디오 관련 에러
     NOT_FOUND_VIDEO(false, HttpStatus.NOT_FOUND, 3000, "해당 비디오가 존재하지 않습니다."),

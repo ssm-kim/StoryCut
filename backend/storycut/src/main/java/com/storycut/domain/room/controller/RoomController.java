@@ -55,13 +55,17 @@ public class RoomController implements RoomAPI {
     }
 
     @Override
-    public ResponseEntity<BaseResponse<RoomMemberResponse>> inviteMember(
-            CustomUserDetails authUser, Long roomId, RoomInviteRequest request) {
-        
-        RoomMemberResponse response = roomService.inviteMember(
-                authUser.getMemberId(), roomId, request.inviteMemberId());
-        return ResponseEntity.ok(new BaseResponse<> (response));
+    public ResponseEntity<BaseResponse<String>> makeInviteCode(
+            CustomUserDetails authUser, Long roomId) {
+        return ResponseEntity.ok(new BaseResponse<> (roomService.generateInviteCode(authUser.getMemberId(), roomId)));
     }
+
+    @Override
+    public ResponseEntity<BaseResponse<Long>> decodeInviteCode(
+        String inviteCode) {
+        return ResponseEntity.ok(new BaseResponse<> (roomService.enterByCode(inviteCode)));
+    }
+
 
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> enterRoom(
