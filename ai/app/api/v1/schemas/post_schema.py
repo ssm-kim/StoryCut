@@ -2,7 +2,28 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
-class VideoPostResult(BaseModel):
+class PostRequest(BaseModel):
+    video_name: str = Field(..., alias="videoName")
+    video_url: str = Field(..., alias="videoUrl")
+    thumbnail: str
+    original_video_id: Optional[int] = Field(None, alias="originalVideoId")
+    is_blur: bool = Field(..., alias="isBlur")
+
+    class Config:
+        populate_by_name = True
+        validate_by_name = True
+        json_schema_extra = {
+            "example": {
+                "videoName": "영상 제목",
+                "videoUrl": "https://example.com/video.mp4",
+                "thumbnail": "https://example.com/thumbnail.jpg",
+                "originalVideoId": None,
+                "isBlur": False
+            }
+        }
+
+
+class PostResult(BaseModel):
     video_id: int = Field(..., alias="videoId")
     member_id: int = Field(..., alias="memberId")
     video_name: str = Field(..., alias="videoName")
@@ -17,11 +38,11 @@ class VideoPostResult(BaseModel):
         orm_mode = True
 
 
-class VideoPostResponse(BaseModel):
+class PostResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
-    result: Optional[VideoPostResult]
+    result: Optional[PostResult]
 
     class Config:
         populate_by_name = True

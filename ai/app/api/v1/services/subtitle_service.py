@@ -6,7 +6,7 @@ import re
 import cv2
 import uuid
 
-base_dir = "app/subtitle"
+base_dir = "app/videos"
 os.makedirs(base_dir, exist_ok=True)
 
 # ✅ 전역에서 Whisper 모델 1회만 로드

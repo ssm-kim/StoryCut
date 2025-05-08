@@ -9,7 +9,7 @@ import os
 import time
 from uuid import uuid4
 
-UPLOAD_DIR = "app/vimosaic"
+UPLOAD_DIR = "app/video"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 face_model = insightface.app.FaceAnalysis()
