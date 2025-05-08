@@ -39,8 +39,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(tokenManager: TokenManager): AuthRepository {
-        return AuthRepository(tokenManager)
+    fun provideAuthRepository(
+        tokenManager: TokenManager,
+        @ApplicationContext context: Context
+    ): AuthRepository {
+        return AuthRepository(tokenManager, context)
     }
 
     // AuthInterceptor를 생성하는 Provides 메서드 추가
@@ -88,9 +91,5 @@ object AppModule {
     fun provideVideoApiService(retrofit: Retrofit): VideoApiService {
         return retrofit.create(VideoApiService::class.java)
     }
-
-    // TODO: BASE_URL을 BuildConfig Field에서 가져오도록 수정 권장
-    // defaultConfig { ... buildConfigField("String", "BASE_URL", "\"$BASE_URL\"") ... }
-    // 그리고 여기서 BuildConfig.BASE_URL 사용
 
 }

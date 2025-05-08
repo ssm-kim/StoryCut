@@ -20,6 +20,7 @@ class TokenManager @Inject constructor(private val context: Context) {
     companion object {
         private val ACCESS_TOKEN = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
+        private val GOOGLE_ACCESS_TOKEN = stringPreferencesKey("google_access_token")
     }
 
     // 토큰 저장
@@ -27,6 +28,12 @@ class TokenManager @Inject constructor(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN] = accessToken
             preferences[REFRESH_TOKEN] = refreshToken
+        }
+    }
+
+    suspend fun saveGoogleAccessTokens(googleAccessToken: String) {
+        context.dataStore.edit { preferences ->
+            preferences[GOOGLE_ACCESS_TOKEN] = googleAccessToken
         }
     }
 
@@ -38,6 +45,11 @@ class TokenManager @Inject constructor(private val context: Context) {
     // 리프레시 토큰 조회
     val refreshToken: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[REFRESH_TOKEN]
+    }
+
+    // 구글 액세스 토큰 조회
+    val googleAccessToken: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[GOOGLE_ACCESS_TOKEN]
     }
 
     // 토큰 삭제 (로그아웃)

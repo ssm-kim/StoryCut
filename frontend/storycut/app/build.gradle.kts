@@ -62,6 +62,18 @@ android {
         compose = true
         buildConfig = true
     }
+
+    packaging {
+        resources {
+            pickFirsts.addAll(listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt"
+            ))
+        }
+    }
 }
 
 dependencies {
@@ -74,6 +86,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,6 +106,14 @@ dependencies {
 
     // Data Store
     implementation ("androidx.datastore:datastore-preferences:1.1.4")
+
+
+    // 확인용
+    implementation("com.google.apis:google-api-services-youtube:v3-rev222-1.25.0")
+    implementation("com.google.api-client:google-api-client-android:1.33.0")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.33.0")
+    implementation("com.google.http-client:google-http-client-android:1.41.0")
+    implementation("com.google.http-client:google-http-client-gson:1.41.0")
 
     // 서버 통신
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
