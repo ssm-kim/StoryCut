@@ -1,23 +1,20 @@
-// ShortsScreen.kt
-package com.ssafy.storycut.ui.shorts
-
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.livedata.observeAsState
+import com.ssafy.storycut.ui.shorts.ShortsViewModel
+import com.ssafy.storycut.ui.shorts.components.AuthScreen
+import com.ssafy.storycut.ui.shorts.components.UploadScreen
+
 @Composable
 fun ShortsScreen(
     viewModel: ShortsViewModel = hiltViewModel()
@@ -26,7 +23,6 @@ fun ShortsScreen(
     val youtubeAuthResponse by viewModel.youtubeAuthUrl.observeAsState()
     val error by viewModel.error.observeAsState()
     val accessToken by viewModel.accessToken.observeAsState("")
-    val scrollState = rememberScrollState()
 
     var isLoading by remember { mutableStateOf(false) }
     var selectedVideoUri by remember { mutableStateOf<Uri?>(null) }
@@ -38,14 +34,17 @@ fun ShortsScreen(
         selectedVideoUri = uri
     }
 
+    // 초기 액세스 토큰 로드
     LaunchedEffect(Unit) {
         viewModel.loadAccessToken()
     }
 
+    // 에러 발생 시 로딩 상태 해제
     LaunchedEffect(error) {
         error?.let { isLoading = false }
     }
 
+    // 인증 URL 응답 처리
     LaunchedEffect(youtubeAuthResponse) {
         youtubeAuthResponse?.let { response ->
             isLoading = false
@@ -54,80 +53,36 @@ fun ShortsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-        ) {
-            Text(
-                text = "쇼츠 업로드 화면",
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (accessToken.isNotEmpty()) {
-                Text("✔ 유튜브 액세스 토큰 불러옴", fontWeight = FontWeight.Bold)
-            } else {
-                Text("❌ 액세스 토큰 없음", color = MaterialTheme.colorScheme.error)
-            }
-
-            // 유튜브 권한 요청 버튼 추가
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
+    // 메인 화면 구성
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 구글 인증 토큰 없으면 받아오기
+        if (accessToken.isEmpty()) {
+            AuthScreen(
+                onRequestAuth = {
                     isLoading = true
                     viewModel.getYouTubeAuthUrl()
                 },
-                enabled = !isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text("🔐 유튜브 권한 요청하기")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { videoPickerLauncher.launch("video/*") },
-                enabled = !isLoading
-            ) {
-                Text("🎞 영상 선택하기")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            selectedVideoUri?.let { uri ->
-                Text("선택된 URI: $uri", maxLines = 1)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        isLoading = true
-                        viewModel.uploadToYouTube(
-                            videoUri = uri,
-                            title = "스토리컷에서 올린 영상",
-                            description = "앱에서 자동 업로드된 영상입니다"
-                        )
-                    },
-                    enabled = !isLoading
-                ) {
-                    Text("🚀 유튜브에 업로드")
-                }
-            }
-
-            if (isLoading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                CircularProgressIndicator()
-            }
+                isLoading = isLoading
+            )
+        } else {
+            // 인증된 경우 - 업로드 화면 표시
+            UploadScreen(
+                selectedVideoUri = selectedVideoUri,
+                onSelectVideo = { videoPickerLauncher.launch("video/*") },
+                onUpload = { uri, title, description, tags ->  // 태그 매개변수 추가
+                    isLoading = true
+                    viewModel.uploadToYouTube(
+                        videoUri = uri,
+                        title = title.ifBlank { "스토리컷에서 올린 영상" },
+                        description = description.ifBlank { "앱에서 자동 업로드된 영상입니다" },
+                        tags = tags
+                    )
+                },
+                isLoading = isLoading
+            )
         }
 
+        // 에러 메시지 표시
         error?.let {
             Snackbar(
                 modifier = Modifier
@@ -135,6 +90,18 @@ fun ShortsScreen(
                     .align(Alignment.BottomCenter)
             ) {
                 Text(it)
+            }
+        }
+
+        // 로딩 인디케이터
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }

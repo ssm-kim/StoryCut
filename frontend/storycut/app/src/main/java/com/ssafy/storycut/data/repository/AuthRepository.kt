@@ -14,6 +14,7 @@ import com.google.api.services.youtube.model.VideoSnippet
 import com.google.api.services.youtube.model.VideoStatus
 import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.GoogleLoginRequest
+import com.ssafy.storycut.data.api.model.TokenResult
 import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import com.ssafy.storycut.data.local.datastore.TokenManager
@@ -225,11 +226,13 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    // Repository.kt
     suspend fun uploadVideoToYouTube(
         accessToken: String,
         videoUri: Uri,
         title: String,
-        description: String
+        description: String,
+        tags: List<String>
     ) {
         withContext(Dispatchers.IO) {
             try {
@@ -252,7 +255,12 @@ class AuthRepository @Inject constructor(
                 val snippet = VideoSnippet()
                 snippet.title = title
                 snippet.description = description
-                snippet.tags = listOf("스토리컷", "쇼츠")
+
+                // 기본 태그와 사용자 태그 병합
+                val defaultTags = listOf("쇼츠")
+                val allTags = (defaultTags + tags).distinct()
+                snippet.tags = allTags
+
                 snippet.categoryId = "22" // People & Blogs 카테고리
                 video.snippet = snippet
 
@@ -284,6 +292,46 @@ class AuthRepository @Inject constructor(
 
             } catch (e: Exception) {
                 Log.e(TAG, "유튜브 업로드 중 오류 발생", e)
+                throw e
+            }
+        }
+    }
+
+    // AuthRepository.kt
+    suspend fun refreshGoogleToken(): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                // JWT 토큰 가져오기
+                val jwtToken = tokenManager.accessToken.first()
+                    ?: throw Exception("JWT 토큰이 없습니다")
+
+                // Bearer 형식으로 토큰 포맷팅
+                val authorization = "Bearer $jwtToken"
+
+                // API 호출
+                val response = RetrofitClient.authService.refreshGoogleToken(authorization)
+
+                // response.body()의 null 체크
+                val responseBody = response.body()
+                    ?: throw Exception("서버 응답이 없습니다")
+
+                if (responseBody.isSuccess) {
+                    // 응답에서 구글 토큰 정보 가져오기
+                    val result = responseBody.result
+                    if (result != null && result.googleAccessToken != null) {
+                        // 새 구글 액세스 토큰 저장
+                        tokenManager.saveGoogleAccessTokens(result.googleAccessToken)
+
+                        Log.d(TAG, "구글 토큰 갱신 성공: ${result.googleAccessToken}")
+                        return@withContext result.googleAccessToken
+                    } else {
+                        throw Exception("구글 액세스 토큰이 응답에 포함되지 않았습니다.")
+                    }
+                } else {
+                    throw Exception("구글 토큰 갱신 실패: ${responseBody.message}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "구글 토큰 갱신 실패", e)
                 throw e
             }
         }

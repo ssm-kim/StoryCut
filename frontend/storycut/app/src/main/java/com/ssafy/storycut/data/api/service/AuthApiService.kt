@@ -28,4 +28,7 @@ interface AuthApiService {
     @GET("/api/auth/youtube/auth")
     suspend fun getYouTubeAuthUrl(@Header("Authorization") authorization: String): Response<BaseResponse<GooglePermissionResponse>>
 
+    @POST("/api/auth/google-refresh")
+    suspend fun refreshGoogleToken(@Header("Authorization") authorization: String): Response<BaseResponse<TokenResult>>
+
 }

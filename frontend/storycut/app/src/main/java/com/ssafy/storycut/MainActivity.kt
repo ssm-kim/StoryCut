@@ -1,5 +1,6 @@
 package com.ssafy.storycut
 
+import ShortsScreen
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -23,7 +24,6 @@ import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import com.ssafy.storycut.ui.auth.LoginScreen
 import com.ssafy.storycut.ui.main.MainScreen
-import com.ssafy.storycut.ui.shorts.ShortsScreen
 import com.ssafy.storycut.ui.splash.SplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.main
 
+import ShortsScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -21,7 +22,6 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 import com.ssafy.storycut.ui.edit.EditScreen
 import com.ssafy.storycut.ui.home.HomeScreen
 import com.ssafy.storycut.ui.mypage.MyPageScreen
-import com.ssafy.storycut.ui.shorts.ShortsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
