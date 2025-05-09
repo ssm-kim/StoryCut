@@ -6,7 +6,6 @@ import com.storycut.domain.member.model.entity.Member;
 import com.storycut.domain.member.repository.MemberRepository;
 import com.storycut.global.exception.BusinessException;
 import com.storycut.global.model.dto.BaseResponseStatus;
-import com.storycut.global.util.AesEncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,18 +33,22 @@ public class TokenService {
     private final JWTUtil jwtUtil;
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
-    private final AesEncryptionUtil encryptionUtil;
     
     // Redis 키 접두사 상수
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
     private static final String GOOGLE_REFRESH_TOKEN_PREFIX = "G_RT:";
-    private static final String PKCE_VERIFIER_PREFIX = "PKCE:";
     private static final String AUTH_STATE_PREFIX = "STATE:";
     private static final String TOKEN_BLACKLIST_PREFIX = "BL:";
     
     // 토큰 만료 시간 상수
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 7 * 24 * 60 * 60; // 7일 (초 단위)
-    private static final long PKCE_VERIFIER_EXPIRE_TIME = 10 * 60; // 10분 (초 단위)
+    @Value("${jwt.refresh-token-validity}")
+    private long refreshTokenValidityMs;
+    
+    // 리프레시 토큰 만료 시간 (초 단위로 변환)
+    private long getRefreshTokenExpireTime() {
+        return refreshTokenValidityMs / 1000; // 밀리초를 초로 변환
+    }
+    
     private static final long AUTH_STATE_EXPIRE_TIME = 10 * 60; // 10분 (초 단위)
     
     // Google API 상수
@@ -68,31 +71,20 @@ public class TokenService {
         redisTemplate.opsForValue().set(
                 REFRESH_TOKEN_PREFIX + memberId,
                 refreshToken,
-                REFRESH_TOKEN_EXPIRE_TIME,
+                getRefreshTokenExpireTime(),
                 TimeUnit.SECONDS
         );
     }
     
     /**
-     * 구글 리프레시 토큰 저장 (암호화)
+     * 구글 리프레시 토큰 저장 (암호화 없이)
      */
     @Transactional
-    public void saveGoogleRefreshToken(Long memberId, String encryptedGoogleRefreshToken) {
-        redisTemplate.opsForValue().set(GOOGLE_REFRESH_TOKEN_PREFIX + memberId, encryptedGoogleRefreshToken);
+    public void saveGoogleRefreshToken(Long memberId, String googleRefreshToken) {
+        redisTemplate.opsForValue().set(GOOGLE_REFRESH_TOKEN_PREFIX + memberId, googleRefreshToken);
     }
     
-    /**
-     * PKCE 코드 검증기 저장
-     */
-    @Transactional
-    public void savePkceVerifier(Long memberId, String codeVerifier) {
-        redisTemplate.opsForValue().set(
-                PKCE_VERIFIER_PREFIX + memberId,
-                codeVerifier,
-                PKCE_VERIFIER_EXPIRE_TIME,
-                TimeUnit.SECONDS
-        );
-    }
+
     
     /**
      * 인증 상태 저장 (CSRF 방지)
@@ -126,21 +118,7 @@ public class TokenService {
         }
     }
     
-    /**
-     * PKCE 코드 검증기 조회 및 삭제
-     */
-    @Transactional
-    public String getPkceVerifier(Long memberId) {
-        String key = PKCE_VERIFIER_PREFIX + memberId;
-        String codeVerifier = redisTemplate.opsForValue().get(key);
-        
-        // 검증기는 조회 후 삭제 (1회용)
-        if (codeVerifier != null) {
-            redisTemplate.delete(key);
-        }
-        
-        return codeVerifier;
-    }
+
     
     /**
      * 구글 리프레시 토큰 존재 여부 확인
@@ -200,16 +178,14 @@ public class TokenService {
             return dummyToken;
         }
 
-        // Redis에서 암호화된 구글 리프레시 토큰 가져오기
-        String encryptedGoogleRefreshToken = redisTemplate.opsForValue().get(GOOGLE_REFRESH_TOKEN_PREFIX + memberId);
+        // Redis에서 구글 리프레시 토큰 가져오기
+        String googleRefreshToken = redisTemplate.opsForValue().get(GOOGLE_REFRESH_TOKEN_PREFIX + memberId);
         
-        if (encryptedGoogleRefreshToken == null || encryptedGoogleRefreshToken.isEmpty()) {
+        if (googleRefreshToken == null || googleRefreshToken.isEmpty()) {
             throw new BusinessException(BaseResponseStatus.GOOGLE_REFRESH_TOKEN_NOT_FOUND);
         }
         
         try {
-            // 암호화된 리프레시 토큰 복호화
-            String googleRefreshToken = encryptionUtil.decrypt(encryptedGoogleRefreshToken);
             
             // Google Token API 호출을 위한 파라미터 준비
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();

@@ -2,7 +2,7 @@ package com.storycut.global.config;
 
 import com.storycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.storycut.domain.auth.service.CustomOAuth2UserService;
-import com.storycut.global.security.filter.JwtAuthenticationFilter;
+import com.storycut.domain.auth.JwtFilter.JwtAuthenticationFilter;
 import com.storycut.global.security.filter.LoggingFilter;
 import com.storycut.global.model.enums.PublicEndpoint;
 import lombok.RequiredArgsConstructor;

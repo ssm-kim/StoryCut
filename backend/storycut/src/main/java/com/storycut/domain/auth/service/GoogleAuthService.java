@@ -8,7 +8,6 @@ import com.storycut.domain.auth.util.JWTUtil;
 import com.storycut.domain.member.model.entity.Member;
 import com.storycut.global.exception.BusinessException;
 import com.storycut.global.model.dto.BaseResponseStatus;
-import com.storycut.global.util.AesEncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Base64;
 
 /**
  * 구글 인증 서비스 - 모바일 앱 구글 로그인 및 유튜브 권한 처리
@@ -39,7 +34,6 @@ public class GoogleAuthService {
     private final JWTUtil jwtUtil;
     private final TokenService tokenService;
     private final CustomOAuth2UserService oAuth2UserService;
-    private final AesEncryptionUtil encryptionUtil;
 
     // 구글 API URL 상수
     private static final String GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
@@ -112,30 +106,13 @@ public class GoogleAuthService {
      */
     @Transactional
     public YouTubeAuthResponse generateYouTubeAuthUrl(Long memberId) {
-        // PKCE 코드 검증기 생성
-        SecureRandom secureRandom = new SecureRandom();
-        byte[] codeVerifierBytes = new byte[32];
-        secureRandom.nextBytes(codeVerifierBytes);
-        String codeVerifier = Base64.getUrlEncoder().withoutPadding().encodeToString(codeVerifierBytes);
-        
-        // PKCE 코드 도전 생성 (검증기의 해시값)
-        String codeChallenge;
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(codeVerifier.getBytes());
-            codeChallenge = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 알고리즘이 지원되지 않습니다.", e);
-        }
-        
         // CSRF 방지를 위한 state 생성
         String state = UUID.randomUUID().toString();
         
-        // 상태 및 PKCE 검증기 저장
+        // 상태 저장
         tokenService.saveAuthState(state, memberId);
-        tokenService.savePkceVerifier(memberId, codeVerifier);
         
-        // 인증 URL 생성
+        // 인증 URL 생성 (PKCE 없이)
         String authUrl = GOOGLE_AUTH_URL + "?" +
                 "client_id=" + GOOGLE_CLIENT_ID + "&" +
                 "redirect_uri=" + BASE_URL + "/api/auth/oauth2/callback" + "&" +
@@ -143,9 +120,7 @@ public class GoogleAuthService {
                 "scope=openid%20email%20profile%20" + YOUTUBE_UPLOAD_SCOPE + "&" +
                 "access_type=offline&" +
                 "prompt=consent&" +
-                "state=" + state + "&" +
-                "code_challenge=" + codeChallenge + "&" +
-                "code_challenge_method=S256";
+                "state=" + state;
         
         return YouTubeAuthResponse.builder()
                 .authUrl(authUrl)
@@ -158,12 +133,6 @@ public class GoogleAuthService {
      */
     @Transactional
     public TokenDto exchangeAuthCodeForTokens(String code, Long memberId) {
-        // PKCE 코드 검증기 가져오기
-        String codeVerifier = tokenService.getPkceVerifier(memberId);
-        if (codeVerifier == null || codeVerifier.isEmpty()) {
-            throw new BusinessException(BaseResponseStatus.UNAUTHORIZED);
-        }
-        
         // 개발 모드에서는 더미 토큰 사용
         if (devMode) {
             String googleAccessToken = "dummy_google_access_token_" + System.currentTimeMillis();
@@ -173,8 +142,8 @@ public class GoogleAuthService {
             Member member = tokenService.getMemberById(memberId);
             member.updateGoogleAccessToken(googleAccessToken);
             
-            // 리프레시 토큰 암호화 저장
-            tokenService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
+            // 리프레시 토큰 저장 (암호화 없이)
+            tokenService.saveGoogleRefreshToken(memberId, googleRefreshToken);
             
             return TokenDto.builder()
                     .googleAccessToken(googleAccessToken)
@@ -187,7 +156,6 @@ public class GoogleAuthService {
             formData.add("client_id", GOOGLE_CLIENT_ID);
             formData.add("client_secret", GOOGLE_CLIENT_SECRET);
             formData.add("code", code);
-            formData.add("code_verifier", codeVerifier);
             formData.add("grant_type", "authorization_code");
             formData.add("redirect_uri", BASE_URL + "/api/auth/oauth2/callback");
             
@@ -213,8 +181,8 @@ public class GoogleAuthService {
             Member member = tokenService.getMemberById(memberId);
             member.updateGoogleAccessToken(googleAccessToken);
             
-            // 리프레시 토큰은 암호화하여 저장
-            tokenService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
+            // 리프레시 토큰 저장 (암호화 없이)
+            tokenService.saveGoogleRefreshToken(memberId, googleRefreshToken);
             
             return TokenDto.builder()
                     .googleAccessToken(googleAccessToken)

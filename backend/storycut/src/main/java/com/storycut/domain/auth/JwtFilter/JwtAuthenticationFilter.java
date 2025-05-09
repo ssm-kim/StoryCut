@@ -1,4 +1,4 @@
-package com.storycut.global.security.filter;
+package com.storycut.domain.auth.JwtFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storycut.domain.auth.util.JWTUtil;
