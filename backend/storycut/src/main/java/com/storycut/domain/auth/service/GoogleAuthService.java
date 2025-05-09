@@ -29,15 +29,15 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * 모바일 앱 인증 서비스 - 안드로이드 앱 로그인 및 유튜브 권한 처리
+ * 구글 인증 서비스 - 모바일 앱 구글 로그인 및 유튜브 권한 처리
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MobileAuthService {
+public class GoogleAuthService {
 
     private final JWTUtil jwtUtil;
-    private final WebAuthService webAuthService;
+    private final TokenService tokenService;
     private final CustomOAuth2UserService oAuth2UserService;
     private final AesEncryptionUtil encryptionUtil;
 
@@ -93,7 +93,7 @@ public class MobileAuthService {
             // 서버 JWT 토큰 발급 및 저장
             String accessToken = jwtUtil.createAccessToken(memberId);
             String refreshToken = jwtUtil.createRefreshToken(memberId);
-            webAuthService.saveRefreshToken(memberId, refreshToken);
+            tokenService.saveRefreshToken(memberId, refreshToken);
             
             // JWT 토큰 반환
             return TokenDto.builder()
@@ -132,8 +132,8 @@ public class MobileAuthService {
         String state = UUID.randomUUID().toString();
         
         // 상태 및 PKCE 검증기 저장
-        webAuthService.saveAuthState(state, memberId);
-        webAuthService.savePkceVerifier(memberId, codeVerifier);
+        tokenService.saveAuthState(state, memberId);
+        tokenService.savePkceVerifier(memberId, codeVerifier);
         
         // 인증 URL 생성
         String authUrl = GOOGLE_AUTH_URL + "?" +
@@ -159,7 +159,7 @@ public class MobileAuthService {
     @Transactional
     public TokenDto exchangeAuthCodeForTokens(String code, Long memberId) {
         // PKCE 코드 검증기 가져오기
-        String codeVerifier = webAuthService.getPkceVerifier(memberId);
+        String codeVerifier = tokenService.getPkceVerifier(memberId);
         if (codeVerifier == null || codeVerifier.isEmpty()) {
             throw new BusinessException(BaseResponseStatus.UNAUTHORIZED);
         }
@@ -170,11 +170,11 @@ public class MobileAuthService {
             String googleRefreshToken = "dummy_google_refresh_token_" + System.currentTimeMillis();
             
             // 사용자 정보 업데이트
-            Member member = webAuthService.getMemberById(memberId);
+            Member member = tokenService.getMemberById(memberId);
             member.updateGoogleAccessToken(googleAccessToken);
             
             // 리프레시 토큰 암호화 저장
-            webAuthService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
+            tokenService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
             
             return TokenDto.builder()
                     .googleAccessToken(googleAccessToken)
@@ -210,11 +210,11 @@ public class MobileAuthService {
             String googleRefreshToken = (String) response.get("refresh_token");
             
             // 사용자 정보 업데이트
-            Member member = webAuthService.getMemberById(memberId);
+            Member member = tokenService.getMemberById(memberId);
             member.updateGoogleAccessToken(googleAccessToken);
             
             // 리프레시 토큰은 암호화하여 저장
-            webAuthService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
+            tokenService.saveGoogleRefreshToken(memberId, encryptionUtil.encrypt(googleRefreshToken));
             
             return TokenDto.builder()
                     .googleAccessToken(googleAccessToken)
@@ -233,18 +233,8 @@ public class MobileAuthService {
      */
     @Transactional
     public TokenDto refreshGoogleAccessToken(Long memberId) {
-        // 개발 모드에서는 더미 액세스 토큰 생성
-        if (devMode) {
-            String newDummyAccessToken = "refreshed_dummy_google_access_token_" + System.currentTimeMillis();
-            webAuthService.updateMemberGoogleToken(memberId, newDummyAccessToken);
-            
-            return TokenDto.builder()
-                    .googleAccessToken(newDummyAccessToken)
-                    .build();
-        }
-        
         // 구글 액세스 토큰 갱신
-        String newGoogleAccessToken = webAuthService.refreshGoogleAccessToken(memberId);
+        String newGoogleAccessToken = tokenService.refreshGoogleAccessToken(memberId);
         
         return TokenDto.builder()
                 .googleAccessToken(newGoogleAccessToken)
@@ -255,7 +245,7 @@ public class MobileAuthService {
      * 사용자가 유튜브 권한을 가지고 있는지 확인
      */
     public boolean hasYouTubeAccess(Long memberId) {
-        return webAuthService.hasGoogleRefreshToken(memberId);
+        return tokenService.hasGoogleRefreshToken(memberId);
     }
     
     /**

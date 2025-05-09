@@ -38,10 +38,6 @@ public class Member extends BaseEntity {
     @Column(name = "google_access_token")
     private String googleAccessToken;
     
-    // 데이터베이스에 저장하지 않고 Redis에 암호화하여 저장하므로 필요 없음
-    // @Column(name = "google_refresh_token")
-    // private String googleRefreshToken;
-
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }

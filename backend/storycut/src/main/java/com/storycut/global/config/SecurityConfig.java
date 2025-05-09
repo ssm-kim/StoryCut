@@ -1,9 +1,8 @@
 package com.storycut.global.config;
 
-import com.storycut.global.security.RestAuthenticationEntryPoint;
-import com.storycut.global.security.filter.JwtAuthenticationFilter;
 import com.storycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.storycut.domain.auth.service.CustomOAuth2UserService;
+import com.storycut.global.security.filter.JwtAuthenticationFilter;
 import com.storycut.global.security.filter.LoggingFilter;
 import com.storycut.global.model.enums.PublicEndpoint;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class SecurityConfig {
 
     // 앱은 모든 환경에서 사용하지만, 웹 인증은 테스트용으로만 활성화합니다.
     // 프로덕션에서는 false로 설정하여 비활성화할 수 있습니다.
-    @Value("${app.auth.web-enabled:false}")
+    @Value("${app.auth.web-enabled:true}")
     private boolean webAuthEnabled;
 
     @Bean
@@ -45,13 +44,10 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(restAuthenticationEntryPoint())
-            )
             .authorizeHttpRequests(auth -> {
                 // 공개 URL들은 인증 없이 접근 가능
                 publicUrls.forEach(url -> auth.requestMatchers(url).permitAll());
-                
+
                 // 보호된 API 엔드포인트들은 인증 필요
                 auth.requestMatchers("/api/**").authenticated()
                     .anyRequest().authenticated();
@@ -75,11 +71,6 @@ public class SecurityConfig {
             .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    @Bean
-    public RestAuthenticationEntryPoint restAuthenticationEntryPoint() {
-        return new RestAuthenticationEntryPoint();
     }
 
     @Bean

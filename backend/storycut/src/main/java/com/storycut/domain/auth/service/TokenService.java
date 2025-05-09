@@ -18,14 +18,18 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 토큰 관리 서비스 - JWT 토큰 및 구글 토큰 관리
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class TokenService {
 
     private final JWTUtil jwtUtil;
     private final MemberRepository memberRepository;
@@ -151,22 +155,26 @@ public class AuthService {
      */
     @Transactional
     public TokenDto refreshAccessToken(String refreshToken) {
-        // 리프레시 토큰 유효성 검증
-        if (!jwtUtil.validateToken(refreshToken)) {
-            throw new BusinessException(BaseResponseStatus.INVALID_ID_TOKEN);
-        }
-
-        Long memberId = jwtUtil.getMemberId(refreshToken);
-        String savedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
+        // 리프레시 토큰 상태 확인
+        JWTUtil.TokenStatus tokenStatus = jwtUtil.checkToken(refreshToken);
         
-        // 저장된 리프레시 토큰과 일치하는지 확인
-        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
-            throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_FAILED);
+        // 토큰 상태에 따른 처리
+        if (tokenStatus == JWTUtil.TokenStatus.EXPIRED) {
+            throw new BusinessException(BaseResponseStatus.JWT_REFRESH_TOKEN_EXPIRED);
+        } else if (tokenStatus != JWTUtil.TokenStatus.VALID) {
+            throw new BusinessException(BaseResponseStatus.INVALID_JWT_TOKEN);
         }
 
-        // 사용자 존재 여부 확인 및 새로운 액세스 토큰 발급
-        memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
+        // 유효한 토큰에서 멤버 ID 추출
+        Long memberId = jwtUtil.getMemberId(refreshToken);
+
+        // 저장된 리프레시 토큰과 일치하는지 확인
+        String savedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
+        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_INVALID);
+        }
+
+        // 새 액세스 토큰 발급
         String newAccessToken = jwtUtil.createAccessToken(memberId);
         
         return TokenDto.builder()
@@ -191,12 +199,12 @@ public class AuthService {
             
             return dummyToken;
         }
-        
+
         // Redis에서 암호화된 구글 리프레시 토큰 가져오기
         String encryptedGoogleRefreshToken = redisTemplate.opsForValue().get(GOOGLE_REFRESH_TOKEN_PREFIX + memberId);
         
         if (encryptedGoogleRefreshToken == null || encryptedGoogleRefreshToken.isEmpty()) {
-            throw new BusinessException(BaseResponseStatus.REFRESH_TOKEN_FAILED);
+            throw new BusinessException(BaseResponseStatus.GOOGLE_REFRESH_TOKEN_NOT_FOUND);
         }
         
         try {
@@ -221,22 +229,37 @@ public class AuthService {
                     .block();
             
             if (response == null || !response.containsKey("access_token")) {
-                throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
+                throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
             }
-            
+
             String newGoogleAccessToken = (String) response.get("access_token");
-            
+
             // 새 액세스 토큰을 Member 엔티티에 저장
             Member member = getMemberById(memberId);
             member.updateGoogleAccessToken(newGoogleAccessToken);
             memberRepository.save(member);
-            
+
             return newGoogleAccessToken;
+        } catch (WebClientResponseException e) {
+            // Google API 응답 오류 처리
+            log.error("구글 토큰 갱신 API 오류: {}", e.getMessage());
+
+            if (e.getStatusCode().is4xxClientError()) {
+                // 401 또는 400 오류가 발생하면 리프레시 토큰이 유효하지 않거나 만료된 것으로 판단
+                if (e.getStatusCode().value() == 400 && e.getResponseBodyAsString().contains("invalid_grant")) {
+                    // 'invalid_grant' 오류는 보통 리프레시 토큰이 만료되었거나 취소되었음을 의미
+                    throw new BusinessException(BaseResponseStatus.GOOGLE_REFRESH_TOKEN_EXPIRED);
+                }
+                // 그 외 클라이언트 오류는 액세스 토큰 만료로 처리
+                throw new BusinessException(BaseResponseStatus.GOOGLE_ACCESS_TOKEN_EXPIRED);
+            }
+            // 5xx 등 서버 오류는 일반 갱신 실패로 처리
+            throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("구글 액세스 토큰 갱신 중 오류 발생", e);
-            throw new BusinessException(BaseResponseStatus.TOKEN_GENERATION_FAILED);
+            throw new BusinessException(BaseResponseStatus.GOOGLE_TOKEN_REFRESH_FAILED);
         }
     }
 
@@ -245,25 +268,29 @@ public class AuthService {
      */
     @Transactional
     public void logout(String accessToken) {
-        // 액세스 토큰 유효성 검증
-        if (!jwtUtil.validateToken(accessToken)) {
-            throw new BusinessException(BaseResponseStatus.INVALID_ID_TOKEN);
+        JWTUtil.TokenStatus tokenStatus = jwtUtil.checkToken(accessToken);
+        
+        Long memberId;
+        try {
+            memberId = jwtUtil.getMemberId(accessToken);
+        } catch (Exception e) {
+            throw new BusinessException(BaseResponseStatus.INVALID_JWT_TOKEN);
         }
-
-        Long memberId = jwtUtil.getMemberId(accessToken);
         
         // Redis에서 리프레시 토큰 삭제
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
         
         // 액세스 토큰 블랙리스트에 추가 (남은 유효 시간동안)
-        long expiration = jwtUtil.getExpirationTime(accessToken) - System.currentTimeMillis();
-        if (expiration > 0) {
-            redisTemplate.opsForValue().set(
-                    TOKEN_BLACKLIST_PREFIX + accessToken,
-                    "logout",
-                    expiration,
-                    TimeUnit.MILLISECONDS
-            );
+        if (tokenStatus == JWTUtil.TokenStatus.VALID) {
+            long expiration = jwtUtil.getExpirationTime(accessToken) - System.currentTimeMillis();
+            if (expiration > 0) {
+                redisTemplate.opsForValue().set(
+                        TOKEN_BLACKLIST_PREFIX + accessToken,
+                        "logout",
+                        expiration,
+                        TimeUnit.MILLISECONDS
+                );
+            }
         }
     }
 
