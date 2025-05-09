@@ -22,6 +22,14 @@ def get_face_model():
         _face_model.prepare(ctx_id=0)
     return _face_model
 
+def release_face_model():
+    global _face_model
+    if _face_model is not None:
+        del _face_model
+        _face_model = None
+        torch.cuda.empty_cache()
+        print("🧹 InsightFace 모델 해제 완료")
+
 def detect_faces(frame):
     face_model = get_face_model()
     faces = face_model.get(frame)
@@ -245,6 +253,7 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
         raise
 
     finally:
+        release_face_model()
         temp_files = segment_paths + [merged_output, final_output] + target_paths
         for path in temp_files:
             try:

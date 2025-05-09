@@ -30,8 +30,10 @@ def subtitles(video_path: str) -> str:
     ffmpeg_ass_path = ass_path.replace("\\", "/")
     output_path = os.path.join(base_dir, f"{uid}_subtitled.mp4").replace("\\", "/")
 
+    whisper_model = None
+
     try:
-        # ✅ Whisper 모델은 이 시점에만 로드
+        # ✅ Whisper 모델 로드
         if not torch.cuda.is_available():
             raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
         whisper_model = whisper.load_model("medium").to("cuda")
@@ -94,6 +96,15 @@ def subtitles(video_path: str) -> str:
         return output_path
 
     finally:
+        # ✅ 모델 및 GPU 메모리 해제
+        try:
+            if whisper_model is not None:
+                del whisper_model
+                torch.cuda.empty_cache()
+        except Exception as e:
+            print(f"⚠️ 모델 해제 중 오류: {e}")
+
+        # ✅ 임시 파일 삭제
         for path in [audio_path, ass_path]:
             try:
                 if os.path.exists(path):
