@@ -9,13 +9,29 @@ import os
 import time
 from uuid import uuid4
 
-UPLOAD_DIR = "app/vimosaic"
+UPLOAD_DIR = "app/videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-face_model = insightface.app.FaceAnalysis()
-face_model.prepare(ctx_id=0)
+_face_model = None
+
+def get_face_model():
+    global _face_model
+    if _face_model is None:
+        print("🔄 InsightFace 모델 초기화 중...")
+        _face_model = insightface.app.FaceAnalysis()
+        _face_model.prepare(ctx_id=0)
+    return _face_model
+
+def release_face_model():
+    global _face_model
+    if _face_model is not None:
+        del _face_model
+        _face_model = None
+        torch.cuda.empty_cache()
+        print("🧹 InsightFace 모델 해제 완료")
 
 def detect_faces(frame):
+    face_model = get_face_model()
     faces = face_model.get(frame)
     if not faces:
         return np.array([]), np.array([])
@@ -112,8 +128,6 @@ def process_video_segment(input_path, target_embeddings, output_path, start_fram
             process_tracks(frame, tracks, track_id_to_class)
             out.write(frame)
             frame_idx += 1
-            if frame_idx % 100 == 0:
-                print(frame_idx)
 
         cap.release()
         out.release()
@@ -132,21 +146,38 @@ def merge_video_segments(output_path, segment_paths):
 
 def add_audio_to_video(video_no_audio_path, original_video_path, output_path):
     try:
-        subprocess.run([
-            "ffmpeg", "-y",
-            "-i", video_no_audio_path,
-            "-i", original_video_path,
-            "-c", "copy",
-            "-map", "0:v:0", "-map", "1:a:0",
-            "-shortest", output_path
-        ], check=True)
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+             "stream=index", "-of", "csv=p=0", original_video_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        has_audio = result.stdout.strip() != ""
+
+        if has_audio:
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-i", video_no_audio_path,
+                "-i", original_video_path,
+                "-c", "copy",
+                "-map", "0:v:0", "-map", "1:a:0",
+                "-shortest", output_path
+            ], check=True)
+        else:
+            print("⚠️ 원본 영상에 오디오 없음 — 비디오만 복사합니다.")
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-i", video_no_audio_path,
+                "-c", "copy",
+                output_path
+            ], check=True)
+
     except subprocess.CalledProcessError as e:
-        print(f" 오디오 추가 실패: {e}")
+        print(f"❌ 오디오 추가 실패: {e}")
+        raise
 
 def gpu_encode_video(input_path: str, output_path: str, bitrate="10M", preset="fast"):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"입력 파일이 존재하지 않습니다: {input_path}")
-
     cmd = [
         "ffmpeg", "-y",
         "-i", input_path,
@@ -155,17 +186,14 @@ def gpu_encode_video(input_path: str, output_path: str, bitrate="10M", preset="f
         "-b:v", bitrate,
         output_path
     ]
-
     print(" GPU 인코딩 시작...")
     result = subprocess.run(cmd, capture_output=True, text=True)
-
     if result.returncode != 0:
         error_msg = f" 인코딩 실패:\n{result.stderr}"
         print(error_msg)
         raise RuntimeError(error_msg)
     else:
         print(f"✅ 인코딩 완료: {output_path}")
-
 
 def split_frames(total_frames, num_segments):
     ranges = []
@@ -175,6 +203,7 @@ def split_frames(total_frames, num_segments):
         end = total_frames if i == num_segments - 1 else (i + 1) * step
         ranges.append((start, end))
     return ranges
+
 def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interval: int = 5, num_segments: int = 3) -> str:
     segment_paths = []
     merged_output = ""
@@ -182,7 +211,6 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
     encoded_output = ""
 
     try:
-        # 타깃 얼굴 임베딩 추출
         target_embeddings = []
         for path in target_paths[:2]:
             img = cv2.imread(path)
@@ -193,21 +221,18 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
                 raise ValueError(f"타깃 얼굴을 찾을 수 없습니다: {path}")
             target_embeddings.append(embeddings[0])
 
-        #  비디오 정보 확인
         cap = cv2.VideoCapture(input_path)
         if not cap.isOpened():
             raise RuntimeError(f"비디오 파일을 열 수 없습니다: {input_path}")
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
 
-        #  세그먼트 분할
         segment_ranges = split_frames(total_frames, num_segments)
         segment_paths = [f"{UPLOAD_DIR}/segment_{i}_{uuid4().hex}.mp4" for i in range(num_segments)]
         merged_output = f"{UPLOAD_DIR}/merged_{uuid4().hex}.mp4"
         final_output = f"{UPLOAD_DIR}/final_{uuid4().hex}.mp4"
         encoded_output = f"{UPLOAD_DIR}/encoded_{uuid4().hex}.mp4"
 
-        # 병렬 처리
         processes = []
         for i, (start, end) in enumerate(segment_ranges):
             p = Process(target=process_video_segment,
@@ -217,11 +242,8 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
         for p in processes:
             p.join()
 
-        #  병합 및 오디오 추가
         merge_video_segments(merged_output, segment_paths)
         add_audio_to_video(merged_output, input_path, final_output)
-
-        # GPU 인코딩
         gpu_encode_video(final_output, encoded_output)
 
         return encoded_output
@@ -231,8 +253,8 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
         raise
 
     finally:
-        #  임시 파일 정리
-        temp_files = segment_paths + [merged_output, final_output, input_path] + target_paths
+        release_face_model()
+        temp_files = segment_paths + [merged_output, final_output] + target_paths
         for path in temp_files:
             try:
                 if os.path.exists(path):

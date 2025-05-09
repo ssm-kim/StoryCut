@@ -43,7 +43,7 @@ def save_uploaded_video_local(file: UploadFile) -> str:
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
-        return filename  # 전체 경로 X, 파일명만 반환
+        return file_path  
 
     except Exception as e:
         raise RuntimeError(f"로컬 영상 저장 실패: {str(e)}")
@@ -70,9 +70,8 @@ def save_uploaded_video(local_path: str, filename: str, s3_client=None) -> str:
 
     
 # === 썸네일 생성 및 S3 업로드 ===
-def generate_and_upload_thumbnail(local_video_filename: str, s3_client=None) -> str:
+def generate_and_upload_thumbnail(video_path: str, s3_client=None) -> str:
     try:
-        video_path = os.path.join(VIDEO_DIR, local_video_filename)
         thumbnail_filename = f"thumb_{uuid4().hex}.jpg"
         thumbnail_path = os.path.join(UPLOAD_DIR, thumbnail_filename)
 
