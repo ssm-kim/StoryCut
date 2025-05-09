@@ -45,7 +45,7 @@ async def process_video(
             is_success=True,
             code=200,
             message="🎬 영상 처리 완료",
-            video_id=spring_response.result.video_id
+            result=spring_response.result
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")

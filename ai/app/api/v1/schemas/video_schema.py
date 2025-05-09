@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-
+from app.api.v1.schemas.post_schema import PostResult
 # 요청 스키마
 class VideoProcessRequest(BaseModel):
     prompt: str
@@ -17,7 +17,7 @@ class VideoPostResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
-    video_id: int = Field(..., alias="video_id")
+    result: Optional[PostResult] 
 
     class Config:
         validate_by_name = True

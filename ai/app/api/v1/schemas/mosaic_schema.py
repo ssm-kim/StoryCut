@@ -5,8 +5,8 @@ from typing import List, Optional
 class MosaicRequest(BaseModel):
     original_video_url: str = Field(..., alias="originalVideoUrl", example="app/videos/sample.mp4")
     images: List[str] = Field(..., example=[
-        "app/videos/face1.jpg",
-        "app/videos/face2.jpg"
+        "app/images/face1.jpg",
+        "app/images/face2.jpg"
     ])
 
     class Config:

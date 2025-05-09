@@ -9,13 +9,22 @@ import os
 import time
 from uuid import uuid4
 
-UPLOAD_DIR = "app/video"
+UPLOAD_DIR = "app/videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-face_model = insightface.app.FaceAnalysis()
-face_model.prepare(ctx_id=0)
+# 🧠 지연 초기화를 위한 캐시 변수
+_face_model = None
+
+def get_face_model():
+    global _face_model
+    if _face_model is None:
+        print("🔄 InsightFace 모델 초기화 중...")
+        _face_model = insightface.app.FaceAnalysis()
+        _face_model.prepare(ctx_id=0)
+    return _face_model
 
 def detect_faces(frame):
+    face_model = get_face_model()
     faces = face_model.get(frame)
     if not faces:
         return np.array([]), np.array([])
@@ -166,7 +175,6 @@ def gpu_encode_video(input_path: str, output_path: str, bitrate="10M", preset="f
     else:
         print(f"✅ 인코딩 완료: {output_path}")
 
-
 def split_frames(total_frames, num_segments):
     ranges = []
     step = total_frames // num_segments
@@ -175,6 +183,7 @@ def split_frames(total_frames, num_segments):
         end = total_frames if i == num_segments - 1 else (i + 1) * step
         ranges.append((start, end))
     return ranges
+
 def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interval: int = 5, num_segments: int = 3) -> str:
     segment_paths = []
     merged_output = ""
@@ -193,14 +202,14 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
                 raise ValueError(f"타깃 얼굴을 찾을 수 없습니다: {path}")
             target_embeddings.append(embeddings[0])
 
-        #  비디오 정보 확인
+        # 비디오 정보 확인
         cap = cv2.VideoCapture(input_path)
         if not cap.isOpened():
             raise RuntimeError(f"비디오 파일을 열 수 없습니다: {input_path}")
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
 
-        #  세그먼트 분할
+        # 세그먼트 분할
         segment_ranges = split_frames(total_frames, num_segments)
         segment_paths = [f"{UPLOAD_DIR}/segment_{i}_{uuid4().hex}.mp4" for i in range(num_segments)]
         merged_output = f"{UPLOAD_DIR}/merged_{uuid4().hex}.mp4"
@@ -217,7 +226,7 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
         for p in processes:
             p.join()
 
-        #  병합 및 오디오 추가
+        # 병합 및 오디오 추가
         merge_video_segments(merged_output, segment_paths)
         add_audio_to_video(merged_output, input_path, final_output)
 
@@ -231,8 +240,8 @@ def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interva
         raise
 
     finally:
-        #  임시 파일 정리
-        temp_files = segment_paths + [merged_output, final_output, input_path] + target_paths
+        # 임시 파일 정리
+        temp_files = segment_paths + [merged_output, final_output] + target_paths
         for path in temp_files:
             try:
                 if os.path.exists(path):

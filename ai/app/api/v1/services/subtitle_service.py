@@ -9,11 +9,6 @@ import uuid
 base_dir = "app/videos"
 os.makedirs(base_dir, exist_ok=True)
 
-# ✅ 전역에서 Whisper 모델 1회만 로드
-if not torch.cuda.is_available():
-    raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
-whisper_model = whisper.load_model("medium").to("cuda")
-
 def get_video_resolution(video_path: str) -> tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -36,6 +31,11 @@ def subtitles(video_path: str) -> str:
     output_path = os.path.join(base_dir, f"{uid}_subtitled.mp4").replace("\\", "/")
 
     try:
+        # ✅ Whisper 모델은 이 시점에만 로드
+        if not torch.cuda.is_available():
+            raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
+        whisper_model = whisper.load_model("medium").to("cuda")
+
         # 1. 오디오 추출
         subprocess.run([
             "ffmpeg", "-y", "-i", video_path,
@@ -94,7 +94,6 @@ def subtitles(video_path: str) -> str:
         return output_path
 
     finally:
-        # ✅ 예외가 발생해도 임시 파일 정리
         for path in [audio_path, ass_path]:
             try:
                 if os.path.exists(path):
