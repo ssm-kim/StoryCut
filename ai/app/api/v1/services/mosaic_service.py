@@ -8,7 +8,7 @@ from multiprocessing import Process
 import os
 import time
 from uuid import uuid4
-
+from typing import List
 UPLOAD_DIR = "app/videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -18,7 +18,7 @@ def get_face_model():
     global _face_model
     if _face_model is None:
         print("🔄 InsightFace 모델 초기화 중...")
-        _face_model = insightface.app.FaceAnalysis()
+        _face_model = insightface.app.FaceAnalysis(providers=["CUDAExecutionProvider"])
         _face_model.prepare(ctx_id=0)
     return _face_model
 
@@ -204,7 +204,7 @@ def split_frames(total_frames, num_segments):
         ranges.append((start, end))
     return ranges
 
-def run_mosaic_pipeline(input_path: str, target_paths: list[str], detect_interval: int = 5, num_segments: int = 3) -> str:
+def run_mosaic_pipeline(input_path: str, target_paths: List[str], detect_interval: int = 5, num_segments: int = 3) -> str:
     segment_paths = []
     merged_output = ""
     final_output = ""

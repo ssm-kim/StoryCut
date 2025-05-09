@@ -10,9 +10,8 @@ class PostRequest(BaseModel):
     is_blur: bool = Field(..., alias="isBlur")
 
     class Config:
-        populate_by_name = True
-        validate_by_name = True
-        json_schema_extra = {
+        allow_population_by_field_name = True
+        schema_extra = {
             "example": {
                 "videoName": "영상 제목",
                 "videoUrl": "https://example.com/video.mp4",
@@ -34,7 +33,7 @@ class PostResult(BaseModel):
     updated_at: str = Field(..., alias="updatedAt")
 
     class Config:
-        populate_by_name = True
+        allow_population_by_field_name = True
         orm_mode = True
 
 
@@ -45,9 +44,8 @@ class PostResponse(BaseModel):
     result: Optional[PostResult]
 
     class Config:
-        populate_by_name = True
-        validate_by_name = True
-        json_schema_extra = {
+        allow_population_by_field_name = True
+        schema_extra = {
             "example": {
                 "isSuccess": True,
                 "code": 200,

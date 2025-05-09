@@ -2,23 +2,20 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
-# ✅ 이미지 업로드 결과
 class ImageUploadResult(BaseModel):
     image_urls: List[str] = Field(..., alias="imageUrls")
 
     class Config:
-        populate_by_name = True
+        allow_population_by_field_name = True
 
 
-# ✅ 영상 업로드 결과
 class VideoUploadResult(BaseModel):
     video_id: int = Field(..., alias="videoId")
 
     class Config:
-        populate_by_name = True
+        allow_population_by_field_name = True
 
 
-# ✅ 이미지 업로드 응답
 class ImageUploadResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
@@ -26,9 +23,8 @@ class ImageUploadResponse(BaseModel):
     result: Optional[ImageUploadResult]
 
     class Config:
-        validate_by_name = True
-        populate_by_name = True
-        json_schema_extra = {
+        allow_population_by_field_name = True
+        schema_extra = {
             "example": {
                 "isSuccess": True,
                 "code": 200,
@@ -42,7 +38,6 @@ class ImageUploadResponse(BaseModel):
         }
 
 
-# ✅ 영상 업로드 응답
 class VideoUploadResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
@@ -50,9 +45,8 @@ class VideoUploadResponse(BaseModel):
     result: Optional[VideoUploadResult]
 
     class Config:
-        validate_by_name = True
-        populate_by_name = True
-        json_schema_extra = {
+        allow_population_by_field_name = True
+        schema_extra = {
             "example": {
                 "isSuccess": True,
                 "code": 200,
@@ -64,7 +58,6 @@ class VideoUploadResponse(BaseModel):
         }
 
 
-# ✅ 공통 에러 응답
 class ErrorResponse(BaseModel):
     is_success: bool = Field(default=False, alias="isSuccess", example=False)
     code: int = Field(..., example=400)
@@ -72,9 +65,8 @@ class ErrorResponse(BaseModel):
     result: Optional[None] = Field(default=None, example=None)
 
     class Config:
-        validate_by_name = True
-        populate_by_name = True
-        json_schema_extra = {
+        allow_population_by_field_name = True
+        schema_extra = {
             "example": {
                 "isSuccess": False,
                 "code": 400,

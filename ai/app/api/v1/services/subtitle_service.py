@@ -5,11 +5,11 @@ import torch
 import re
 import cv2
 import uuid
-
+from typing import Tuple 
 base_dir = "app/videos"
 os.makedirs(base_dir, exist_ok=True)
 
-def get_video_resolution(video_path: str) -> tuple[int, int]:
+def get_video_resolution(video_path: str) -> Tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
