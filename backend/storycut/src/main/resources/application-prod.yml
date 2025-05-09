@@ -22,6 +22,9 @@ server:
 
 app:
   baseUrl: https://k12d108.p.ssafy.io
+  # 앱 리다이렉션 스키마 설정
+  mobile:
+    redirectScheme: stroycut://oauth2/redirect
 
 logging:
   file:
