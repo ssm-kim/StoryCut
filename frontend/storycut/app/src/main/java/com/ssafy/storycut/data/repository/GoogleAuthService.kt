@@ -10,11 +10,12 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.ssafy.storycut.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "GoogleAuthService"
-private const val WEB_CLIENT_ID = "540631555497-sfbspp2d11a6jjn69uuhp7vdk6b01hve.apps.googleusercontent.com"
+private const val WEB_CLIENT_ID = BuildConfig.WEB_CLIENT_ID;
 
 @Singleton
 class GoogleAuthService @Inject constructor() {

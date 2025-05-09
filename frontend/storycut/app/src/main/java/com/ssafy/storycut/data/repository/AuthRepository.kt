@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.http.InputStreamContent
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -22,13 +21,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -72,8 +64,7 @@ class AuthRepository @Inject constructor(
                             // 토큰 정보 반환
                             val tokenPair = Pair(accessToken, refreshToken)
 
-                            // 토큰이 저장되면 사용자 정보 가져오기
-                            val userInfoResult = getUserInfo()
+                            getUserInfo()
 
                             withContext(Dispatchers.Main) {
                                 onComplete("성공", tokenPair)
@@ -199,14 +190,6 @@ class AuthRepository @Inject constructor(
                 return@withContext null
             }
         }
-    }
-
-    /**
-     * 현재 로그인한 사용자 정보 반환
-     * @return 사용자 정보
-     */
-    fun getCurrentUser(): UserInfo? {
-        return currentUser
     }
 
     suspend fun getYouTubeAuthUrl(): GooglePermissionResponse? {

@@ -49,8 +49,12 @@ object AppModule {
     // AuthInterceptor를 생성하는 Provides 메서드 추가
     @Provides
     @Singleton
-    fun provideAuthInterceptor(tokenManager: TokenManager, authRepository: AuthRepository): AuthInterceptor {
-        return AuthInterceptor(tokenManager, authRepository)
+    fun provideAuthInterceptor(
+        tokenManager: TokenManager,
+        authRepository: AuthRepository,
+        @ApplicationContext context: Context // Context 파라미터 추가
+    ): AuthInterceptor {
+        return AuthInterceptor(tokenManager, authRepository, context)
     }
 
     @Provides

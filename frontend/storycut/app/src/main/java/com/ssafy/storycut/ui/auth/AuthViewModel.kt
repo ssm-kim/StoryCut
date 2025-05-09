@@ -211,6 +211,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                Log.d(TAG, "토큰 전송")
                 googleAuthService.signInWithGoogle(context, credentialManager) { idToken ->
                     // 서버에 토큰 전송
                     sendTokenToServer(idToken)
