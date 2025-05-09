@@ -25,8 +25,12 @@ public class JWTUtil {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1시간
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7일
+
+    @Value("${jwt.access-token-validity}")
+    private long ACCESS_TOKEN_EXPIRE_TIME; // application-secret.yml에서 설정
+
+    @Value("${jwt.refresh-token-validity}")
+    private long REFRESH_TOKEN_EXPIRE_TIME; // application-secret.yml에서 설정
 
     private final UserDetailsService userDetailsService;
 
@@ -41,17 +45,30 @@ public class JWTUtil {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Access 토큰 생성 - memberId 사용
+    // 토큰 상태를 나타내는 열거형
+    public enum TokenStatus {
+        VALID,      // 유효한 토큰
+        EXPIRED,    // 만료된 토큰
+        INVALID     // 유효하지 않은 토큰 (서명 불일치, 형식 오류 등)
+    }
+
+    /**
+     * Access 토큰 생성
+     */
     public String createAccessToken(Long memberId) {
         return createToken(String.valueOf(memberId), ACCESS_TOKEN_EXPIRE_TIME);
     }
 
-    // Refresh 토큰 생성 - memberId 사용
+    /**
+     * Refresh 토큰 생성
+     */
     public String createRefreshToken(Long memberId) {
         return createToken(String.valueOf(memberId), REFRESH_TOKEN_EXPIRE_TIME);
     }
 
-    // 토큰 생성 공통 메소드
+    /**
+     * 토큰 생성 공통 메소드
+     */
     private String createToken(String subject, long expireTime) {
         Claims claims = Jwts.claims().subject(subject).build();
         Date now = new Date();
@@ -65,28 +82,44 @@ public class JWTUtil {
                 .compact();
     }
 
-    // Request 헤더에서 토큰 추출
+    /**
+     * Request 헤더에서 토큰 추출
+     */
     public String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+        String accessToken = request.getHeader(AUTHORIZATION_HEADER);
 
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(7);
+        if (StringUtils.hasText(accessToken) && accessToken.startsWith(BEARER_PREFIX)) {
+            return accessToken.replace("Bearer ", "");
         }
         return null;
     }
 
-    // 토큰 유효성 검증
+    /**
+     * 토큰 유효성 검증 - 기존 메서드 (하위 호환성 유지)
+     */
     public boolean validateToken(String token) {
+        return checkToken(token) == TokenStatus.VALID;
+    }
+
+    /**
+     * 토큰 상태 확인 (유효, 만료, 유효하지 않음)
+     */
+    public TokenStatus checkToken(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
+            return TokenStatus.VALID;
+        } catch (ExpiredJwtException e) {
+            log.debug("만료된 JWT 토큰: {}", e.getMessage());
+            return TokenStatus.EXPIRED;
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("Invalid JWT token", e);
-            return false;
+            log.debug("유효하지 않은 JWT 토큰: {}", e.getMessage());
+            return TokenStatus.INVALID;
         }
     }
 
-    // 토큰에서 멤버 ID 추출
+    /**
+     * 토큰에서 멤버 ID 추출
+     */
     public Long getMemberId(String token) {
         String memberId = Jwts.parser()
                 .verifyWith(key)
@@ -98,13 +131,17 @@ public class JWTUtil {
         return Long.parseLong(memberId);
     }
 
-    // 인증 객체 생성
+    /**
+     * 인증 객체 생성
+     */
     public Authentication getAuthentication(String token) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(this.getMemberId(token).toString());
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
     
-    // 토큰 만료 시간 반환
+    /**
+     * 토큰 만료 시간 반환
+     */
     public long getExpirationTime(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)

@@ -2,7 +2,7 @@ package com.storycut.domain.auth.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storycut.domain.auth.model.dto.TokenDto;
-import com.storycut.domain.auth.service.AuthService;
+import com.storycut.domain.auth.service.TokenService;
 import com.storycut.domain.auth.util.JWTUtil;
 import com.storycut.domain.member.model.entity.Member;
 import com.storycut.domain.member.repository.MemberRepository;
@@ -26,7 +26,7 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
-    private final AuthService authService;
+    private final TokenService tokenService;
     private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
 
@@ -55,7 +55,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String refreshToken = jwtUtil.createRefreshToken(memberId);
         
         // 리프레시 토큰 저장
-        authService.saveRefreshToken(memberId, refreshToken);
+        tokenService.saveRefreshToken(memberId, refreshToken);
         
         // 모바일 앱으로 리다이렉트 또는 토큰 응답
         String targetUrl = UriComponentsBuilder.fromUriString("stroycut://oauth2/redirect")

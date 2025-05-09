@@ -1,8 +1,8 @@
-package com.storycut.global.security;
+package com.storycut.global.config;
 
-import com.storycut.global.security.filter.JwtAuthenticationFilter;
 import com.storycut.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.storycut.domain.auth.service.CustomOAuth2UserService;
+import com.storycut.domain.auth.JwtFilter.JwtAuthenticationFilter;
 import com.storycut.global.security.filter.LoggingFilter;
 import com.storycut.global.model.enums.PublicEndpoint;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +31,8 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
-    @Value("${app.baseUrl}")
-    private String baseUrl;
-
-    // 추후 웹 로그인 필요 시 true 변경하면 됨
+    // 앱은 모든 환경에서 사용하지만, 웹 인증은 테스트용으로만 활성화합니다.
+    // 프로덕션에서는 false로 설정하여 비활성화할 수 있습니다.
     @Value("${app.auth.web-enabled:true}")
     private boolean webAuthEnabled;
 
@@ -46,41 +44,33 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(restAuthenticationEntryPoint())
-            )
-            .authorizeHttpRequests((auth) -> {
-                // 명시적으로 공개 URL 처리 - forEach를 사용해 각 URL 패턴 처리
+            .authorizeHttpRequests(auth -> {
+                // 공개 URL들은 인증 없이 접근 가능
                 publicUrls.forEach(url -> auth.requestMatchers(url).permitAll());
 
-                // 보호된 API 엔드포인트 - 인증 필요
+                // 보호된 API 엔드포인트들은 인증 필요
                 auth.requestMatchers("/api/**").authenticated()
                     .anyRequest().authenticated();
             })
-            .sessionManagement((session) -> session
+            .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             );
 
-            if (webAuthEnabled) {
-                http
-                    .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo
-                            .userService(customOAuth2UserService)
-                        )
-                    .successHandler(oAuth2AuthenticationSuccessHandler)
-                );
-            }
+        // 웹 로그인 활성화 설정 - 테스트 환경에서만 사용
+        if (webAuthEnabled) {
+            http.oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+            );
+        }
 
-        http
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        // 필터 설정
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    @Bean
-    public RestAuthenticationEntryPoint restAuthenticationEntryPoint() {
-        return new RestAuthenticationEntryPoint();
     }
 
     @Bean

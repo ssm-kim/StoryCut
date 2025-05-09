@@ -34,7 +34,10 @@ public class Member extends BaseEntity {
 
     @Column(name = "provider_id")
     private String providerId;
-
+    
+    @Column(name = "google_access_token")
+    private String googleAccessToken;
+    
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -49,5 +52,9 @@ public class Member extends BaseEntity {
     
     public void updateName(String name) {
         this.name = name;
+    }
+    
+    public void updateGoogleAccessToken(String googleAccessToken) {
+        this.googleAccessToken = googleAccessToken;
     }
 }

@@ -4,6 +4,7 @@ import com.storycut.domain.member.model.dto.MemberDto;
 import com.storycut.domain.member.service.MemberService;
 import com.storycut.global.model.dto.BaseResponse;
 import com.storycut.domain.auth.model.CustomUserDetails;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "멤버 API")
 public class MemberController {
 
     private final MemberService memberService;

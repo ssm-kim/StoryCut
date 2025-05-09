@@ -26,7 +26,7 @@ import java.util.List;
  * 공유방 관련 API 인터페이스
  */
 @RequestMapping("/api/room")
-@Tag(name = "Room", description = "공유방 API - MCP(Model Context Protocol)에 따라 설계됨")
+@Tag(name = "Room", description = "공유방 API ")
 public interface RoomAPI {
 
     /**

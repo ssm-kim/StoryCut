@@ -22,7 +22,7 @@ import java.util.List;
  * 비디오 관련 API 인터페이스
  */
 @RequestMapping("/api/video")
-@Tag(name = "Video", description = "비디오 관련 API")
+@Tag(name = "Video", description = "비디오 API")
 public interface VideoAPI {
 
     /**
