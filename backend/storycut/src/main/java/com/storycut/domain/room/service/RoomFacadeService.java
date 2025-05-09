@@ -2,6 +2,7 @@ package com.storycut.domain.room.service;
 
 import static com.storycut.global.model.dto.BaseResponseStatus.*;
 
+import com.storycut.domain.mediachat.service.ChatService;
 import com.storycut.domain.room.dto.request.RoomCreateRequest;
 import com.storycut.domain.room.dto.request.RoomUpdateRequest;
 import com.storycut.domain.room.dto.response.RoomMemberResponse;
@@ -31,6 +32,7 @@ public class RoomFacadeService implements RoomService {
     private final RoomDetailService roomDetailService;
     private final RoomMemberService roomMemberService;
     private final RoomInviteService roomInviteService;
+    private final ChatService chatService;
     
 
     @Override
@@ -84,6 +86,9 @@ public class RoomFacadeService implements RoomService {
     public void deleteRoom(Long memberId, Long roomId) {
         // 방장 권한 확인과 함께 공유방 조회
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
+        
+        // MongoDB에서 채팅 로그 삭제
+        chatService.deleteRoomMessages(roomId);
         
         // 공유방 삭제 (cascade로 멤버도 함께 삭제됨)
         roomDetailService.deleteRoom(room);
@@ -147,8 +152,13 @@ public class RoomFacadeService implements RoomService {
                     .toList();
             
             if (remainingMembers.isEmpty() && Objects.equals(room.getHostId(), memberId)) {
-                // 남은 멤버가 없으면 방 삭제
+                // 남은 멤버가 없으면 방과 관련 데이터 삭제
                 log.info("방장 {}가 방을 삭제합니다.", memberId);
+                
+                // MongoDB에서 채팅 로그 삭제
+                chatService.deleteRoomMessages(roomId);
+                
+                // 공유방 삭제
                 roomDetailService.deleteRoom(room);
                 return;
             } else {
