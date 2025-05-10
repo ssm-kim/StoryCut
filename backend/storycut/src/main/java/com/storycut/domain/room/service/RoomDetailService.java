@@ -48,7 +48,7 @@ public class RoomDetailService {
 
     @Transactional
     public void updateRoom(Room room, String title, String password, String context) {
-        room.updateRoom(title, password, context);
+        room.updateRoom(title, password, context);// 엔티티끌어쓰고
     }
     
 
