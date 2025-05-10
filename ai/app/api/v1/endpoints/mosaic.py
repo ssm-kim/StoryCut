@@ -7,7 +7,7 @@ router = APIRouter()
 @router.post("/process-video/", response_model=ProcessedVideoResponse)
 async def process_video_from_json(request: MosaicRequest):
     try:
-        output_path = run_mosaic_pipeline(
+        output_path = await run_mosaic_pipeline(
             input_path=request.original_video_url,
             target_paths=request.images[:2],
             detect_interval=5,

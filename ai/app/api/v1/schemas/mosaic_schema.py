@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-# 요청 스키마
 class MosaicRequest(BaseModel):
     original_video_url: str = Field(..., alias="originalVideoUrl", example="app/videos/sample.mp4")
     images: List[str] = Field(..., example=[
@@ -21,7 +20,6 @@ class MosaicRequest(BaseModel):
             }
         }
 
-# 응답 result 구조
 class ProcessedVideoResult(BaseModel):
     video_url: str = Field(..., alias="videoUrl", example="https://your-bucket.s3.ap-northeast-2.amazonaws.com/videos/abc123_video.mp4")
 
