@@ -1,10 +1,7 @@
 import os
 import logging
 from fastapi import APIRouter, Header, HTTPException
-from app.api.v1.services.upload_service import (
-    generate_and_upload_thumbnail,
-    save_uploaded_video
-)
+from app.api.v1.services.upload_service import generate_and_upload_thumbnail, save_uploaded_video
 from app.api.v1.schemas.post_schema import PostRequest
 from app.api.v1.services.springboot_service import post_video_to_springboot
 from app.api.v1.schemas.video_schema import VideoPostResponse, VideoProcessRequest
@@ -21,7 +18,7 @@ async def process_video(
     request: VideoProcessRequest,
     authorization: str = Header(...)
 ):
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ","")
     try:
         logger.info("영상 처리 시작")
 

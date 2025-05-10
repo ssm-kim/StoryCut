@@ -9,7 +9,6 @@ from typing import List
 from functools import partial
 from fastapi import UploadFile
 from app.core.config import settings
-
 # 디렉토리 생성
 UPLOAD_DIR = "app/images"
 VIDEO_DIR = "app/videos"

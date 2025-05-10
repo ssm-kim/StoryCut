@@ -24,7 +24,7 @@ class VideoPostResponse(BaseModel):
             "example": {
                 "isSuccess": True,
                 "code": 200,
-                "message": "🎬 영상 처리 완료",
+                "message": "영상 처리 완료",
                 "result": {
                     "videoId": 1,
                     "memberId": 1,
@@ -33,7 +33,8 @@ class VideoPostResponse(BaseModel):
                     "thumbnail": "https://example.com/thumbnail.jpg",
                     "originalVideoId": None,
                     "createdAt": "2025-05-02T08:54:00.000Z",
-                    "updatedAt": "2025-05-02T08:54:00.000Z"
+                    "updatedAt": "2025-05-02T08:54:00.000Z",
+                    "isBlur":True
                 }
             }
         }

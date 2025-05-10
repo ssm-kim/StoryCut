@@ -6,10 +6,14 @@ import re
 import cv2
 import uuid
 import aiofiles
+import logging
 from typing import Tuple
 
 base_dir = "app/videos"
 os.makedirs(base_dir, exist_ok=True)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def get_video_resolution(video_path: str) -> Tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
@@ -30,6 +34,15 @@ def run_ffmpeg_command_sync(cmd: list):
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg 명령어 실패: {' '.join(cmd)}")
 
+def has_audio_stream(video_path: str) -> bool:
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    return bool(result.stdout.strip())
+
 async def subtitles(video_path: str) -> str:
     uid = uuid.uuid4().hex
     audio_path = os.path.join(base_dir, f"{uid}_temp_audio.wav")
@@ -40,6 +53,13 @@ async def subtitles(video_path: str) -> str:
     whisper_model = None
 
     try:
+        if not has_audio_stream(video_path):
+            logger.info("🔇 오디오 트랙이 없어 자막 생성을 생략합니다.")
+            run_ffmpeg_command_sync([
+                "ffmpeg", "-y", "-i", video_path, "-c", "copy", output_path
+            ])
+            return output_path
+
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA 사용 불가. GPU 설정을 확인하세요.")
 
@@ -103,11 +123,11 @@ async def subtitles(video_path: str) -> str:
                 del whisper_model
                 torch.cuda.empty_cache()
         except Exception as e:
-            print(f"모델 해제 중 오류: {e}")
+            logger.warning(f"모델 해제 중 오류: {e}")
 
         for path in [audio_path, ass_path]:
             try:
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
-                print(f"임시 파일 삭제 중 오류: {e}")
+                logger.warning(f"임시 파일 삭제 중 오류: {e}")

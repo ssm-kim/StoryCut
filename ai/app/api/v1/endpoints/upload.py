@@ -11,8 +11,8 @@ from app.api.v1.services.upload_service import (
 )
 from app.api.v1.services.springboot_service import post_video_to_springboot
 from app.api.v1.schemas.upload_schema import (
-    ImageUploadResponse, VideoUploadResponse, ErrorResponse,
-    ImageUploadResult, VideoUploadResult
+    ImageUploadResponse, ErrorResponse,
+    ImageUploadResult,VideoUploadResponse
 )
 from app.api.v1.schemas.post_schema import PostRequest
 
@@ -63,7 +63,7 @@ async def upload_video(
             is_success=True,
             code=200,
             message="영상 업로드 성공",
-            result=VideoUploadResult(video_id=spring_response.result.video_id)
+            result=spring_response.result
         )
 
     except Exception as e:

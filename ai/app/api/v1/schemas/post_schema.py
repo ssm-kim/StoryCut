@@ -31,7 +31,7 @@ class PostResult(BaseModel):
     original_video_id: Optional[int] = Field(None, alias="originalVideoId")
     created_at: str = Field(..., alias="createdAt")
     updated_at: str = Field(..., alias="updatedAt")
-
+    is_blur: bool = Field(False, alias="isBlur")
     class Config:
         allow_population_by_field_name = True
         orm_mode = True
@@ -58,7 +58,8 @@ class PostResponse(BaseModel):
                     "thumbnail": "https://example.com/thumbnail.jpg",
                     "originalVideoId": None,
                     "createdAt": "2025-05-02T08:54:00.000Z",
-                    "updatedAt": "2025-05-02T08:54:00.000Z"
+                    "updatedAt": "2025-05-02T08:54:00.000Z",
+                    "is_blur":True
                 }
             }
         }
