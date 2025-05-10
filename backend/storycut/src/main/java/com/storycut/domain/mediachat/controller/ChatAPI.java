@@ -67,8 +67,8 @@ public interface ChatAPI {
     @GetMapping("/{roomId}")
     ResponseEntity<BaseResponse<List<ChatMessageResponse>>> getChatMessages(
             @Parameter(description = "메시지를 조회할 방 ID", required = true) @PathVariable Long roomId,
-            @Parameter(description = "페이지 번호 (0부터 시작)", required = false) @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지 크기", required = false) @RequestParam(defaultValue = "10") int size);
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size);
 
     /**
      * 단일 채팅 메시지 삭제 API
@@ -83,7 +83,7 @@ public interface ChatAPI {
             content = @Content(schema = @Schema(implementation = BaseResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
         @ApiResponse(responseCode = "403", description = "권한이 없습니다. (403)"),
-        @ApiResponse(responseCode = "404", description = "해당 메시지가 존재하지 않습니다. (404)")
+        @ApiResponse(responseCode = "404", description = "해당 메시지를 찾을 수 없습니다. (5000)")
     })
     @DeleteMapping("/{chatId}")
     ResponseEntity<BaseResponse<Boolean>> deleteMessage(

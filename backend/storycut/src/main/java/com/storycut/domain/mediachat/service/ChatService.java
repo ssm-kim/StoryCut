@@ -26,14 +26,6 @@ public interface ChatService {
     ChatMessageResponse saveVideoMessage(Long roomId, Long memberId, ChatMessageRequest request);
 
     /**
-     * Room의 모든 채팅 메시지를 조회합니다.
-     *
-     * @param roomId Room ID
-     * @return 채팅 메시지 목록
-     */
-    List<ChatMessageResponse> getRoomMessages(Long roomId);
-
-    /**
      * Room의 채팅 메시지를 페이징하여 조회합니다.
      *
      * @param roomId Room ID
@@ -62,20 +54,5 @@ public interface ChatService {
      * @return 삭제 성공 여부
      */
     boolean deleteMessage(String chatId, Long memberId);
-    
-    /**
-     * 방장인지 확인합니다.
-     *
-     * @param roomId Room ID
-     * @param memberId 멤버 ID
-     * @return 방장 여부
-     */
-    boolean isRoomOwner(Long roomId, Long memberId);
 
-    /**
-     * Room이 삭제될 때 해당 Room의 모든 채팅 메시지를 삭제합니다.
-     *
-     * @param roomId 삭제할 Room ID
-     */
-    void deleteRoomMessages(Long roomId);
 }
