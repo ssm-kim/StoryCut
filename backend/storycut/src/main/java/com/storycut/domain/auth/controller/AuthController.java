@@ -1,5 +1,6 @@
 package com.storycut.domain.auth.controller;
 
+import com.storycut.domain.auth.model.CustomUserDetails;
 import com.storycut.domain.auth.model.dto.GoogleLoginRequest;
 import com.storycut.domain.auth.model.dto.TokenDto;
 import com.storycut.domain.auth.model.dto.YouTubeAuthResponse;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -24,7 +26,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "토큰/로그인 인증 API")
+@Tag(name = "Authentication", description = "로그인, 토큰 관리, 로그아웃 API")
 public class AuthController {
 
     private final TokenService tokenService;
@@ -37,37 +39,48 @@ public class AuthController {
     @Value("${app.baseUrl}")
     private String baseUrl;
 
-    @Operation(summary = "구글 ID 토큰 로그인", description = "안드로이드 앱에서 Credential Manager로 획득한 구글 ID 토큰으로 로그인합니다.")
-    @PostMapping("/login")
-    public ResponseEntity<BaseResponse<TokenDto>> appLogin(@RequestBody GoogleLoginRequest request) {
-        log.info("앱 로그인 요청 - 클라이언트: 모바일, 인증 방식: 구글");
+    //==================================
+    // 구글 로그인 관련 API
+    //==================================
 
-        // ID 토큰 검증 및 JWT 토큰 발급
+    @Operation(summary = "구글 로그인 (모바일)", description = "모바일 앱에서 구글 ID 토큰으로 로그인합니다")
+    @PostMapping("/login")
+    public ResponseEntity<BaseResponse<TokenDto>> googleLogin(@RequestBody GoogleLoginRequest request) {
+        log.info("[구글 로그인] 모바일 앱 요청");
+
         TokenDto tokenDto = googleAuthService.processGoogleLogin(request.getIdToken());
         return ResponseEntity.ok(new BaseResponse<>(tokenDto));
     }
 
-    @Operation(summary = "유튜브 권한 요청 URL 생성", description = "유튜브 업로드 권한을 위한 인증 URL을 생성합니다.")
-    @GetMapping("/youtube/auth")
-    public ResponseEntity<BaseResponse<YouTubeAuthResponse>> getYouTubeAuthUrl(@RequestHeader("Authorization") String bearerToken) {
-        // Bearer 접두사 제거
-        String token = bearerToken.replace("Bearer ", "");
-        Long memberId = jwtUtil.getMemberId(token);
-        
-        log.info("유튜브 권한 요청 URL 생성 - 사용자 ID: {}", memberId);
-        
-        // 유튜브 권한 인증 URL 생성
-        YouTubeAuthResponse response = googleAuthService.generateYouTubeAuthUrl(memberId);
-        return ResponseEntity.ok(new BaseResponse<>(response));
+    @Operation(summary = "웹 로그인", description = "웹 환경에서 구글 로그인 페이지로 리다이렉트합니다")
+    @GetMapping("/web/login")
+    public void googleWebLogin(HttpServletResponse response) throws IOException {
+        log.info("[구글 로그인] 웹 요청 - OAuth 리다이렉트");
+        response.sendRedirect("/oauth2/authorization/google");
     }
 
-    @Operation(summary = "구글 OAuth2 콜백 처리", description = "구글 OAuth2 인증 후 콜백을 처리합니다.")
+    @Operation(summary = "테스트 로그인", description = "개발 환경에서만 사용 가능한 테스트 로그인")
+    @GetMapping("/test-login")
+    public ResponseEntity<BaseResponse<TokenDto>> testLogin() {
+        if (!devMode) {
+            return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.UNAUTHORIZED));
+        }
+        
+        log.info("[테스트 로그인] 개발 모드에서 테스트 계정 로그인");
+        TokenDto tokenDto = googleAuthService.processTestLogin();
+        return ResponseEntity.ok(new BaseResponse<>(tokenDto));
+    }
+
+    @Operation(summary = "OAuth2 콜백 처리", description = "구글 인증 후 리다이렉트되는 콜백을 처리합니다")
     @GetMapping("/oauth2/callback")
     public RedirectView handleOAuth2Callback(@RequestParam("code") String code, 
                                            @RequestParam("state") String state) {
+        log.info("[OAuth2 콜백] 인증 코드 수신 - state: {}", state);
+        
         // 상태 토큰 검증 및 사용자 ID 획득
         Long memberId = tokenService.validateAuthState(state);
         if (memberId == null) {
+            log.warn("[OAuth2 콜백] 유효하지 않은 상태 토큰: {}", state);
             return new RedirectView(baseUrl + "/auth/error?error=invalid_state");
         }
         
@@ -77,71 +90,75 @@ public class AuthController {
             
             // 토큰 교환 성공 후 상태 토큰 삭제
             tokenService.deleteAuthState(state);
+            log.info("[OAuth2 콜백] 토큰 교환 성공 - 사용자 ID: {}", memberId);
             
             // 딥링크를 통해 앱으로 리다이렉트
             return new RedirectView("storycut://auth/success?token=" + tokenDto.getGoogleAccessToken());
         } catch (Exception e) {
-            log.error("구글 OAuth2 토큰 교환 실패", e);
+            log.error("[OAuth2 콜백] 토큰 교환 실패", e);
             return new RedirectView(baseUrl + "/auth/error?error=token_exchange_failed");
         }
     }
 
-    @Operation(summary = "유튜브 권한 확인", description = "사용자가 유튜브 업로드 권한을 가지고 있는지 확인합니다.")
+    //==================================
+    // 유튜브 권한 관련 API
+    //==================================
+
+    @Operation(summary = "유튜브 권한 URL 생성", description = "유튜브 업로드 권한 획득을 위한 인증 URL을 생성합니다")
+    @GetMapping("/youtube/auth")
+    public ResponseEntity<BaseResponse<YouTubeAuthResponse>> getYouTubeAuthUrl(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        log.info("[유튜브 권한] URL 생성 요청 - 사용자 ID: {}", memberId);
+        
+        YouTubeAuthResponse response = googleAuthService.generateYouTubeAuthUrl(memberId);
+        return ResponseEntity.ok(new BaseResponse<>(response));
+    }
+
+    @Operation(summary = "유튜브 권한 확인", description = "사용자가 유튜브 업로드 권한을 가지고 있는지 확인합니다")
     @GetMapping("/youtube/status")
-    public ResponseEntity<BaseResponse<Boolean>> checkYouTubeAccess(@RequestHeader("Authorization") String bearerToken) {
-        // Bearer 접두사 제거
-        String token = bearerToken.replace("Bearer ", "");
-        Long memberId = jwtUtil.getMemberId(token);
+    public ResponseEntity<BaseResponse<Boolean>> checkYouTubeAccess(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        log.info("[유튜브 권한] 상태 확인 - 사용자 ID: {}", memberId);
         
         boolean hasAccess = googleAuthService.hasYouTubeAccess(memberId);
         return ResponseEntity.ok(new BaseResponse<>(hasAccess));
     }
 
-    @Operation(summary = "구글 액세스 토큰 갱신", description = "구글 액세스 토큰이 만료되었을 때 갱신합니다.")
+    //==================================
+    // 토큰 관리 API
+    //==================================
+
+    @Operation(summary = "구글 토큰 갱신", description = "만료된 구글 액세스 토큰을 갱신합니다")
     @PostMapping("/google-refresh")
-    public ResponseEntity<BaseResponse<TokenDto>> refreshGoogleToken(@RequestHeader("Authorization") String bearerToken) {
-        // Bearer 접두사 제거
-        String token = bearerToken.replace("Bearer ", "");
-        Long memberId = jwtUtil.getMemberId(token);
-        log.info("구글 액세스 토큰 갱신 요청 - 사용자 ID: {}", memberId);
+    public ResponseEntity<BaseResponse<TokenDto>> refreshGoogleToken(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        log.info("[토큰 갱신] 구글 액세스 토큰 갱신 - 사용자 ID: {}", memberId);
         
         TokenDto newGoogleTokenDto = googleAuthService.refreshGoogleAccessToken(memberId);
         return ResponseEntity.ok(new BaseResponse<>(newGoogleTokenDto));
     }
 
-    @Operation(summary = "JWT 토큰 갱신", description = "JWT 액세스 토큰이 만료되었을 때 리프레시 토큰으로 갱신합니다.")
+    @Operation(summary = "JWT 토큰 갱신", description = "만료된 JWT 액세스 토큰을 리프레시 토큰으로 갱신합니다")
     @PostMapping("/refresh")
-    public ResponseEntity<BaseResponse<TokenDto>> refreshToken(@RequestBody TokenDto tokenDto) {
+    public ResponseEntity<BaseResponse<TokenDto>> refreshJwtToken(@RequestBody TokenDto tokenDto) {
+        log.info("[토큰 갱신] JWT 액세스 토큰 갱신 요청");
+        
         TokenDto newTokenDto = tokenService.refreshAccessToken(tokenDto.getRefreshToken());
         return ResponseEntity.ok(new BaseResponse<>(newTokenDto));
     }
 
-    @Operation(summary = "로그아웃", description = "사용자 로그아웃을 처리합니다.")
+    //==================================
+    // 로그아웃 API
+    //==================================
+
+    @Operation(summary = "로그아웃", description = "사용자 로그아웃을 처리하고 토큰을 무효화합니다")
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<Void>> logout(@RequestHeader("Authorization") String bearerToken) {
-        String token = bearerToken.replace("Bearer ", "");
-        log.info("로그아웃 요청 - 사용자 ID: {}", jwtUtil.getMemberId(token));
+    public ResponseEntity<BaseResponse<Void>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getMemberId();
+        log.info("[로그아웃] 요청 - 사용자 ID: {}", memberId);
 
-        tokenService.logout(token);
+        tokenService.logout(memberId);
         return ResponseEntity.ok(new BaseResponse<>());
-    }
-
-    @Operation(summary = "웹 로그인 리다이렉트", description = "웹 환경에서 구글 OAuth 로그인으로 리다이렉트합니다.")
-    @GetMapping("/web/login")
-    public void webLogin(HttpServletResponse response) throws IOException {
-        log.info("웹 로그인 요청 - 리다이렉트: 구글 OAuth");
-        response.sendRedirect("/oauth2/authorization/google");
-    }
-    
-    @Operation(summary = "테스트 로그인", description = "개발 환경에서 테스트용 로그인을 처리합니다. (개발 모드에서만 사용 가능)")
-    @GetMapping("/test-login")
-    public ResponseEntity<BaseResponse<TokenDto>> testLogin() {
-        if (!devMode) {
-            return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.UNAUTHORIZED));
-        }
-        
-        log.info("테스트 로그인 요청");
-        TokenDto tokenDto = googleAuthService.processTestLogin();
-        return ResponseEntity.ok(new BaseResponse<>(tokenDto));
     }
 }
