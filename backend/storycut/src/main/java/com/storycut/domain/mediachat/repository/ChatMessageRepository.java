@@ -33,17 +33,17 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
      * @param pageable 페이징 정보
      * @return 해당 Room의 채팅 메시지 페이지
      */
-    Page<ChatMessage> findByRoomIdOrderByTimestampDesc(Long roomId, Pageable pageable);
+    Page<ChatMessage> findByRoomIdOrderByCreatedAtDesc(Long roomId, Pageable pageable);
 
 
     /**
      * Room ID로 특정 시간 이후의 채팅 메시지 목록을 조회합니다.
      *
      * @param roomId 조회할 Room ID
-     * @param timestamp 조회 시작 시간
+     * @param createdAt 조회 시작 시간
      * @return 해당 Room의 특정 시간 이후 채팅 메시지 목록
      */
-    List<ChatMessage> findByRoomIdAndTimestampAfterOrderByTimestampAsc(Long roomId, LocalDateTime timestamp);
+    List<ChatMessage> findByRoomIdAndCreatedAtAfterOrderByCreatedAtAsc(Long roomId, LocalDateTime createdAt);
 
     /**
      * Room ID로 채팅 메시지를 삭제합니다.
@@ -61,7 +61,7 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
      * @param pageable 페이징 정보
      * @return 해당 발신자의 채팅 메시지 페이지
      */
-    Page<ChatMessage> findByRoomIdAndSenderIdOrderByTimestampDesc(Long roomId, Long senderId, Pageable pageable);
+    Page<ChatMessage> findByRoomIdAndSenderIdOrderByCreatedAtDesc(Long roomId, Long senderId, Pageable pageable);
 
     /**
      * 키워드가 포함된 채팅 메시지 목록을 조회합니다.
@@ -71,5 +71,5 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
      * @param pageable 페이징 정보
      * @return 검색 결과 채팅 메시지 페이지
      */
-    Page<ChatMessage> findByRoomIdAndContentContainingOrderByTimestampDesc(Long roomId, String keyword, Pageable pageable);
+    Page<ChatMessage> findByRoomIdAndTitleContainingOrderByCreatedAtDesc(Long roomId, String keyword, Pageable pageable);
 }

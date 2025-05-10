@@ -24,7 +24,7 @@ public class ChatController implements ChatAPI {
 
     @Override
     public ResponseEntity<BaseResponse<ChatMessageResponse>> sendVideoMessage(
-            @AuthenticationPrincipal CustomUserDetails authUser,
+            CustomUserDetails authUser,
             Long roomId,
             ChatMessageRequest request) {
 
@@ -50,7 +50,7 @@ public class ChatController implements ChatAPI {
      */
     @Override
     public ResponseEntity<BaseResponse<Boolean>> deleteMessage(
-            @AuthenticationPrincipal CustomUserDetails authUser,
+            CustomUserDetails authUser,
             String chatId) {
 
         // 메시지 삭제 권한 체크 및 삭제 (방장 또는 작성자)

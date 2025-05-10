@@ -15,18 +15,12 @@ public class ChatMessageResponse {
     private String id;
     private Long roomId;
     private Long senderId;
-    private String senderNickname;
-    private String content;
-    private String messageType;
-    private String mediaUrl;
     // 비디오 관련 필드 추가
     private String videoId;
-    private String videoTitle;
+    private String title;
+    private String mediaUrl;
     private String thumbnailUrl;
-    private LocalDateTime timestamp;
-    private boolean deleted;
-    private Long deletedBy;
-    private LocalDateTime deletedAt;
+    private LocalDateTime createdAt;
 
     /**
      * ChatMessage 엔티티를 응답 DTO로 변환합니다.
@@ -39,17 +33,11 @@ public class ChatMessageResponse {
                 .id(chatMessage.getId())
                 .roomId(chatMessage.getRoomId())
                 .senderId(chatMessage.getSenderId())
-                .senderNickname(chatMessage.getSenderNickname())
-                .content(chatMessage.getContent())
-                .messageType(chatMessage.getMessageType().name())
-                .mediaUrl(chatMessage.getMediaUrl())
                 .videoId(chatMessage.getVideoId())
-                .videoTitle(chatMessage.getVideoTitle())
+                .title(chatMessage.getTitle())
+                .mediaUrl(chatMessage.getMediaUrl())
                 .thumbnailUrl(chatMessage.getThumbnailUrl())
-                .timestamp(chatMessage.getTimestamp())
-                .deleted(chatMessage.isDeleted())
-                .deletedBy(chatMessage.getDeletedBy())
-                .deletedAt(chatMessage.getDeletedAt())
+                .createdAt(chatMessage.getCreatedAt())
                 .build();
     }
 }
