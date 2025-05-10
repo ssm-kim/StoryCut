@@ -1,6 +1,7 @@
 package com.ssafy.storycut.di
 
 import android.content.Context
+import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
 import com.ssafy.storycut.data.api.service.VideoApiService
 import com.ssafy.storycut.data.local.datastore.TokenManager
@@ -23,7 +24,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = BuildConfig.BASE_URL
 
     @Provides
     @Singleton

@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.mypage
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,7 +58,7 @@ fun MyPageScreen(
     var showSettings by remember { mutableStateOf(false) }
     val createdAt = userInfo?.createdAt
     val postCount = videoList.size
-    
+
     // 날짜 포맷변환
     fun formatCreatedAt(createdAt: String?): String {
         if (createdAt.isNullOrEmpty()) return "정보 없음"
@@ -83,6 +85,7 @@ fun MyPageScreen(
         try {
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
+                Log.d("VideoViewModel","${token}")
                 myVideoViewModel.fetchMyVideos(token)
             }
         } catch (e: Exception) {
@@ -190,32 +193,63 @@ fun MyPageScreen(
             } else {
                 // 비디오 그리드 표시
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
+                    columns = GridCells.Fixed(2),  // 3에서 2로 열 수 감소 (세로로 길어질 것이므로 가로 공간 확보)
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(4.dp)
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),  // 세로 간격 증가
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(videoList.filter {
                         // 검색어가 비어있지 않으면 필터링, 비어있으면 모든 비디오 표시
                         searchQuery.isEmpty() ||
-                        it.videoName.contains(searchQuery, ignoreCase = true)
+                                it.videoName.contains(searchQuery, ignoreCase = true)
                     }) { video ->
                         Box(
                             modifier = Modifier
-                                .aspectRatio(1f)
-                                .padding(2.dp)
-                                .clip(MaterialTheme.shapes.small)
+                                .fillMaxWidth()
+                                // 9:16 비율로 변경 (9/16 = 0.5625)
+                                .aspectRatio(9f/16f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
                                     // 비디오 상세 페이지로 이동
                                     navController?.navigate("video_detail/${video.videoId}")
                                 }
                         ) {
+                            // 썸네일 이미지
                             AsyncImage(
                                 model = video.thumbnail,
                                 contentDescription = video.videoName,
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,  // 이미지 비율 유지하며 채우기
+                                contentScale = ContentScale.Crop,
                                 error = painterResource(id = R.drawable.ic_launcher_foreground)
                             )
+
+                            // 비디오 정보를 표시하는 오버레이 추가
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp, horizontal = 10.dp)
+                            ) {
+                                Text(
+                                    text = video.videoName,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,  // 글자 굵게 설정
+                                        shadow = Shadow(  // 텍스트 그림자 추가
+                                            color = Color.Black,
+                                            blurRadius = 4f,
+                                            offset = androidx.compose.ui.geometry.Offset(1f, 1f)
+                                        )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Start,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
                         }
                     }
                 }

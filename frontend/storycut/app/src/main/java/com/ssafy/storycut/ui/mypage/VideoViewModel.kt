@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.mypage
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.VideoListDto
@@ -29,11 +30,11 @@ class VideoViewModel @Inject constructor(
                 } else {
                     // 에러 처리 - 로그 추가
                     val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                    println("비디오 목록 가져오기 실패: $errorMsg")
+                    Log.d("VideoViewModel", "비디오 목록 가져오기 실패 : ${errorMsg}")
                 }
             } catch (e: Exception) {
                 // 예외 처리 - 로그 추가
-                println("비디오 목록 가져오기 중 예외 발생: ${e.message}")
+                Log.d("VideoViewModel", "비디오 목록 가져오기 에러 : ${e.message}")
             }
         }
     }
