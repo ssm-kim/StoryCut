@@ -45,7 +45,8 @@ public class AuthController {
 
     @Operation(summary = "구글 로그인 (모바일)", description = "모바일 앱에서 구글 ID 토큰으로 로그인합니다")
     @PostMapping("/login")
-    public ResponseEntity<BaseResponse<TokenDto>> googleLogin(@RequestBody GoogleLoginRequest request) {
+    public ResponseEntity<BaseResponse<TokenDto>> googleLogin(
+        @RequestBody GoogleLoginRequest request) {
         log.info("[구글 로그인] 모바일 앱 요청");
 
         TokenDto tokenDto = googleAuthService.processGoogleLogin(request.getIdToken());
@@ -54,7 +55,8 @@ public class AuthController {
 
     @Operation(summary = "웹 로그인", description = "웹 환경에서 구글 로그인 페이지로 리다이렉트합니다")
     @GetMapping("/web/login")
-    public void googleWebLogin(HttpServletResponse response) throws IOException {
+    public void googleWebLogin(
+        HttpServletResponse response) throws IOException {
         log.info("[구글 로그인] 웹 요청 - OAuth 리다이렉트");
         response.sendRedirect("/oauth2/authorization/google");
     }
@@ -73,8 +75,9 @@ public class AuthController {
 
     @Operation(summary = "OAuth2 콜백 처리", description = "구글 인증 후 리다이렉트되는 콜백을 처리합니다")
     @GetMapping("/oauth2/callback")
-    public RedirectView handleOAuth2Callback(@RequestParam("code") String code, 
-                                           @RequestParam("state") String state) {
+    public RedirectView handleOAuth2Callback(
+        @RequestParam("code") String code,
+        @RequestParam("state") String state) {
         log.info("[OAuth2 콜백] 인증 코드 수신 - state: {}", state);
         
         // 상태 토큰 검증 및 사용자 ID 획득
@@ -117,7 +120,8 @@ public class AuthController {
 
     @Operation(summary = "유튜브 권한 확인", description = "사용자가 유튜브 업로드 권한을 가지고 있는지 확인합니다")
     @GetMapping("/youtube/status")
-    public ResponseEntity<BaseResponse<Boolean>> checkYouTubeAccess(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<BaseResponse<Boolean>> checkYouTubeAccess(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
         log.info("[유튜브 권한] 상태 확인 - 사용자 ID: {}", memberId);
         
@@ -131,7 +135,8 @@ public class AuthController {
 
     @Operation(summary = "구글 토큰 갱신", description = "만료된 구글 액세스 토큰을 갱신합니다")
     @PostMapping("/google-refresh")
-    public ResponseEntity<BaseResponse<TokenDto>> refreshGoogleToken(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<BaseResponse<TokenDto>> refreshGoogleToken(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
         log.info("[토큰 갱신] 구글 액세스 토큰 갱신 - 사용자 ID: {}", memberId);
         
@@ -141,7 +146,8 @@ public class AuthController {
 
     @Operation(summary = "JWT 토큰 갱신", description = "만료된 JWT 액세스 토큰을 리프레시 토큰으로 갱신합니다")
     @PostMapping("/refresh")
-    public ResponseEntity<BaseResponse<TokenDto>> refreshJwtToken(@RequestBody TokenDto tokenDto) {
+    public ResponseEntity<BaseResponse<TokenDto>> refreshJwtToken(
+        @RequestBody TokenDto tokenDto) {
         log.info("[토큰 갱신] JWT 액세스 토큰 갱신 요청");
         
         TokenDto newTokenDto = tokenService.refreshAccessToken(tokenDto.getRefreshToken());
@@ -154,7 +160,8 @@ public class AuthController {
 
     @Operation(summary = "로그아웃", description = "사용자 로그아웃을 처리하고 토큰을 무효화합니다")
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<Void>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<BaseResponse<Void>> logout(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getMemberId();
         log.info("[로그아웃] 요청 - 사용자 ID: {}", memberId);
 
