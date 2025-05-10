@@ -37,6 +37,6 @@ public class ChatMessage {
     private String mediaUrl;
 
     private String thumbnailUrl;
-
+    
     private LocalDateTime createdAt;
 }
