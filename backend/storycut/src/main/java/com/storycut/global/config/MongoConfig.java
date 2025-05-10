@@ -14,7 +14,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
  * </p>
  */
 @Configuration
-@EnableMongoRepositories(basePackages = "com.storycut.domain.room.repository")
+@EnableMongoRepositories(basePackages = {"com.storycut.domain.room.repository", "com.storycut.domain.mediachat.repository"})
 @EnableMongoAuditing
 public class MongoConfig {
 
