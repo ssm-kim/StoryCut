@@ -11,8 +11,10 @@ import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService
 import com.ssafy.storycut.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -39,6 +41,14 @@ class AuthViewModel @Inject constructor(
     // 사용자 정보 상태
     private val _userState = MutableStateFlow<UserInfo?>(null)
     val userState: StateFlow<UserInfo?> = _userState.asStateFlow()
+
+    private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
+    val navigationEvent = _navigationEvent.asSharedFlow()
+
+    // 네비게이션 이벤트 타입 정의
+    sealed class NavigationEvent {
+        object NavigateToLogin : NavigationEvent()
+    }
 
     // 초기화 시 Room DB에서 사용자 정보와 토큰 유효성 확인
     init {
@@ -83,16 +93,15 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
-    
     // 토큰 유효성 확인 - 스플래시에서 호출할 수 있도록 public으로 변경
     fun checkTokenValidity() {
         viewModelScope.launch {
             try {
                 val accessToken = tokenManager.accessToken.first()
-                
+
                 if (!accessToken.isNullOrEmpty()) {
                     Log.d(TAG, "액세스 토큰 발견, 유효성 확인")
-                    
+
                     // 백그라운드에서 서버 정보 갱신 시도 (UI 영향 없이)
                     try {
                         val serverUserInfo = authRepository.getUserInfo()
@@ -105,7 +114,7 @@ class AuthViewModel @Inject constructor(
                     } catch (e: Exception) {
                         // 토큰이 만료되었거나 서버 오류일 수 있음
                         Log.e(TAG, "액세스 토큰으로 서버 접근 실패, 리프레시 토큰 확인", e)
-                        
+
                         // 리프레시 토큰 확인
                         val refreshToken = tokenManager.refreshToken.first()
                         if (!refreshToken.isNullOrEmpty()) {
@@ -113,7 +122,7 @@ class AuthViewModel @Inject constructor(
                                 val newTokens = authRepository.refreshAccessToken()
                                 if (newTokens != null) {
                                     Log.d(TAG, "토큰 갱신 성공")
-                                    
+
                                     // 토큰이 갱신되었으므로 서버에서 사용자 정보 다시 가져오기
                                     val userInfo = authRepository.getUserInfo()
                                     if (userInfo != null) {
@@ -127,10 +136,16 @@ class AuthViewModel @Inject constructor(
                             }
                         }
                     }
+                } else {
+                    // 액세스 토큰이 없는 경우
+                    Log.d(TAG, "액세스 토큰 없음, 로그인 필요")
+                    // 사용자 상태를 null로 설정하여 로그인 필요함을 표시
+                    _userState.value = null
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "토큰 체크 과정에서 오류 발생", e)
-                // userState는 로컬 DB의 정보로 유지
+                // 오류 발생 시 사용자 상태를 null로 설정
+                _userState.value = null
             }
         }
     }
@@ -289,37 +304,43 @@ class AuthViewModel @Inject constructor(
                 // TokenManager에서 먼저 토큰 삭제
                 tokenManager.clearTokens()
                 Log.d(TAG, "로그아웃: TokenManager에서 토큰 삭제 성공")
-                
+
                 // Room DB에서 사용자 정보 삭제
                 userRepository.logout()
                 Log.d(TAG, "로그아웃: Room DB에서 사용자 정보 삭제 성공")
-                
+
                 // 상태 초기화
                 _userState.value = null
                 _tokenState.value = null
                 _uiState.value = AuthUiState.Initial
-                
-                Log.d(TAG, "로그아웃 완료: 모든 상태 갱신 완료")
+
+                // 로그인 화면으로 이동하는 이벤트 발생
+                _navigationEvent.emit(NavigationEvent.NavigateToLogin)
+
+                Log.d(TAG, "로그아웃 완료: 모든 상태 갱신 및 네비게이션 이벤트 발생")
             } catch (e: Exception) {
                 Log.e(TAG, "로그아웃 중 오류 발생", e)
-                
+
                 // 오류가 발생해도 사용자 상태는 null로 강제 설정
                 _userState.value = null
                 _tokenState.value = null
                 _uiState.value = AuthUiState.Initial
-                
+
                 // 개별 실패 시도
                 try {
                     tokenManager.clearTokens()
                 } catch (tokenEx: Exception) {
                     Log.e(TAG, "토큰 삭제 중 오류", tokenEx)
                 }
-                
+
                 try {
                     userRepository.logout()
                 } catch (userEx: Exception) {
                     Log.e(TAG, "사용자 정보 삭제 중 오류", userEx)
                 }
+
+                // 오류가 발생해도 로그인 화면으로 이동하는 이벤트 발생
+                _navigationEvent.emit(NavigationEvent.NavigateToLogin)
             }
         }
     }

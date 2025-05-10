@@ -13,25 +13,25 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 @Composable
 fun AnimatedSettingsNavigation(
     authViewModel: AuthViewModel = hiltViewModel(),
-    navController: NavController,
     isVisible: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onNavigateToLogin: () -> Unit = {} // 올바른 람다 함수 기본값
 ) {
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInHorizontally(
-            initialOffsetX = { fullWidth -> fullWidth }, // 오른쪽에서 시작
-            animationSpec = tween(durationMillis = 300) // 애니메이션 시간
+            initialOffsetX = { fullWidth -> fullWidth },
+            animationSpec = tween(durationMillis = 300)
         ),
         exit = slideOutHorizontally(
-            targetOffsetX = { fullWidth -> fullWidth }, // 오른쪽으로 사라짐
+            targetOffsetX = { fullWidth -> fullWidth },
             animationSpec = tween(durationMillis = 300)
         )
     ) {
         SettingsScreen(
-            navController = navController,
             authViewModel = authViewModel,
-            onBackPressed = onDismiss
+            onBackPressed = onDismiss,
+            onNavigateToLogin = onNavigateToLogin // 콜백 전달
         )
     }
 }

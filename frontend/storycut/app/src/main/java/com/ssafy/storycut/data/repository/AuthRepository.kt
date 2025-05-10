@@ -59,6 +59,9 @@ class AuthRepository @Inject constructor(
                             val accessToken = result.accessToken
                             val refreshToken = result.refreshToken
 
+                            Log.d("mine", accessToken)
+                            Log.d("mine", refreshToken)
+
                             // 토큰 저장
                             tokenManager.saveTokens(accessToken, refreshToken)
 
@@ -198,6 +201,7 @@ class AuthRepository @Inject constructor(
             try {
                 // 저장된 토큰 가져오기
                 val token = tokenManager.accessToken.first()
+
                 if (token.isNullOrEmpty()) {
                     Log.e(TAG, "토큰이 없습니다.")
                     return@withContext null

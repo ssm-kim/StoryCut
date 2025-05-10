@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.settings
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -24,11 +26,22 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    navController: NavController,
     authViewModel: AuthViewModel = hiltViewModel(),
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(authViewModel) {
+        authViewModel.navigationEvent.collect { event ->
+            when (event) {
+                is AuthViewModel.NavigationEvent.NavigateToLogin -> {
+                    Log.d("SettingsScreen", "로그인 화면으로 이동 이벤트 수신")
+                    onNavigateToLogin() // 콜백 호출
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -52,7 +65,7 @@ fun SettingsScreen(
                 .verticalScroll(scrollState)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // 설정 항목 목록 - 일반 항목
             SettingItem(
                 title = "계정 정보 확인 및 변경",
@@ -60,40 +73,30 @@ fun SettingsScreen(
                 onClick = { /* 계정 정보 화면으로 이동 */ },
                 showDivider = true
             )
-            
-            // API 키 등록 (ImageVector 대신 리소스 ID 사용)
-            SettingItemWithResourceIcon(
-                title = "API 키 등록",
-                iconResId = R.drawable.setting_key, // 임시로 기본 아이콘 사용
-                onClick = { /* API 키 등록 화면으로 이동 */ },
-                showDivider = true
-            )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // 로그아웃 (ImageVector 대신 리소스 ID 사용)
+
+            // 로그아웃 항목 - 이벤트 방식으로 처리
             SettingItemWithResourceIcon(
                 title = "로그아웃",
-                iconResId = R.drawable.setting_logout, // 임시로 기본 아이콘 사용
+                iconResId = R.drawable.setting_logout,
                 onClick = {
+                    // 로그아웃 함수 호출 후 네비게이션은 이벤트를 통해 처리
                     authViewModel.logout()
-                    navController.navigate("login") {
-                        popUpTo("main") { inclusive = true }
-                    }
                 },
                 isWarning = true,
                 showDivider = true
             )
-            
+
             // 회원탈퇴 (ImageVector 대신 리소스 ID 사용)
             SettingItemWithResourceIcon(
                 title = "회원탈퇴",
-                iconResId = R.drawable.setting_delete, // 임시로 기본 아이콘 사용
+                iconResId = R.drawable.setting_delete,
                 onClick = { /* 회원탈퇴 확인 다이얼로그 표시 */ },
                 isWarning = true,
                 showDivider = false
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -112,7 +115,7 @@ fun SettingItem(
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,9 +133,9 @@ fun SettingItem(
                 tint = textColor,
                 modifier = Modifier.size(24.dp)
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
@@ -140,7 +143,7 @@ fun SettingItem(
                 color = textColor
             )
         }
-        
+
         if (!isWarning) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -149,7 +152,7 @@ fun SettingItem(
             )
         }
     }
-    
+
     if (showDivider) {
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),
@@ -171,7 +174,7 @@ fun SettingItemWithResourceIcon(
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,9 +192,9 @@ fun SettingItemWithResourceIcon(
                 tint = textColor,
                 modifier = Modifier.size(24.dp)
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
@@ -199,7 +202,7 @@ fun SettingItemWithResourceIcon(
                 color = textColor
             )
         }
-        
+
         if (!isWarning) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -208,7 +211,7 @@ fun SettingItemWithResourceIcon(
             )
         }
     }
-    
+
     if (showDivider) {
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),

@@ -1,8 +1,12 @@
-package com.ssafy.storycut.ui.main
+package com.ssafy.storycut.ui.navigation
 
-import ShortsScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -11,27 +15,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
-import com.ssafy.storycut.ui.edit.EditScreen
-import com.ssafy.storycut.ui.home.HomeScreen
-import com.ssafy.storycut.ui.mypage.MyPageScreen
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @Composable
 fun MainScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
-    tokenManager: TokenManager
+    tokenManager: TokenManager,
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    
+
     // 내비게이션 아이템 리스트
     val items = listOf(
         BottomNavItem.Home,
@@ -39,11 +38,11 @@ fun MainScreen(
         BottomNavItem.Shorts,
         BottomNavItem.MyPage
     )
-    
+
     // 현재 선택된 탭 정보 가져오기
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
+
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -55,16 +54,8 @@ fun MainScreen(
                         onClick = {
                             // 현재 선택된 아이템이 아닌 경우에만 네비게이션 처리
                             if (currentRoute != item.route) {
-                                navController.navigate(item.route) {
-                                    // 네비게이션 컨트롤러의 스택을 초기화하여 백 스택 관리
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    // 같은 아이템을 여러 번 클릭했을 때 같은 화면의 여러 인스턴스가 쌓이는 것을 방지
-                                    launchSingleTop = true
-                                    // 이전 상태를 복원
-                                    restoreState = true
-                                }
+                                // navigateToMainTab 함수 사용
+                                navController.navigateToMainTab(item.route)
                             }
                         }
                     )
@@ -76,27 +67,52 @@ fun MainScreen(
         Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = BottomNavItem.Home.route // 시작 화면을 홈으로 변경
+                startDestination = Navigation.Main.HOME
             ) {
-                // 각 화면에 대한 컴포저블 정의
-                composable(BottomNavItem.Home.route) {
-                    HomeScreen()
-                }
-                composable(BottomNavItem.Edit.route) {
-                    EditScreen()
-                }
-                composable(BottomNavItem.Shorts.route) {
-                    ShortsScreen()
-                }
-                composable(BottomNavItem.MyPage.route) {
-                    // 마이페이지에 MainScreen에서 받은 AuthViewModel과 NavController 전달
-                    MyPageScreen(
-                        authViewModel = authViewModel,
-                        navController = navController,
-                        tokenManager = tokenManager
-                    )
-                }
+                mainGraph(
+                    navController = navController,
+                    authViewModel = authViewModel,
+                    tokenManager = tokenManager,
+                    onNavigateToLogin = onNavigateToLogin
+                )
             }
         }
     }
+}
+
+/**
+ * 하단 내비게이션 바의 아이템을 정의하는 클래스
+ */
+sealed class BottomNavItem(
+    val route: String,
+    val title: String,
+    val icon: ImageVector
+) {
+    // 홈 화면 아이템
+    object Home : BottomNavItem(
+        route = Navigation.Main.HOME,
+        title = "홈",
+        icon = Icons.Default.Home
+    )
+
+    // 영상 편집 아이템
+    object Edit : BottomNavItem(
+        route = Navigation.Main.EDIT,
+        title = "영상편집",
+        icon = Icons.Default.List
+    )
+
+    // 쇼츠 업로드 아이템
+    object Shorts : BottomNavItem(
+        route = Navigation.Main.SHORTS_UPLOAD,
+        title = "쇼츠 업로드",
+        icon = Icons.Default.Create
+    )
+
+    // 마이페이지 아이템
+    object MyPage : BottomNavItem(
+        route = Navigation.Main.MYPAGE,
+        title = "마이페이지",
+        icon = Icons.Default.Person
+    )
 }

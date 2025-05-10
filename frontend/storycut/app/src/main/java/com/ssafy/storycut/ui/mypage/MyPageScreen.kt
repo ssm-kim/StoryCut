@@ -46,7 +46,8 @@ fun MyPageScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     myVideoViewModel: VideoViewModel = hiltViewModel(),
     navController: NavController? = null,
-    tokenManager: TokenManager
+    tokenManager: TokenManager,
+    onNavigateToLogin: () -> Unit = {} // 올바른 람다 함수 기본값
 ) {
     val userInfo by authViewModel.userState.collectAsState()
     val videoList by myVideoViewModel.myVideos.collectAsState()
@@ -230,9 +231,9 @@ fun MyPageScreen(
             ) {
                 AnimatedSettingsNavigation(
                     authViewModel = authViewModel,
-                    navController = navController,
                     isVisible = showSettings,
-                    onDismiss = { showSettings = false }
+                    onDismiss = { showSettings = false },
+                    onNavigateToLogin = onNavigateToLogin
                 )
             }
         }
