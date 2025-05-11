@@ -10,11 +10,16 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 private const val BASE_URL = BuildConfig.BASE_URL
+private const val AI_URL = BuildConfig.AI_URL
 
 object RetrofitClient {
     // 로깅 인터셉터 설정 - 개발 빌드에서만 BODY 레벨, 릴리스에서는 NONE
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.NONE
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     // OkHttpClient 설정
@@ -25,18 +30,32 @@ object RetrofitClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    // Gson 인스턴스 생성 (lenient 모드 활성화)
     private val gson = GsonBuilder()
-        .setLenient() // 잘못된 JSON 형식 처리를 위한 설정
+        .setLenient()
+        .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
         .create()
 
-    // Retrofit 인스턴스 생성
-    val authService: AuthApiService by lazy {
+    // Retrofit 인스턴스 생성 (공통)
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(gson)) // 커스텀 Gson 인스턴스 사용
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
-            .create(AuthApiService::class.java)
     }
+
+    // 두 번째 서버를 위한 Retrofit 인스턴스
+    private val secondRetrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(AI_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+    }
+
+    // AuthApiService 인스턴스
+    val authService: AuthApiService by lazy {
+        retrofit.create(AuthApiService::class.java)
+    }
+
 }

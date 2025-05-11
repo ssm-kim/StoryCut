@@ -7,6 +7,6 @@ data class VideoDto(
     val videoUrl: String,
     val thumbnail: String,
     val originalVideoId: Long,
-    val createdAt: String, // ISO 형식 (String → 필요시 LocalDateTime으로 파싱)
+    val createdAt: String,
     val updatedAt: String
 )

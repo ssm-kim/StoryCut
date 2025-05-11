@@ -26,6 +26,7 @@ if (localPropertiesFile.exists()) {
 // local.properties에서 특정 값 가져오기
 val sdkDir = localProperties.getProperty("sdk.dir") ?: ""
 val BASE_URL = localProperties.getProperty("BASE_URL") ?: ""
+val AI_URL = localProperties.getProperty("AI_URL") ?: ""
 val WEB_CLIENT_ID = localProperties.getProperty("WEB_CLIENT_ID") ?: ""
 
 android {
@@ -41,6 +42,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BASE_URL", "\"$BASE_URL\"")
+        buildConfigField("String", "AI_URL", "\"$AI_URL\"")
         buildConfigField("String", "WEB_CLIENT_ID", "\"$WEB_CLIENT_ID\"")
     }
 

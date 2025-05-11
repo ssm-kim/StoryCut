@@ -17,4 +17,9 @@ class VideoRepository @Inject constructor(
     suspend fun getVideoDetail(videoId: String, token: String): Response<BaseResponse<VideoDto>> {
         return videoApiService.getMyVideo(videoId, "Bearer $token")
     }
+    
+    // 공유방 비디오 호출
+    suspend fun getRoomVideos(roomId: String, token: String): Response<BaseResponse<List<VideoDto>>> {
+        return videoApiService.getRoomVideos(roomId, "Bearer $token")
+    }
 }

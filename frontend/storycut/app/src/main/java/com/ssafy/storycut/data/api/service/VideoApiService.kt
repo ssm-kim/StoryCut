@@ -17,4 +17,6 @@ interface VideoApiService {
     suspend fun getMyVideo(@Path("videoId") videoId: String, @Header("Authorization") token: String
     ): Response<BaseResponse<VideoDto>>
 
+    @GET("/api/video/room/{roomId}")
+    suspend fun getRoomVideos(@Path("roomId") roomId: String, @Header("Authorization") token: String): Response<BaseResponse<List<VideoDto>>>
 }

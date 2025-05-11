@@ -15,6 +15,7 @@ import ShortsScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
+import com.ssafy.storycut.ui.room.RoomDetailScreen
 
 /**
  * 메인 화면의 네비게이션 그래프를 확장 함수로 정의
@@ -26,7 +27,11 @@ fun NavGraphBuilder.mainGraph(
     onNavigateToLogin: () -> Unit
 ) {
     composable(Navigation.Main.HOME) {
-        HomeScreen()
+        HomeScreen(
+            onRoomClick = { roomId ->
+                navController.navigate("room_detail/$roomId")
+            }
+        )
     }
 
     composable(Navigation.Main.EDIT) {
@@ -59,12 +64,12 @@ fun NavGraphBuilder.mainGraph(
     }
 
     composable(
-        route = "video_detail/{videoId}",
-        arguments = listOf(navArgument("videoId") { type = NavType.StringType })
+        route = "room_detail/{roomId}",
+        arguments = listOf(navArgument("roomId") { type = NavType.StringType })
     ) { backStackEntry ->
-        val videoId = backStackEntry.arguments?.getString("videoId") ?: ""
-        VideoDetailScreen(
-            videoId = videoId,
+        val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+        RoomDetailScreen(
+            roomId = roomId,
             navController = navController,
             tokenManager = tokenManager
         )

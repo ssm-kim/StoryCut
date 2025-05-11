@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class VideoViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
@@ -44,12 +44,25 @@ class VideoViewModel @Inject constructor(
     private val _error = MutableLiveData<String>()
     val error: LiveData<String> = _error
 
+    // 새로 생성된 방 ID (추가된 부분)
+    private val _createdRoomId = MutableLiveData<String>()
+    val createdRoomId: LiveData<String> = _createdRoomId
+
+    // 새로 입장한 방 ID (추가된 부분)
+    private val _enteredRoomId = MutableLiveData<String>()
+    val enteredRoomId: LiveData<String> = _enteredRoomId
+
     // 내 공유방 목록 조회
     fun getMyRooms() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.getMyRooms(token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -70,13 +83,20 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.createRoom(request, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     response.body()?.result?.let {
                         // 새 공유방이 생성되면 목록 다시 불러오기
                         getMyRooms()
+                        // 생성된 방의 ID 설정 (추가된 부분)
+                        _createdRoomId.value = it.roomId.toString()
                     }
                 } else {
                     _error.value = response.body()?.message ?: "공유방 생성에 실패했습니다."
@@ -89,12 +109,27 @@ class VideoViewModel @Inject constructor(
         }
     }
 
+    // 생성된 방 ID 초기화 (추가된 부분)
+    fun clearCreatedRoomId() {
+        _createdRoomId.value = ""
+    }
+
+    // 입장한 방 ID 초기화 (추가된 부분)
+    fun clearEnteredRoomId() {
+        _enteredRoomId.value = ""
+    }
+
     // 공유방 상세 정보 조회
     fun getRoomDetail(roomId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.getRoomDetail(roomId, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -117,7 +152,12 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.getRoomMembers(roomId, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -138,7 +178,12 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.createInviteCode(roomId, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -161,12 +206,21 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.enterRoom(inviteCode, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     // 공유방 입장 후 목록 다시 불러오기
                     getMyRooms()
+                    // 입장한 방의 ID 설정 (추가된 부분)
+                    response.body()?.result?.let {
+                        _enteredRoomId.value = it.roomId.toString()
+                    }
                 } else {
                     _error.value = response.body()?.message ?: "공유방 입장에 실패했습니다."
                 }
@@ -183,7 +237,12 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.leaveRoom(roomId, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -205,7 +264,12 @@ class VideoViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first() ?: ""
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
                 val response = roomRepository.deleteRoom(roomId, token)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {

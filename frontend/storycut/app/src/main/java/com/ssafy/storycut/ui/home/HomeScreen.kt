@@ -30,7 +30,7 @@ import com.ssafy.storycut.ui.home.dialog.RoomOptionsDialog
 
 @Composable
 fun HomeScreen(
-    viewModel: VideoViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     onRoomClick: (String) -> Unit = {},
     onCreateRoomClick: () -> Unit = {},
     onEnterRoomClick: () -> Unit = {}
@@ -40,10 +40,34 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState("")
 
+    // 새로 생성된 방 ID 관찰 (추가된 부분)
+    val createdRoomId by viewModel.createdRoomId.observeAsState("")
+    val enteredRoomId by viewModel.enteredRoomId.observeAsState("")
+
     // 다이얼로그 표시 상태
     var showRoomOptionsDialog by remember { mutableStateOf(false) }
     var showCreateRoomDialog by remember { mutableStateOf(false) }
     var showEnterRoomDialog by remember { mutableStateOf(false) }
+
+    // 새로 생성된 방으로 자동 이동 (추가된 부분)
+    LaunchedEffect(createdRoomId) {
+        if (createdRoomId.isNotEmpty()) {
+            // 방으로 이동
+            onRoomClick(createdRoomId)
+            // ID 초기화
+            viewModel.clearCreatedRoomId()
+        }
+    }
+
+    // 입장한 방으로 자동 이동 (추가된 부분)
+    LaunchedEffect(enteredRoomId) {
+        if (enteredRoomId.isNotEmpty()) {
+            // 방으로 이동
+            onRoomClick(enteredRoomId)
+            // ID 초기화
+            viewModel.clearEnteredRoomId()
+        }
+    }
 
     // 컴포넌트가 처음 표시될 때 데이터 로드
     LaunchedEffect(key1 = true) {
@@ -166,6 +190,7 @@ fun HomeScreen(
             onDismiss = { showCreateRoomDialog = false },
             onCreateRoom = { request ->
                 viewModel.createRoom(request)
+                showCreateRoomDialog = false // 다이얼로그 닫기
             }
         )
     }
@@ -176,6 +201,7 @@ fun HomeScreen(
             onDismiss = { showEnterRoomDialog = false },
             onEnterRoom = { inviteCode ->
                 viewModel.enterRoom(inviteCode)
+                showEnterRoomDialog = false // 다이얼로그 닫기
             }
         )
     }

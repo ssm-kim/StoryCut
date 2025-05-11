@@ -123,4 +123,29 @@ class VideoViewModel @Inject constructor(
             emptyList()
         }
     }
+
+
+    private val _roomVideos = MutableStateFlow<List<VideoDto>>(emptyList())
+    val roomVideos: StateFlow<List<VideoDto>> = _roomVideos
+
+    // 공유방의 비디오 목록 가져오기
+    fun fetchRoomVideos(roomId: String, token: String) {
+        viewModelScope.launch {
+            try {
+                val response = videoRepository.getRoomVideos(roomId, token)
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    response.body()?.result?.let {
+                        _roomVideos.value = it
+                    }
+                } else {
+                    // 에러 처리
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Log.d("VideoViewModel", "공유방 비디오 목록 가져오기 실패 : ${errorMsg}")
+                }
+            } catch (e: Exception) {
+                // 예외 처리
+                Log.d("VideoViewModel", "공유방 비디오 목록 가져오기 에러 : ${e.message}")
+            }
+        }
+    }
 }
