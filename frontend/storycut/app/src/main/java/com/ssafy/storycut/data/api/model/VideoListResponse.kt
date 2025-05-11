@@ -1,6 +1,6 @@
 package com.ssafy.storycut.data.api.model
 
-data class VideoListDto(
+data class VideoDto(
     val videoId: Long,
     val memberId: Long,
     val videoName: String,
