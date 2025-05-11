@@ -2,19 +2,24 @@ package com.ssafy.storycut.ui.mypage
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,9 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +67,11 @@ fun MyPageScreen(
     var showSettings by remember { mutableStateOf(false) }
     val createdAt = userInfo?.createdAt
     val postCount = videoList.size
+
+    // 포커스 관리를 위한 변수 추가
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+    var isFocused by remember { mutableStateOf(false) }
 
     // 날짜 포맷변환
     fun formatCreatedAt(createdAt: String?): String {
@@ -95,8 +109,23 @@ fun MyPageScreen(
         }
     }
 
+    // 다른 화면으로 이동할 때 포커스 해제
+    LaunchedEffect(navController?.currentBackStackEntry) {
+        focusManager.clearFocus()
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                // 화면의 다른 부분을 클릭하면 포커스 제거
+                if (isFocused) {
+                    focusManager.clearFocus()
+                }
+            }
     ) {
         // 기본 마이페이지 콘텐츠
         Column(
@@ -151,19 +180,59 @@ fun MyPageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 검색창
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "검색") }, // leading 아이콘 추가
-                placeholder = { Text("사진 검색하기") },
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(vertical = 8.dp), // 상하 패딩 추가
-                singleLine = true,
-                shape = RoundedCornerShape(32.dp) // 모서리 둥글게 설정
-            )
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(32.dp))
+                        .border(
+                            width = 1.dp,
+                            color = if (isFocused) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
+                            shape = RoundedCornerShape(32.dp)
+                        )
+                        .height(36.dp)  // 원하는 낮은 높이로 설정
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            isFocused = focusState.isFocused
+                        },
+                    decorationBox = { innerTextField ->
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = "검색",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 8.dp)
+                            ) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        "사진 검색하기",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -200,7 +269,6 @@ fun MyPageScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(videoList.filter {
-                        // 검색어가 비어있지 않으면 필터링, 비어있으면 모든 비디오 표시
                         searchQuery.isEmpty() ||
                                 it.videoName.contains(searchQuery, ignoreCase = true)
                     }) { video ->
@@ -212,7 +280,8 @@ fun MyPageScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
-                                    // 비디오 상세 페이지로 이동
+                                    // 비디오 상세 페이지로 이동 - 이동 시 포커스 해제 추가
+                                    focusManager.clearFocus()
                                     navController?.navigate("video_detail/${video.videoId}")
                                 }
                         ) {
@@ -249,7 +318,6 @@ fun MyPageScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
-
                         }
                     }
                 }
@@ -266,7 +334,11 @@ fun MyPageScreen(
                 AnimatedSettingsNavigation(
                     authViewModel = authViewModel,
                     isVisible = showSettings,
-                    onDismiss = { showSettings = false },
+                    onDismiss = {
+                        showSettings = false
+                        // 설정 화면을 닫을 때도 포커스 해제
+                        focusManager.clearFocus()
+                    },
                     onNavigateToLogin = onNavigateToLogin
                 )
             }

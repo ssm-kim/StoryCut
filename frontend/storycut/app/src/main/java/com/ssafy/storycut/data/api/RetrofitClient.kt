@@ -14,8 +14,6 @@ private const val BASE_URL = BuildConfig.BASE_URL
 object RetrofitClient {
     // 로깅 인터셉터 설정 - 개발 빌드에서만 BODY 레벨, 릴리스에서는 NONE
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        // BuildConfig.DEBUG가 true일 때만 로깅 활성화
-        // 로그를 완전히 끄려면 NONE으로 설정
         level = HttpLoggingInterceptor.Level.NONE
     }
 
