@@ -13,7 +13,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
@@ -43,28 +47,53 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // 비디오 상세 화면인지 확인 (video_detail/숫자 형식의 경로 확인)
+    val isVideoDetailScreen = currentRoute?.startsWith("video_detail/") == true
+
+    // 이전 화면 상태 추적
+    val wasVideoDetailScreen = remember { mutableStateOf(false) }
+
+    // 화면 전환 감지 및 처리
+    LaunchedEffect(isVideoDetailScreen) {
+        // 비디오 상세 화면에서 다른 화면으로 전환될 때
+        if (wasVideoDetailScreen.value && !isVideoDetailScreen) {
+            // 전환 효과를 위한 약간의 딜레이
+            delay(100)
+        }
+        wasVideoDetailScreen.value = isVideoDetailScreen
+    }
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                items.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(text = item.title) },
-                        selected = currentRoute == item.route,
-                        onClick = {
-                            // 현재 선택된 아이템이 아닌 경우에만 네비게이션 처리
-                            if (currentRoute != item.route) {
-                                // navigateToMainTab 함수 사용
-                                navController.navigateToMainTab(item.route)
+            // 비디오 상세 화면이 아닐 때만 하단 네비게이션 바 표시
+            if (!isVideoDetailScreen) {
+                NavigationBar {
+                    items.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.title) },
+                            label = { Text(text = item.title) },
+                            selected = currentRoute == item.route,
+                            onClick = {
+                                // 현재 선택된 아이템이 아닌 경우에만 네비게이션 처리
+                                if (currentRoute != item.route) {
+                                    // navigateToMainTab 함수 사용
+                                    navController.navigateToMainTab(item.route)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
         // 내비게이션 호스트 설정
-        Box(modifier = Modifier.padding(innerPadding)) {
+        Box(
+            modifier = if (isVideoDetailScreen) {
+                Modifier
+            } else {
+                Modifier.padding(innerPadding)
+            }
+        ) {
             NavHost(
                 navController = navController,
                 startDestination = Navigation.Main.HOME

@@ -1,11 +1,13 @@
 package com.ssafy.storycut.ui.mypage
 
-
 import android.util.Log
-import androidx.compose.foundation.Image
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -31,54 +35,109 @@ import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import kotlinx.coroutines.flow.first
 
+@OptIn(ExperimentalFoundationApi::class)
 @UnstableApi
 @Composable
 fun VideoDetailScreen(
-    videoId: String,  // 비디오 ID (실제 타입에 맞게 조정 필요)
+    videoId: String,
     navController: NavController,
     videoViewModel: VideoViewModel = hiltViewModel(),
     tokenManager: TokenManager
 ) {
     val context = LocalContext.current
-    var video by remember { mutableStateOf<VideoDto?>(null) }
+    val videoList by videoViewModel.myVideos.collectAsState()
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var isPlaying by remember { mutableStateOf(true) }  // 재생 상태 추적
 
-    // ExoPlayer 인스턴스 생성
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            playWhenReady = true  // 초기에는 자동 재생
-            repeatMode = Player.REPEAT_MODE_ONE  // 비디오 반복 재생
+    // 화면 종료 여부를 추적하는 변수
+    var isExiting by remember { mutableStateOf(false) }
+
+    // 플레이어 맵을 관리하기 위한 변수
+    val players = remember { mutableMapOf<Int, ExoPlayer>() }
+
+    // 앱 생명주기 상태를 저장
+    var appInBackground by remember { mutableStateOf(false) }
+
+    // 현재 선택된 비디오의 위치 찾기
+    val initialPage = remember(videoId, videoList) {
+        videoList.indexOfFirst { it.videoId.toString() == videoId }.takeIf { it >= 0 } ?: 0
+    }
+
+    // VerticalPager 상태 설정
+    val pagerState = rememberPagerState(initialPage = initialPage) { videoList.size }
+
+    // 뒤로가기 처리 함수 정의 - 먼저 선언
+    val handleBackPress = {
+        // 종료 상태로 변경하고 모든 플레이어 즉시 해제
+        isExiting = true
+        players.values.forEach { player ->
+            player.stop()
+            player.release()
+        }
+        players.clear()
+
+        // 화면 전환
+        navController.popBackStack()
+    }
+
+    // 생명주기 감지를 위한 효과
+    DisposableEffect(true) {
+        val activity = context as? androidx.activity.ComponentActivity
+        val callback = object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                handleBackPress()
+            }
+        }
+
+        val lifecycleObserver = object : DefaultLifecycleObserver {
+            override fun onPause(owner: LifecycleOwner) {
+                // 백그라운드로 이동할 때
+                appInBackground = true
+                players.values.forEach { player ->
+                    if (player.isPlaying) {
+                        player.pause()
+                    }
+                }
+            }
+
+            override fun onResume(owner: LifecycleOwner) {
+                // 포그라운드로 돌아올 때
+                if (appInBackground) {
+                    appInBackground = false
+                    val currentPage = pagerState.currentPage
+                    players[currentPage]?.play()
+                }
+            }
+        }
+
+        activity?.lifecycle?.addObserver(lifecycleObserver)
+        activity?.onBackPressedDispatcher?.addCallback(callback)
+
+        onDispose {
+            activity?.lifecycle?.removeObserver(lifecycleObserver)
+            callback.remove()
         }
     }
 
-    // 비디오 로드
-    LaunchedEffect(videoId) {
+    // 안드로이드 시스템 뒤로가기 버튼 처리
+    BackHandler(enabled = !isExiting) {
+        handleBackPress()
+    }
+
+    // 비디오 로드 및 토큰 가져오기
+    LaunchedEffect(Unit) {
         isLoading = true
         try {
-            // 먼저 캐시에서 비디오 확인
-            val cachedVideo = videoViewModel.getVideoFromCache(videoId)
-            if (cachedVideo != null) {
-                video = cachedVideo
-                setupExoPlayer(cachedVideo, exoPlayer)
-            }
-
-            // 토큰 가져오기
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
-                // API에서 최신 정보 가져오기
-                val videoDetail = videoViewModel.getVideoDetail(videoId, token)
-                if (videoDetail != null) {
-                    video = videoDetail
-                    setupExoPlayer(videoDetail, exoPlayer)
-                } else if (video == null) {
-                    error = "비디오를 찾을 수 없습니다."
+                // 만약 비디오 리스트가 비어있다면 불러오기
+                if (videoList.isEmpty()) {
+                    videoViewModel.fetchMyVideos(token)
                 }
+                // 현재 비디오 상세정보 불러오기
+                videoViewModel.getVideoDetail(videoId, token)
             } else {
-                if (video == null) {
-                    error = "인증 정보가 없습니다. 다시 로그인해주세요."
-                }
+                error = "인증 정보가 없습니다. 다시 로그인해주세요."
             }
         } catch (e: Exception) {
             error = "비디오를 로드할 수 없습니다: ${e.message}"
@@ -87,10 +146,13 @@ fun VideoDetailScreen(
         }
     }
 
-    // 화면이 종료되면 ExoPlayer 해제
+    // 화면 종료 시 모든 플레이어 해제
     DisposableEffect(Unit) {
         onDispose {
-            exoPlayer.release()
+            players.values.forEach { player ->
+                player.release()
+            }
+            players.clear()
         }
     }
 
@@ -98,26 +160,15 @@ fun VideoDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            // 전체 화면을 클릭하면 재생/정지 토글
-            .clickable {
-                if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
-                } else {
-                    exoPlayer.play()
-                }
-                isPlaying = !isPlaying
-            }
     ) {
         when {
             isLoading -> {
-                // 로딩 표시
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.White
                 )
             }
             error != null -> {
-                // 에러 표시
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -129,91 +180,185 @@ fun VideoDetailScreen(
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { navController.popBackStack() }) {
+                    Button(onClick = { handleBackPress() }) {
                         Text("돌아가기")
                     }
                 }
             }
-            else -> {
-                // 비디오 플레이어 (전체 화면, 컨트롤러 숨김)
-                AndroidView(
-                    factory = { ctx ->
-                        PlayerView(ctx).apply {
-                            player = exoPlayer
-                            useController = false  // 기본 컨트롤러 숨기기
-                            setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
+            videoList.isEmpty() -> {
+                Text(
+                    text = "비디오가 없습니다",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.White
                 )
-
-                // 재생/정지 아이콘 (정지 상태일 때만 표시)
-                if (!isPlaying) {
-                    Box(
+            }
+            else -> {
+                if (!isExiting) {
+                    // VerticalPager로 정확히 한 비디오씩만 스와이프 가능하게 구현
+                    VerticalPager(
+                        state = pagerState,
                         modifier = Modifier
-                            .size(80.dp)
-                            .align(Alignment.Center)
-                            .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                            .padding(20.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = "재생",
-                            tint = Color.White,
-                            modifier = Modifier.size(40.dp)
-                        )
+                            .fillMaxSize()
+                            .systemBarsPadding() // 시스템 바 영역 제외
+                    ) { page ->
+                        val video = videoList.getOrNull(page)
+                        if (video != null) {
+                            SingleVideoPlayer(
+                                video = video,
+                                isCurrentlyVisible = page == pagerState.currentPage && !isExiting && !appInBackground,
+                                onPlayerCreated = { player ->
+                                    players[page] = player
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
 
-                // 간략한 비디오 정보 (하단에 표시)
-                Box(
+                // 뒤로가기 버튼
+                IconButton(
+                    onClick = { handleBackPress() },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.7f)
-                                )
-                            )
-                        )
+                        .align(Alignment.TopStart)
                         .padding(16.dp)
+                        .size(48.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // 비디오 제목
-                        Text(
-                            text = video?.videoName ?: "",
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // 업로더 정보 (VideoDto의 실제 필드에 맞게 수정 필요)
-                        Text(
-                            text = video?.videoName ?: "알 수 없음",  // 필드명 확인 필요
-                            color = Color.White.copy(alpha = 0.8f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기",
+                        tint = Color.White
+                    )
                 }
             }
         }
     }
 }
 
-// ExoPlayer 설정 함수
 @UnstableApi
-private fun setupExoPlayer(video: VideoDto, exoPlayer: ExoPlayer) {
-    // videoUrl 필드 이름은 실제 VideoDto 클래스에 맞게 수정
-    video.videoUrl.let { url ->  // 필드명 확인 필요
-        val mediaItem = MediaItem.fromUri(url)
-        exoPlayer.setMediaItem(mediaItem)
-        exoPlayer.prepare()
+@Composable
+fun SingleVideoPlayer(
+    video: VideoDto,
+    isCurrentlyVisible: Boolean,
+    onPlayerCreated: (ExoPlayer) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var isPlaying by remember { mutableStateOf(isCurrentlyVisible) }
+
+    // 플레이어 상태 관리
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            playWhenReady = isCurrentlyVisible
+            repeatMode = Player.REPEAT_MODE_ONE  // 비디오 반복 재생
+
+            // 비디오 URL 설정
+            val mediaItem = MediaItem.fromUri(video.videoUrl)
+            setMediaItem(mediaItem)
+            prepare()
+
+            // 플레이어 콜백 호출
+            onPlayerCreated(this)
+        }
+    }
+
+    // 화면이 종료되면 ExoPlayer 해제
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    // 현재 보이는 상태 변경 감지
+    LaunchedEffect(isCurrentlyVisible) {
+        if (isCurrentlyVisible) {
+            exoPlayer.play()
+            isPlaying = true
+        } else {
+            exoPlayer.pause()
+            isPlaying = false
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .clickable {
+                // 화면 클릭 시 재생/일시정지 토글
+                if (exoPlayer.isPlaying) {
+                    exoPlayer.pause()
+                    isPlaying = false
+                } else {
+                    exoPlayer.play()
+                    isPlaying = true
+                }
+            }
+    ) {
+        // 비디오 플레이어
+        AndroidView(
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    player = exoPlayer
+                    useController = false  // 기본 컨트롤러 숨기기
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // 재생/정지 아이콘 (정지 상태일 때만 표시)
+        if (!isPlaying) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .align(Alignment.Center)
+                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                    .padding(20.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "재생",
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+
+        // 비디오 정보 (하단에 표시)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.7f)
+                        )
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 비디오 제목
+                Text(
+                    text = video.videoName,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 추가 정보 (필요에 따라 수정)
+                Text(
+                    text = "작성자: ${video.videoName}",  // 실제 작성자 필드로 변경 필요
+                    color = Color.White.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }

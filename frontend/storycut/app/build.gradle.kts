@@ -134,9 +134,14 @@ dependencies {
 
     // coil
     implementation("io.coil-kt:coil-compose:2.4.0")
-
+    
+    // 영상재생
     implementation ("androidx.media3:media3-exoplayer:1.6.1")
     implementation ("androidx.media3:media3-ui:1.6.1")
     implementation ("androidx.media3:media3-common:1.6.1")
+
+    //라이프 사이클
+    implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+
 
 }

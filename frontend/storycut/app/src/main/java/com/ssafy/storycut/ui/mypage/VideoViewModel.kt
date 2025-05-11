@@ -84,4 +84,43 @@ class VideoViewModel @Inject constructor(
             null
         }
     }
+
+    fun getNextVideo(currentVideoId: String): VideoDto? {
+        val currentList = myVideos.value
+        val currentIndex = currentList.indexOfFirst { it.videoId.toString() == currentVideoId }
+
+        // 현재 비디오가 마지막이 아니면 다음 비디오 반환
+        return if (currentIndex >= 0 && currentIndex < currentList.size - 1) {
+            currentList[currentIndex + 1]
+        } else {
+            // 마지막 비디오인 경우 처음으로 돌아가거나 null 반환 가능
+            null  // 또는 currentList.firstOrNull()
+        }
+    }
+
+
+    // 이전 비디오 가져오기
+    fun getPreviousVideo(currentVideoId: String): VideoDto? {
+        val currentList = myVideos.value
+        val currentIndex = currentList.indexOfFirst { it.videoId.toString() == currentVideoId }
+
+        // 현재 비디오가 첫 번째가 아니면 이전 비디오 반환
+        return if (currentIndex > 0) {
+            currentList[currentIndex - 1]
+        } else {
+            // 첫 번째 비디오인 경우 마지막으로 이동하거나 null 반환 가능
+            null  // 또는 currentList.lastOrNull()
+        }
+    }
+    // 비디오 리스트에서 특정 인덱스부터 원하는 개수만큼 가져오기 (페이징 구현 시 유용)
+    fun getVideosFromIndex(startIndex: Int, count: Int = 5): List<VideoDto> {
+        val currentList = myVideos.value
+        val endIndex = minOf(startIndex + count, currentList.size)
+
+        return if (startIndex < currentList.size) {
+            currentList.subList(startIndex, endIndex)
+        } else {
+            emptyList()
+        }
+    }
 }
