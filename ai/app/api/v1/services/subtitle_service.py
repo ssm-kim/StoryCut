@@ -1,13 +1,19 @@
-import whisper
 import os
 import subprocess
+import whisper
 import torch
 import re
 import cv2
 import uuid
-from typing import Tuple 
+import aiofiles
+import logging
+from typing import Tuple
+
 base_dir = "app/videos"
 os.makedirs(base_dir, exist_ok=True)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def get_video_resolution(video_path: str) -> Tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
@@ -23,7 +29,21 @@ def format_time_ass(seconds: float) -> str:
     cs = int(round((seconds - int(seconds)) * 100))
     return f"{h:01}:{m:02}:{s:02}.{cs:02}"
 
-def subtitles(video_path: str) -> str:
+def run_ffmpeg_command_sync(cmd: list):
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode != 0:
+        raise RuntimeError(f"ffmpeg 명령어 실패: {' '.join(cmd)}")
+
+def has_audio_stream(video_path: str) -> bool:
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    return bool(result.stdout.strip())
+
+async def subtitles(video_path: str) -> str:
     uid = uuid.uuid4().hex
     audio_path = os.path.join(base_dir, f"{uid}_temp_audio.wav")
     ass_path = os.path.join(base_dir, f"{uid}_subtitle.ass")
@@ -33,18 +53,23 @@ def subtitles(video_path: str) -> str:
     whisper_model = None
 
     try:
-        # ✅ Whisper 모델 로드
+        if not has_audio_stream(video_path):
+            logger.info("🔇 오디오 트랙이 없어 자막 생성을 생략합니다.")
+            run_ffmpeg_command_sync([
+                "ffmpeg", "-y", "-i", video_path, "-c", "copy", output_path
+            ])
+            return output_path
+
         if not torch.cuda.is_available():
-            raise RuntimeError("❌ CUDA 사용 불가. GPU 설정을 확인하세요.")
+            raise RuntimeError("CUDA 사용 불가. GPU 설정을 확인하세요.")
+
         whisper_model = whisper.load_model("medium").to("cuda")
 
-        # 1. 오디오 추출
-        subprocess.run([
+        run_ffmpeg_command_sync([
             "ffmpeg", "-y", "-i", video_path,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", audio_path
-        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ])
 
-        # 2. 자막 추출
         result = whisper_model.transcribe(
             audio_path,
             language="ko",
@@ -54,26 +79,22 @@ def subtitles(video_path: str) -> str:
             no_speech_threshold=0.5
         )
 
-        # 3. 해상도 및 스타일 계산
         width, height = get_video_resolution(video_path)
         base_ref = max(width, height)
         fontsize = max(16, int(48 * base_ref / 1080))
         margin_v = max(10, int(30 * base_ref / 1080 * (2.2 if height > width else 1)))
 
-        # 4. ASS 자막 생성
-        with open(ass_path, "w", encoding="utf-8") as f:
-            f.write("[Script Info]\n")
-            f.write(f"PlayResX: {width}\nPlayResY: {height}\nScriptType: v4.00+\n\n")
-
-            f.write("[V4+ Styles]\n")
-            f.write("Format: Name, Fontname, Fontsize, PrimaryColour, BackColour, Bold, Italic, "
-                    "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
-                    "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
-            f.write(f"Style: Default,Arial,{fontsize},&H00FFFFFF,&H80000000,0,0,0,0,100,100,0,0,"
-                    f"3,2,0,2,30,30,{margin_v},1\n\n")
-
-            f.write("[Events]\n")
-            f.write("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+        async with aiofiles.open(ass_path, "w", encoding="utf-8") as f:
+            await f.write("[Script Info]\n")
+            await f.write(f"PlayResX: {width}\nPlayResY: {height}\nScriptType: v4.00+\n\n")
+            await f.write("[V4+ Styles]\n")
+            await f.write("Format: Name, Fontname, Fontsize, PrimaryColour, BackColour, Bold, Italic, "
+                          "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
+                          "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
+            await f.write(f"Style: Default,Arial,{fontsize},&H00FFFFFF,&H80000000,0,0,0,0,100,100,0,0,"
+                          f"3,2,0,2,30,30,{margin_v},1\n\n")
+            await f.write("[Events]\n")
+            await f.write("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
 
             for seg in result["segments"]:
                 text = seg["text"].strip().replace("\n", " ")
@@ -84,30 +105,29 @@ def subtitles(video_path: str) -> str:
 
                 start = format_time_ass(seg["start"])
                 end = format_time_ass(seg["end"])
-                f.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{text}\n")
+                await f.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{text}\n")
 
-        # 5. 영상에 자막 입히기
-        subprocess.run([
+        run_ffmpeg_command_sync([
             "ffmpeg", "-y", "-i", video_path,
             "-vf", f"ass={ffmpeg_ass_path}",
-            "-c:v", "libx264", "-c:a", "aac", "-b:a", "192k", output_path
-        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            "-c:v", "h264_nvenc", "-preset", "fast", "-b:v", "2M",
+            "-c:a", "aac", "-b:a", "192k",
+            output_path
+        ])
 
         return output_path
 
     finally:
-        # ✅ 모델 및 GPU 메모리 해제
         try:
             if whisper_model is not None:
                 del whisper_model
                 torch.cuda.empty_cache()
         except Exception as e:
-            print(f"⚠️ 모델 해제 중 오류: {e}")
+            logger.warning(f"모델 해제 중 오류: {e}")
 
-        # ✅ 임시 파일 삭제
         for path in [audio_path, ass_path]:
             try:
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
-                print(f"⚠️ 임시 파일 삭제 중 오류: {e}")
+                logger.warning(f"임시 파일 삭제 중 오류: {e}")

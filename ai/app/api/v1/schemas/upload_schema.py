@@ -1,16 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-
-
+from app.api.v1.schemas.post_schema import PostResult
 class ImageUploadResult(BaseModel):
     image_urls: List[str] = Field(..., alias="imageUrls")
-
-    class Config:
-        allow_population_by_field_name = True
-
-
-class VideoUploadResult(BaseModel):
-    video_id: int = Field(..., alias="videoId")
 
     class Config:
         allow_population_by_field_name = True
@@ -42,7 +34,7 @@ class VideoUploadResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
     message: str
-    result: Optional[VideoUploadResult]
+    result: Optional[PostResult]
 
     class Config:
         allow_population_by_field_name = True
@@ -50,9 +42,17 @@ class VideoUploadResponse(BaseModel):
             "example": {
                 "isSuccess": True,
                 "code": 200,
-                "message": "영상 업로드 성공",
+                "message": "요청에 성공하였습니다.",
                 "result": {
-                    "videoId": 1
+                    "videoId": 1,
+                    "memberId": 1,
+                    "videoName": "영상 제목",
+                    "videoUrl": "https://example.com/video.mp4",
+                    "thumbnail": "https://example.com/thumbnail.jpg",
+                    "originalVideoId": None,
+                    "createdAt": "2025-05-02T08:54:00.000Z",
+                    "updatedAt": "2025-05-02T08:54:00.000Z",
+                    "is_blur":True
                 }
             }
         }

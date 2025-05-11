@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.api.v1.schemas.post_schema import PostResult
 
-# 요청 스키마
 class VideoProcessRequest(BaseModel):
     prompt: str
     video_id: int = Field(..., alias="videoId")
@@ -13,7 +12,6 @@ class VideoProcessRequest(BaseModel):
         allow_population_by_field_name = True
 
 
-# 응답 스키마
 class VideoPostResponse(BaseModel):
     is_success: bool = Field(..., alias="isSuccess")
     code: int
@@ -26,7 +24,7 @@ class VideoPostResponse(BaseModel):
             "example": {
                 "isSuccess": True,
                 "code": 200,
-                "message": "🎬 영상 처리 완료",
+                "message": "영상 처리 완료",
                 "result": {
                     "videoId": 1,
                     "memberId": 1,
@@ -35,7 +33,8 @@ class VideoPostResponse(BaseModel):
                     "thumbnail": "https://example.com/thumbnail.jpg",
                     "originalVideoId": None,
                     "createdAt": "2025-05-02T08:54:00.000Z",
-                    "updatedAt": "2025-05-02T08:54:00.000Z"
+                    "updatedAt": "2025-05-02T08:54:00.000Z",
+                    "isBlur":True
                 }
             }
         }
