@@ -3,6 +3,7 @@ package com.ssafy.storycut.di
 import android.content.Context
 import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
+import com.ssafy.storycut.data.api.service.RoomApiService
 import com.ssafy.storycut.data.api.service.VideoApiService
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
@@ -97,4 +98,9 @@ object AppModule {
         return retrofit.create(VideoApiService::class.java)
     }
 
+    @Provides
+    @Singleton
+    fun provideRoomApiService(retrofit: Retrofit): RoomApiService {
+        return retrofit.create(RoomApiService::class.java)
+    }
 }
