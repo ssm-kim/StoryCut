@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
-@router.post("/mosaic", response_model=VideoPostResponse, summary="모자이크")
+@router.post("", response_model=VideoPostResponse, summary="모자이크")
 async def process_video_from_json(
     request: MosaicRequest,
     authorization: str = Header(...)
@@ -23,11 +23,11 @@ async def process_video_from_json(
         token = authorization.replace("Bearer ", "")
         video_info = await get_video_from_springboot(request.video_id, token)
 
-        # if video_info.result.is_blur:
-        #     raise HTTPException(
-        #         status_code=400,
-        #         detail="이미 모자이크 처리된 영상입니다."
-        #     )
+        if video_info.result.is_blur:
+            raise HTTPException(
+                status_code=400,
+                detail="이미 모자이크 처리된 영상입니다."
+            )
 
         video_path = await run_mosaic_pipeline(
             input_path=video_info.result.video_url,
