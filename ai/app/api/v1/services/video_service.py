@@ -4,6 +4,7 @@ from app.api.v1.services.springboot_service import get_video_from_springboot
 from app.api.v1.services.mosaic_service import run_mosaic_pipeline
 from app.api.v1.services.subtitle_service import subtitles
 from app.api.v1.services.bgm_service import process_bgm_service  
+from app.api.v1.services.video_analysis import run_analysis_pipeline
 
 async def download_video_to_local(videoUrl: str, save_path: str):
     async with httpx.AsyncClient() as client:
@@ -32,6 +33,9 @@ async def process_video_job(
         print(f"{video_name} 다운로드 중...")
         await download_video_to_local(video_info.result.video_url, video_path)
 
+    print("영상 분석 중...")
+    analysis_results = await run_analysis_pipeline(video_path)
+    print(analysis_results)
 
     if images:
         new_video_path = await run_mosaic_pipeline(video_path, images, 5, 3)
