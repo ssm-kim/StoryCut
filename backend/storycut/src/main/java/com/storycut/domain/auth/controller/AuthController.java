@@ -61,17 +61,17 @@ public class AuthController {
         response.sendRedirect("/oauth2/authorization/google");
     }
 
-//    @Operation(summary = "테스트 로그인", description = "개발 환경에서만 사용 가능한 테스트 로그인")
-//    @GetMapping("/test-login")
-//    public ResponseEntity<BaseResponse<TokenDto>> testLogin() {
-//        if (!devMode) {
-//            return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.UNAUTHORIZED));
-//        }
-//
-//        log.info("[테스트 로그인] 개발 모드에서 테스트 계정 로그인");
-//        TokenDto tokenDto = googleAuthService.processTestLogin();
-//        return ResponseEntity.ok(new BaseResponse<>(tokenDto));
-//    }
+    @Operation(summary = "테스트 로그인", description = "개발 환경에서만 사용 가능한 테스트 로그인")
+    @GetMapping("/test-login")
+    public ResponseEntity<BaseResponse<TokenDto>> testLogin() {
+        if (!devMode) {
+            return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.UNAUTHORIZED));
+        }
+
+        log.info("[테스트 로그인] 개발 모드에서 테스트 계정 로그인");
+        TokenDto tokenDto = googleAuthService.processTestLogin();
+        return ResponseEntity.ok(new BaseResponse<>(tokenDto));
+    }
 
     @Operation(summary = "OAuth2 콜백 처리", description = "구글 인증 후 리다이렉트되는 콜백을 처리합니다")
     @GetMapping("/oauth2/callback")
