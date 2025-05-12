@@ -27,6 +27,7 @@ async def process_video(
             video_id=request.video_id,
             images=request.images,
             subtitle=request.subtitle,
+            music_prompt=request.music_prompt,
             token=token
         )
         video_name = os.path.basename(video_path)
