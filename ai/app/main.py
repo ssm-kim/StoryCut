@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints import upload, video,mosaic
+from app.api.v1.endpoints import upload, video,mosaic, video_test
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 
@@ -42,3 +42,4 @@ app.mount("/static", StaticFiles(directory="app"), name="static")
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(video.router, prefix="/api/videos", tags=["videos"])
 app.include_router(mosaic.router, prefix="/api/mosaic", tags=["mosaic"])
+app.include_router(video_test.router, prefix="/api/v1", tags=["videoTest"])
