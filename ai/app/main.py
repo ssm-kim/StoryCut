@@ -3,7 +3,7 @@ from app.api.v1.endpoints import upload, video,mosaic, video_test
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 
-app = FastAPI()
+app = FastAPI(root_path="/api/v1/fastapi")
 
 # ✅ Bearer 인증 Swagger에 적용
 def custom_openapi():
