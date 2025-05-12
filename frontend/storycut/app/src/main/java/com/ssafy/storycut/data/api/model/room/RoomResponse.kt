@@ -5,6 +5,7 @@ data class RoomDto(
     val hostId: Long,
     val roomTitle: String,
     val hasPassword: Boolean,
+    val roomThumbnail: String?,
     val createdAt: String,
     val updatedAt: String,
     val memberCount: Int

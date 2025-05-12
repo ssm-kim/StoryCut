@@ -8,6 +8,7 @@ import com.ssafy.storycut.data.api.service.VideoApiService
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService
+import com.ssafy.storycut.data.repository.S3Repository
 import com.ssafy.storycut.util.network.AuthInterceptor // AuthInterceptor import는 유지
 import dagger.Module
 import dagger.Provides
@@ -102,5 +103,11 @@ object AppModule {
     @Singleton
     fun provideRoomApiService(retrofit: Retrofit): RoomApiService {
         return retrofit.create(RoomApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideS3Repository(@ApplicationContext context: Context): S3Repository {
+        return S3Repository(context)
     }
 }

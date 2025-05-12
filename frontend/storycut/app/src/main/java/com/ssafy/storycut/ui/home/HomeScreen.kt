@@ -16,12 +16,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.ui.home.dialog.CreateRoomDialog
@@ -188,8 +191,8 @@ fun HomeScreen(
     if (showCreateRoomDialog) {
         CreateRoomDialog(
             onDismiss = { showCreateRoomDialog = false },
-            onCreateRoom = { request ->
-                viewModel.createRoom(request)
+            onCreateRoom = { request, imageUri ->
+                viewModel.createRoom(request, imageUri)
                 showCreateRoomDialog = false // 다이얼로그 닫기
             }
         )
@@ -205,9 +208,7 @@ fun HomeScreen(
             }
         )
     }
-}
-
-@Composable
+}@Composable
 fun RoomItem(
     room: RoomDto,
     onClick: () -> Unit
@@ -228,27 +229,33 @@ fun RoomItem(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 축구장 이미지
+            // 썸네일 이미지
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),  // 적절한 이미지 리소스 필요
-                    contentDescription = "축구장",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // 축구공 이미지 중앙에 표시
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),  // 적절한 이미지 리소스 필요
-                    contentDescription = "축구공",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .align(Alignment.Center)
-                )
+                // 썸네일 이미지 로드
+                if (room.roomThumbnail != null && room.roomThumbnail != "default_thumbnail") {
+                    // FastAPI에서 제공한 URL로 이미지 로드
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(room.roomThumbnail)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "방 썸네일",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    // 기본 이미지 표시
+                    Image(
+                        painter = painterResource(id = R.drawable.logo), // 적절한 기본 이미지 리소스 필요
+                        contentDescription = "기본 썸네일",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
             // 방 정보 표시
