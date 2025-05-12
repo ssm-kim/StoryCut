@@ -4,6 +4,7 @@ import com.storycut.domain.member.model.dto.MemberDto;
 import com.storycut.domain.member.service.MemberService;
 import com.storycut.global.model.dto.BaseResponse;
 import com.storycut.domain.auth.model.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class MemberController {
     private final MemberService memberService;
 
     // 회원 상세 정보 조회
+    @Operation(summary = "회원 정보 조회", description = "회원 정보를 조회합니다.")
     @GetMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> getMyInfo(
         @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -31,6 +33,7 @@ public class MemberController {
     }
 
     // 회원 정보 업데이트
+    @Operation(summary = "회원 정보 수정", description = "회원 정보를 수정합니다.")
     @PatchMapping("/detail")
     public ResponseEntity<BaseResponse<MemberDto.Response>> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -42,6 +45,7 @@ public class MemberController {
     }
 
     // 계정 탈퇴
+    @Operation(summary = "회원 탈퇴", description = "회원을 탈퇴합니다.")
     @DeleteMapping()
     public ResponseEntity<BaseResponse<Void>> deleteMyAccount(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
