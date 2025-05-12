@@ -65,7 +65,7 @@ public class RoomFacadeService implements RoomService {
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
         
         // 공유방 정보 수정
-        roomDetailService.updateRoom(room, request.getRoomTitle(), request.getRoomPassword(), request.getRoomContext());
+        room.updateRoom(request.getRoomTitle(), request.getRoomPassword(), request.getRoomContext());
 
         // 현재 참여자 수 조회
         int memberCount = roomMemberService.countMembersByRoomId(roomId);
@@ -81,7 +81,7 @@ public class RoomFacadeService implements RoomService {
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
 
         // 공유방 정보 수정
-        roomDetailService.updateThumbnail(room, thumbnail);
+        room.updateThumbnail(thumbnail);
 
         // 현재 참여자 수 조회
         int memberCount = roomMemberService.countMembersByRoomId(roomId);
