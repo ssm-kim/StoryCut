@@ -33,8 +33,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
-import java.io.File
-import java.util.UUID
+
 @Composable
 fun CreateRoomDialog(
     onDismiss: () -> Unit,
@@ -259,7 +258,7 @@ fun CreateRoomDialog(
                                     roomTitle = roomTitle,
                                     roomPassword = if (roomPassword.isBlank()) null else roomPassword,
                                     roomContext = roomContext,
-                                    roomThumbnail = "" // 임시값, 실제 값은 ViewModel에서 처리
+                                    roomThumbnail = ""
                                 )
                                 onCreateRoom(request, imageUri)
                             }
