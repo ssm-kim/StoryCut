@@ -49,8 +49,15 @@ public class RoomDetailService {
     @Transactional
     public void updateRoom(Room room, String title, String password, String context) {
         room.updateRoom(title, password, context);// 엔티티끌어쓰고
+        roomRepository.save(room);
     }
-    
+
+    @Transactional
+    public void updateThumbnail(Room room, String thumbnail) {
+        room.updateThumbnail(thumbnail);// 엔티티끌어쓰고
+        roomRepository.save(room);
+    }
+
 
     @Transactional
     public void deleteRoom(Room room) {

@@ -45,6 +45,18 @@ public interface RoomService {
      * @throws com.storycut.global.exception.BusinessException 해당 공유방이 존재하지 않거나 방장이 아닌 경우
      */
     RoomResponse updateRoom(Long memberId, Long roomId, RoomUpdateRequest request);
+
+    /**
+     * 공유방 썸네일를 수정합니다.
+     * 방장만 썸네일를 수정할 수 있습니다.
+     *
+     * @param memberId 수정을 요청하는 회원의 ID (방장)
+     * @param roomId 수정할 공유방의 ID
+     * @param thumbnail 수정할 썸네일 이미지 URL
+     * @return 수정된 공유방 정보를 담은 응답 객체
+     * @throws com.storycut.global.exception.BusinessException 해당 공유방이 존재하지 않거나 방장이 아닌 경우
+     */
+    RoomResponse updateThumbnail(Long memberId, Long roomId, String thumbnail);
     
     /**
      * 공유방을 삭제합니다.

@@ -30,7 +30,6 @@ public class RoomFacadeService implements RoomService {
     private final RoomMemberService roomMemberService;
     private final RoomInviteService roomInviteService;
     private final ChatMessageService chatMessageService;
-    
 
     @Override
     @Transactional
@@ -67,10 +66,26 @@ public class RoomFacadeService implements RoomService {
         
         // 공유방 정보 수정
         roomDetailService.updateRoom(room, request.getRoomTitle(), request.getRoomPassword(), request.getRoomContext());
-        
+
         // 현재 참여자 수 조회
         int memberCount = roomMemberService.countMembersByRoomId(roomId);
-        
+
+        // 응답 생성
+        return roomDetailService.mapToResponse(room, memberCount);
+    }
+
+    @Override
+    @Transactional
+    public RoomResponse updateThumbnail(Long memberId, Long roomId, String thumbnail) {
+        // 방장 권한 확인과 함께 공유방 조회
+        Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
+
+        // 공유방 정보 수정
+        roomDetailService.updateThumbnail(room, thumbnail);
+
+        // 현재 참여자 수 조회
+        int memberCount = roomMemberService.countMembersByRoomId(roomId);
+
         // 응답 생성
         return roomDetailService.mapToResponse(room, memberCount);
     }
@@ -95,7 +110,6 @@ public class RoomFacadeService implements RoomService {
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, hostMemberId);
         return roomInviteService.generateInviteCode(room.getId());
     }
-    
 
     @Override
     @Transactional
@@ -171,7 +185,6 @@ public class RoomFacadeService implements RoomService {
             roomMemberService.removeMember(roomId, memberId);
         }
     }
-    
 
     @Override
     public RoomResponse getRoomDetail(Long roomId) {
@@ -184,7 +197,6 @@ public class RoomFacadeService implements RoomService {
         // 응답 생성
         return roomDetailService.mapToResponse(room, memberCount);
     }
-    
 
     @Override
     public List<RoomMemberResponse> getRoomMembers(Long roomId) {
