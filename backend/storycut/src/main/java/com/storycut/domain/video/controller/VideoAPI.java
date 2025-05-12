@@ -32,7 +32,7 @@ public interface VideoAPI {
     @Operation(
         summary = "비디오 업로드",
         description = "비디오 정보를 DB에 저장합니다. FastAPI에서 S3에 업로드한 후 호출해야 합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -50,7 +50,8 @@ public interface VideoAPI {
     @GetMapping("/{videoId}")
     @Operation(
         summary = "비디오 상세 조회",
-        description = "비디오 ID로 비디오 정보를 조회합니다."
+        description = "비디오 ID로 비디오 정보를 조회합니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -67,7 +68,7 @@ public interface VideoAPI {
     @Operation(
         summary = "내 비디오 목록 조회",
         description = "회원이 업로드한 비디오 목록을 조회합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -83,7 +84,8 @@ public interface VideoAPI {
     @GetMapping("/edited/{originalVideoId}")
     @Operation(
         summary = "편집된 비디오 목록 조회",
-        description = "원본 비디오를 기반으로 편집된 비디오 목록을 조회합니다."
+        description = "원본 비디오를 기반으로 편집된 비디오 목록을 조회합니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -99,7 +101,8 @@ public interface VideoAPI {
     @GetMapping("/download/{videoId}")
     @Operation(
         summary = "비디오 다운로드 정보 조회",
-        description = "비디오 다운로드를 위한 정보를 조회합니다. 클라이언트는 반환된 URL을 사용하여 다운로드할 수 있습니다."
+        description = "비디오 다운로드를 위한 정보를 조회합니다. 클라이언트는 반환된 URL을 사용하여 다운로드할 수 있습니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",

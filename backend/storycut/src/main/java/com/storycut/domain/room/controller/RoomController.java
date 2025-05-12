@@ -47,6 +47,14 @@ public class RoomController implements RoomAPI {
     }
 
     @Override
+    public ResponseEntity<BaseResponse<RoomResponse>> updateThumbnail(
+        CustomUserDetails authUser, Long roomId, String thumbnail) {
+
+        RoomResponse response = roomService.updateThumbnail(authUser.getMemberId(), roomId, thumbnail);
+        return ResponseEntity.ok(new BaseResponse<> (response));
+    }
+
+    @Override
     public ResponseEntity<BaseResponse<String>> deleteRoom(
             CustomUserDetails authUser, Long roomId) {
         

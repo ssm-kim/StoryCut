@@ -41,21 +41,29 @@ public class Room extends BaseEntity {
     @Column(name = "room_password")
     private String password;
 
+    @Column(name = "room_thumbnail")
+    private String thumbnail;
+
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<RoomMember> roomMembers = new ArrayList<>();
 
     @Builder
-    public Room(Long hostMemberId, String title, String password, String context) {
+    public Room(Long hostMemberId, String title, String password, String context, String thumbnail) {
         this.hostId = hostMemberId;
         this.title = title;
         this.password = password;
         this.context = context;
+        this.thumbnail = thumbnail;
     }
 
     public void updateRoom(String title, String password, String context) {
         this.title = title;
         this.password = password;
         this.context = context;
+    }
+
+    public void updateThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
     }
     
     public void updateHostId(Long newHostId) {

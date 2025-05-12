@@ -37,7 +37,7 @@ public interface ChatAPI {
     @Operation(
         summary = "비디오 채팅 메시지 전송",
         description = "비디오 채팅 메시지를 전송하고 MongoDB에 저장합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -56,8 +56,9 @@ public interface ChatAPI {
      * 채팅 메시지 목록 조회 API (페이징)
      */
     @Operation(
-        summary = "채팅 메시지 목록 조회",
-        description = "특정 방의 채팅 메시지를 페이징하여 조회합니다. 10개 단위로 불러오며 페이지 번호로 더 많은 메시지를 불러올 수 있습니다."
+        summary = "공유방 비디오 목록 조회",
+        description = "특정 방의 공유된 비디오를 페이징하여 조회합니다. 10개 단위로 불러오며 페이지 번호로 더 많은 메시지를 불러올 수 있습니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -74,9 +75,9 @@ public interface ChatAPI {
      * 단일 채팅 메시지 삭제 API
      */
     @Operation(
-        summary = "채팅 메시지 삭제",
-        description = "채팅 메시지를 삭제합니다. 방장과 메시지 작성자만 삭제할 수 있습니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        summary = "공유방 비디오 삭제",
+        description = "공유방 비디오를 삭제합니다. 방장과 쇼츠 작성자만 삭제할 수 있습니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
