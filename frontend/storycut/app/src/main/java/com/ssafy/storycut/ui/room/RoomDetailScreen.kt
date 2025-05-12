@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -174,8 +175,7 @@ fun RoomDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_launcher_foreground), // 사용자 아이콘으로 교체 필요
-                                        contentDescription = "멤버",
+                                        imageVector = Icons.Default.Person,                                        contentDescription = "멤버",
                                         modifier = Modifier.size(18.dp),
                                         tint = Color.Gray
                                     )

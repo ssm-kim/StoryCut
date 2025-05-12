@@ -25,7 +25,6 @@ import androidx.navigation.NavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import kotlinx.coroutines.flow.first
 
-@OptIn(ExperimentalFoundationApi::class)
 @UnstableApi
 @Composable
 fun VideoDetailScreen(
