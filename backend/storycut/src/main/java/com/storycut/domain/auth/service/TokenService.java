@@ -6,11 +6,14 @@ import com.storycut.domain.member.model.entity.Member;
 import com.storycut.domain.member.repository.MemberRepository;
 import com.storycut.global.exception.BusinessException;
 import com.storycut.global.model.dto.BaseResponseStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -33,6 +36,7 @@ public class TokenService {
     private final JWTUtil jwtUtil;
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final HttpServletRequest request;
     
     // Redis 키 접두사 상수
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
@@ -243,31 +247,32 @@ public class TokenService {
      * 로그아웃 처리
      */
     @Transactional
-    public void logout(String accessToken) {
-        JWTUtil.TokenStatus tokenStatus = jwtUtil.checkToken(accessToken);
-        
-        Long memberId;
-        try {
-            memberId = jwtUtil.getMemberId(accessToken);
-        } catch (Exception e) {
-            throw new BusinessException(BaseResponseStatus.INVALID_JWT_TOKEN);
-        }
-        
+    public void logout(Long memberId) {
         // Redis에서 리프레시 토큰 삭제
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
         
-        // 액세스 토큰 블랙리스트에 추가 (남은 유효 시간동안)
-        if (tokenStatus == JWTUtil.TokenStatus.VALID) {
-            long expiration = jwtUtil.getExpirationTime(accessToken) - System.currentTimeMillis();
-            if (expiration > 0) {
-                redisTemplate.opsForValue().set(
-                        TOKEN_BLACKLIST_PREFIX + accessToken,
-                        "logout",
-                        expiration,
-                        TimeUnit.MILLISECONDS
-                );
+        // 현재 요청에서 토큰 추출
+        String accessToken = jwtUtil.resolveToken(request);
+        
+        if (accessToken != null) {
+            JWTUtil.TokenStatus tokenStatus = jwtUtil.checkToken(accessToken);
+            
+            // 액세스 토큰 블랙리스트에 추가 (남은 유효 시간동안)
+            if (tokenStatus == JWTUtil.TokenStatus.VALID) {
+                long expiration = jwtUtil.getExpirationTime(accessToken) - System.currentTimeMillis();
+                if (expiration > 0) {
+                    redisTemplate.opsForValue().set(
+                            TOKEN_BLACKLIST_PREFIX + accessToken,
+                            "logout",
+                            expiration,
+                            TimeUnit.MILLISECONDS
+                    );
+                    log.info("액세스 토큰 블랙리스트 추가 - 사용자 ID: {}, 만료까지 남은 시간: {}ms", memberId, expiration);
+                }
             }
         }
+        
+        log.info("사용자 로그아웃 처리 완료 - ID: {}", memberId);
     }
 
     /**
@@ -277,15 +282,5 @@ public class TokenService {
     public Member getMemberById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(BaseResponseStatus.USER_NOT_FOUND));
-    }
-    
-    /**
-     * 회원의 구글 액세스 토큰 업데이트
-     */
-    @Transactional
-    public void updateMemberGoogleToken(Long memberId, String googleAccessToken) {
-        Member member = getMemberById(memberId);
-        member.updateGoogleAccessToken(googleAccessToken);
-        memberRepository.save(member);
     }
 }
