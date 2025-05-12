@@ -35,7 +35,7 @@ public interface RoomAPI {
     @Operation(
         summary = "공유방 생성",
         description = "새로운 공유방을 생성합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -54,7 +54,7 @@ public interface RoomAPI {
     @Operation(
         summary = "내 공유방 목록 조회",
         description = "회원이 참여 중인 모든 공유방 목록을 조회합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -71,7 +71,7 @@ public interface RoomAPI {
     @Operation(
         summary = "공유방 수정",
         description = "공유방 정보를 수정합니다. 방장만 수정할 수 있습니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -88,12 +88,34 @@ public interface RoomAPI {
         @Valid @RequestBody RoomUpdateRequest request);
 
     /**
+     * 공유방 썸네일 변경 API
+     */
+    @Operation(
+        summary = "공유방 썸네일 변경",
+        description = "공유방 썸네일을 변경합니다. 방장만 수정할 수 있습니다.",
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
+            content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+        @ApiResponse(responseCode = "400", description = "입력값을 확인해주세요. (400)"),
+        @ApiResponse(responseCode = "401", description = "인증이 필요합니다. (401)"),
+        @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
+        @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
+    })
+    @PatchMapping("/thumbnail")
+    ResponseEntity<BaseResponse<RoomResponse>> updateThumbnail(
+        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser,
+        @Parameter(description = "수정할 공유방 ID", required = true) @RequestParam Long roomId,
+        @Valid @RequestBody String thumbnail);
+
+    /**
      * 공유방 삭제 API
      */
     @Operation(
         summary = "공유방 삭제",
         description = "공유방을 삭제합니다. 방장만 삭제할 수 있습니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -113,7 +135,7 @@ public interface RoomAPI {
     @Operation(
         summary = "공유방 초대코드 생성",
         description = "방장이 초대 버튼을 누르면 6자리 초대코드를 생성하고 10분간 유효한 상태로 Redis에 저장합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "초대코드가 생성되었습니다.",
@@ -131,7 +153,8 @@ public interface RoomAPI {
      */
     @Operation(
         summary = "초대코드로 공유방 ID 조회",
-        description = "초대코드를 사용해 입장할 공유방의 ID를 반환합니다. 초대코드는 Redis에 10분간 유효합니다."
+        description = "초대코드를 사용해 입장할 공유방의 ID를 반환합니다. 초대코드는 Redis에 10분간 유효합니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "공유방 ID 조회 성공",
@@ -148,7 +171,7 @@ public interface RoomAPI {
     @Operation(
         summary = "공유방 입장",
         description = "공유방에 입장합니다. 비밀번호가 설정된 공유방은 비밀번호 검증이 필요합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -169,7 +192,7 @@ public interface RoomAPI {
     @Operation(
         summary = "공유방 나가기",
         description = "공유방에서 나갑니다. 방장이 나갈 경우: 1. 방에 남은 다른 멤버가 있을 경우, 가입 시간이 가장 오래된 멤버가 새로운 방장으로 지정됩니다. 2. 방에 남은 다른 멤버가 없을 경우, 방은 자동으로 삭제됩니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -187,7 +210,8 @@ public interface RoomAPI {
      */
     @Operation(
         summary = "공유방 상세 정보 조회",
-        description = "공유방의 상세 정보를 조회합니다."
+        description = "공유방의 상세 정보를 조회합니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",
@@ -203,7 +227,8 @@ public interface RoomAPI {
      */
     @Operation(
         summary = "공유방 참여자 목록 조회",
-        description = "공유방 참여자 목록을 조회합니다."
+        description = "공유방 참여자 목록을 조회합니다.",
+        security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청에 성공하였습니다. (200)",

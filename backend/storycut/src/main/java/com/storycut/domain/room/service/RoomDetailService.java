@@ -44,13 +44,12 @@ public class RoomDetailService {
     public List<Room> findRoomsByMemberId(Long memberId) {
         return roomRepository.findRoomsByMemberId(memberId);
     }
-    
 
     @Transactional
     public void updateRoom(Room room, String title, String password, String context) {
-        room.updateRoom(title, password, context);
+        room.updateRoom(title, password, context);// 엔티티끌어쓰고
+        roomRepository.save(room);
     }
-    
 
     @Transactional
     public void deleteRoom(Room room) {

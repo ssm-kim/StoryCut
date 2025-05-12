@@ -18,6 +18,8 @@ public class RoomCreateRequest {
     private String roomPassword;
 
     private String roomContext;
+
+    private String roomThumbnail;
     
     public Room toEntity(Long hostMemberId) {
         return Room.builder()
@@ -25,6 +27,7 @@ public class RoomCreateRequest {
                 .title(roomTitle)
                 .password(roomPassword)
                 .context(roomContext)
+                .thumbnail(roomThumbnail)
                 .build();
     }
 }

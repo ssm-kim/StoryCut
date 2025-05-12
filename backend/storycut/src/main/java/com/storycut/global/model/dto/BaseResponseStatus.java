@@ -53,7 +53,15 @@ public enum BaseResponseStatus {
     // 4000~ 4999 : 유튜브 API 관련 에러
     YOUTUBE_API_ERROR(false, HttpStatus.INTERNAL_SERVER_ERROR, 4000, "유튜브 API 호출 중 오류가 발생했습니다."),
     YOUTUBE_UPLOAD_FAILED(false, HttpStatus.INTERNAL_SERVER_ERROR, 4001, "유튜브 업로드에 실패했습니다."),
-    YOUTUBE_ACCESS_DENIED(false, HttpStatus.FORBIDDEN, 4002, "유튜브 권한이 거부되었습니다.");
+    YOUTUBE_ACCESS_DENIED(false, HttpStatus.FORBIDDEN, 4002, "유튜브 권한이 거부되었습니다."),
+
+    // 5000~ 5999 : 메시지 관련 에러
+    NOT_FOUND_MESSAGE(false, HttpStatus.NOT_FOUND, 5000, "해당 메시지를 찾을 수 없습니다."),
+    NOT_VALID_MESSAGE(false, HttpStatus.BAD_REQUEST, 5001, "메시지가 유효하지 않습니다."),
+    UNAUTHORIZED_MESSAGE(false, HttpStatus.FORBIDDEN, 5002, "메시지에 대한 권한이 없습니다."),
+
+
+    ;
 
     private final boolean isSuccess;
     @JsonIgnore

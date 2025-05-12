@@ -2,6 +2,7 @@ package com.storycut.domain.room.service;
 
 import static com.storycut.global.model.dto.BaseResponseStatus.*;
 
+import com.storycut.domain.mediachat.service.ChatMessageService;
 import com.storycut.domain.room.dto.request.RoomCreateRequest;
 import com.storycut.domain.room.dto.request.RoomUpdateRequest;
 import com.storycut.domain.room.dto.response.RoomMemberResponse;
@@ -9,13 +10,10 @@ import com.storycut.domain.room.dto.response.RoomResponse;
 import com.storycut.domain.room.entity.Room;
 import com.storycut.domain.room.entity.RoomMember;
 import com.storycut.global.exception.BusinessException;
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ public class RoomFacadeService implements RoomService {
     private final RoomDetailService roomDetailService;
     private final RoomMemberService roomMemberService;
     private final RoomInviteService roomInviteService;
-    
+    private final ChatMessageService chatMessageService;
 
     @Override
     @Transactional
@@ -45,7 +43,6 @@ public class RoomFacadeService implements RoomService {
         // 응답 생성 (참여자 수는 1, 방장만 존재)
         return roomDetailService.mapToResponse(savedRoom, 1);
     }
-    
 
     @Override
     public List<RoomResponse> getMyRooms(Long memberId) {
@@ -60,7 +57,6 @@ public class RoomFacadeService implements RoomService {
                 })
                 .toList();
     }
-    
 
     @Override
     @Transactional
@@ -69,15 +65,30 @@ public class RoomFacadeService implements RoomService {
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
         
         // 공유방 정보 수정
-        roomDetailService.updateRoom(room, request.getRoomTitle(), request.getRoomPassword(), request.getRoomContext());
-        
+        room.updateRoom(request.getRoomTitle(), request.getRoomPassword(), request.getRoomContext());
+
         // 현재 참여자 수 조회
         int memberCount = roomMemberService.countMembersByRoomId(roomId);
-        
+
         // 응답 생성
         return roomDetailService.mapToResponse(room, memberCount);
     }
-    
+
+    @Override
+    @Transactional
+    public RoomResponse updateThumbnail(Long memberId, Long roomId, String thumbnail) {
+        // 방장 권한 확인과 함께 공유방 조회
+        Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
+
+        // 공유방 정보 수정
+        room.updateThumbnail(thumbnail);
+
+        // 현재 참여자 수 조회
+        int memberCount = roomMemberService.countMembersByRoomId(roomId);
+
+        // 응답 생성
+        return roomDetailService.mapToResponse(room, memberCount);
+    }
 
     @Override
     @Transactional
@@ -85,10 +96,12 @@ public class RoomFacadeService implements RoomService {
         // 방장 권한 확인과 함께 공유방 조회
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, memberId);
         
+        // MongoDB에서 채팅 로그 삭제
+        chatMessageService.deleteAllByRoomId(roomId);
+        
         // 공유방 삭제 (cascade로 멤버도 함께 삭제됨)
         roomDetailService.deleteRoom(room);
     }
-
 
     @Override
     @Transactional
@@ -97,7 +110,6 @@ public class RoomFacadeService implements RoomService {
         Room room = roomDetailService.findRoomByIdAndHostId(roomId, hostMemberId);
         return roomInviteService.generateInviteCode(room.getId());
     }
-    
 
     @Override
     @Transactional
@@ -147,8 +159,13 @@ public class RoomFacadeService implements RoomService {
                     .toList();
             
             if (remainingMembers.isEmpty() && Objects.equals(room.getHostId(), memberId)) {
-                // 남은 멤버가 없으면 방 삭제
+                // 남은 멤버가 없으면 방과 관련 데이터 삭제
                 log.info("방장 {}가 방을 삭제합니다.", memberId);
+                
+                // MongoDB에서 채팅 로그 삭제
+                chatMessageService.deleteAllByRoomId(roomId);
+                
+                // 공유방 삭제
                 roomDetailService.deleteRoom(room);
                 return;
             } else {
@@ -168,7 +185,6 @@ public class RoomFacadeService implements RoomService {
             roomMemberService.removeMember(roomId, memberId);
         }
     }
-    
 
     @Override
     public RoomResponse getRoomDetail(Long roomId) {
@@ -181,7 +197,6 @@ public class RoomFacadeService implements RoomService {
         // 응답 생성
         return roomDetailService.mapToResponse(room, memberCount);
     }
-    
 
     @Override
     public List<RoomMemberResponse> getRoomMembers(Long roomId) {
