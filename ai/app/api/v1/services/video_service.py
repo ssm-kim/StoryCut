@@ -3,6 +3,7 @@ import httpx
 from app.api.v1.services.springboot_service import get_video_from_springboot
 from app.api.v1.services.mosaic_service import run_mosaic_pipeline
 from app.api.v1.services.subtitle_service import subtitles
+from app.api.v1.services.bgm_service import process_bgm_service  
 
 async def download_video_to_local(videoUrl: str, save_path: str):
     async with httpx.AsyncClient() as client:
@@ -17,6 +18,7 @@ async def process_video_job(
     video_id: int,
     images: list,
     subtitle: bool,
+    music_prompt:str,
     token: str,
 ) -> str:
 
@@ -37,6 +39,10 @@ async def process_video_job(
         video_path = new_video_path
         is_blur = True
 
+    if music_prompt:
+        new_video_path = await process_bgm_service(video_path,prompt)
+        os.remove(video_path)
+        video_path = new_video_path
 
     if subtitle:
         new_video_path = await subtitles(video_path)

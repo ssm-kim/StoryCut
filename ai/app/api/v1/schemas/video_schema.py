@@ -7,9 +7,21 @@ class VideoProcessRequest(BaseModel):
     video_id: int = Field(..., alias="videoId")
     images: Optional[List[str]] = None
     subtitle: bool
+    music_prompt:str=Field(..., alias="musicPrompt")
 
     class Config:
         allow_population_by_field_name = True
+        schema_extra = {
+           "example": {
+                "prompt":"축구하는 장면",
+                "video_id":1,
+                "images":[
+                    "app/images/face1.jpg"
+                ],
+                "subtitle":True,
+                "musicPrompt":"댄스음악"
+           }
+        }
 
 
 class VideoPostResponse(BaseModel):
