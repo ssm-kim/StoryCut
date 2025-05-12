@@ -3,6 +3,16 @@ spring:
     activate:
       on-profile: prod
 
+  # MySQL 설정
+  datasource:
+    url: jdbc:mysql://k12d108.p.ssafy.io:3306/storycut
+
+  # Redis 설정
+  data:
+    redis:
+      host: redis
+      port: 6379
+
 server:
   port: 8080
 
