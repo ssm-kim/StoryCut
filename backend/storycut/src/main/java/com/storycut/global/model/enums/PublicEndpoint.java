@@ -11,8 +11,11 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum PublicEndpoint {
     // 인증 관련 경로
-    AUTH_API("/api/auth/**"),   // 모든 인증 API 경로 (로그인, 토큰 갱신 등)
-    WEB_LOGIN("/api/auth/web/login"),    // 웹 로그인 경로가 있는지 확인
+    AUTH_LOGIN("/api/auth/login"),       // 로그인 API
+    AUTH_REFRESH("/api/auth/refresh"),   // 토큰 갱신 API
+    AUTH_WEB_LOGIN("/api/auth/web/login"), // 웹 로그인 리다이렉트
+    AUTH_TEST_LOGIN("/api/auth/test-login"), // 테스트 로그인
+    AUTH_OAUTH2_CALLBACK("/api/auth/oauth2/callback"), // OAuth2 콜백
 
     // OAuth2 관련 경로
     OAUTH2("/oauth2/**"),
