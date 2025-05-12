@@ -3,8 +3,6 @@ from app.api.v1.schemas.post_schema import PostRequest, PostResponse
 
 SPRINGBOOT_API_URL = "http://localhost:8080/api/video"  # 실제 주소로 교체
 
-
-# ✅ 영상 등록 (POST)
 async def post_video_to_springboot(
     token: str,
     payload: PostRequest
@@ -27,7 +25,6 @@ async def post_video_to_springboot(
     return PostResponse.parse_obj(response.json())
 
 
-# ✅ 영상 조회 (GET)
 async def get_video_from_springboot(
     video_id: int,
     token: str

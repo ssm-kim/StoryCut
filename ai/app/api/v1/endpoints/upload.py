@@ -2,22 +2,21 @@ import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, Header
 from typing import List
 
+# 비동기 서비스 로직 불러오기
 from app.api.v1.services.upload_service import (
     save_uploaded_images,
     save_uploaded_video_local,
     save_uploaded_video,
-    generate_and_upload_thumbnail 
+    generate_and_upload_thumbnail
 )
 from app.api.v1.services.springboot_service import post_video_to_springboot
 from app.api.v1.schemas.upload_schema import (
-    ImageUploadResponse, VideoUploadResponse, ErrorResponse,
-    ImageUploadResult, VideoUploadResult
+    ImageUploadResponse, ErrorResponse,
+    ImageUploadResult,VideoUploadResponse
 )
-from app.api.v1.schemas.post_schema import PostRequest 
+from app.api.v1.schemas.post_schema import PostRequest
 
 router = APIRouter()
-
-
 @router.post(
     "/images",
     response_model=ImageUploadResponse,
@@ -26,7 +25,7 @@ router = APIRouter()
 )
 async def upload_images(files: List[UploadFile] = File(...)):
     try:
-        image_urls = save_uploaded_images(files)
+        image_urls = await save_uploaded_images(files)
         return ImageUploadResponse(
             is_success=True,
             code=200,
@@ -43,18 +42,14 @@ async def upload_video(
     authorization: str = Header(..., alias="Authorization")
 ):
     token = authorization.replace("Bearer ", "")
-    
+
     try:
-        # 1. 로컬 저장
-        local_path = save_uploaded_video_local(file)
 
-        # 2. 썸네일 생성 + S3 업로드
-        thumbnail_url = generate_and_upload_thumbnail(local_path)
-        video_name= os.path.basename(local_path)
-        # 3. 영상 S3 업로드
-        s3_url = save_uploaded_video(local_path, video_name)
+        local_path = await save_uploaded_video_local(file)
+        video_name = os.path.basename(local_path)
+        thumbnail_url = await generate_and_upload_thumbnail(local_path)
+        s3_url = await save_uploaded_video(local_path, video_name)
 
-        # 4. Spring Boot 전송 - PostRequest 활용
         payload = PostRequest(
             video_name=video_name,
             video_url=s3_url,
@@ -62,15 +57,13 @@ async def upload_video(
             original_video_id=None,
             is_blur=False
         )
-
         spring_response = await post_video_to_springboot(token, payload)
 
-        # 5. 응답
         return VideoUploadResponse(
             is_success=True,
             code=200,
             message="영상 업로드 성공",
-            result=VideoUploadResult(video_id=spring_response.result.video_id)
+            result=spring_response.result
         )
 
     except Exception as e:
