@@ -119,3 +119,35 @@ async def generate_and_upload_thumbnail(video_path: str) -> str:
         import traceback
         logger.exception("썸네일 처리 실패\n%s", traceback.format_exc())
         raise RuntimeError(f"썸네일 처리 실패: {str(e)}")
+
+
+
+async def save_uploaded_image(file: UploadFile) -> str:
+    session = aioboto3.Session()
+    try:
+        ext = file.filename.split('.')[-1]
+        filename = f"{uuid4().hex}.{ext}"
+        local_path = os.path.join(UPLOAD_DIR, filename)
+
+        logger.info("이미지 저장 시작")
+        async with aiofiles.open(local_path, "wb") as out_file:
+            content = await file.read()
+            await out_file.write(content)
+
+        logger.info("S3 이미지 업로드 시작")
+        async with session.client("s3", region_name=settings.AWS_REGION) as s3_client:
+            s3_key = f"images/{filename}"
+            async with aiofiles.open(local_path, "rb") as f:
+                await s3_client.upload_fileobj(
+                    f,
+                    settings.S3_BUCKET_NAME,
+                    s3_key,
+                    ExtraArgs={"ContentType": file.content_type}
+                )
+        os.remove(local_path)
+        url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+        logger.info(f"S3 이미지 업로드 완료: {url}")
+        return url
+    except Exception as e:
+        logger.exception("S3 이미지 업로드 실패")
+        raise RuntimeError(f"S3 이미지 업로드 실패: {str(e)}")
