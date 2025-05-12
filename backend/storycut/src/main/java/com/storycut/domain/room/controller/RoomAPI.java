@@ -103,7 +103,7 @@ public interface RoomAPI {
         @ApiResponse(responseCode = "403", description = "방의 호스트가 아니거나 이미 없는 방입니다. (2001)"),
         @ApiResponse(responseCode = "404", description = "해당 방이 존재하지 않습니다. (2000)")
     })
-    @PatchMapping
+    @PatchMapping("/thumbnail")
     ResponseEntity<BaseResponse<RoomResponse>> updateThumbnail(
         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser,
         @Parameter(description = "수정할 공유방 ID", required = true) @RequestParam Long roomId,
