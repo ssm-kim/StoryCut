@@ -19,6 +19,7 @@ public class VideoResponse {
     private String videoUrl;
     private String thumbnail;
     private Long originalVideoId;
+    private boolean isBlur;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -30,6 +31,7 @@ public class VideoResponse {
                 .videoUrl(video.getVideoUrl())
                 .thumbnail(video.getThumbnail())
                 .originalVideoId(video.getOriginalVideoId())
+                .isBlur(video.isBlur())
                 .createdAt(video.getCreatedAt())
                 .updatedAt(video.getUpdatedAt())
                 .build();

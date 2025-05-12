@@ -14,6 +14,8 @@ public class RoomResponse {
     private Long hostId;
     private String roomTitle;
     private boolean hasPassword;
+    private String roomContext;
+    private String roomThumbnail;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private int memberCount;
@@ -23,6 +25,8 @@ public class RoomResponse {
                 .roomId(publicRoom.getId())
                 .hostId(publicRoom.getHostId())
                 .roomTitle(publicRoom.getTitle())
+                .roomContext(publicRoom.getContext())
+                .roomThumbnail(publicRoom.getThumbnail())
                 .hasPassword(publicRoom.getPassword() != null && !publicRoom.getPassword().isEmpty())
                 .createdAt(publicRoom.getCreatedAt())
                 .updatedAt(publicRoom.getUpdatedAt())
