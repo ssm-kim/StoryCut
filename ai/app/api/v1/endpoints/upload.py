@@ -7,12 +7,15 @@ from app.api.v1.services.upload_service import (
     save_uploaded_images,
     save_uploaded_video_local,
     save_uploaded_video,
-    generate_and_upload_thumbnail
+    generate_and_upload_thumbnail,
+    save_uploaded_image
 )
 from app.api.v1.services.springboot_service import post_video_to_springboot
 from app.api.v1.schemas.upload_schema import (
     ImageUploadResponse, ErrorResponse,
-    ImageUploadResult,VideoUploadResponse
+    ImageUploadResult,VideoUploadResponse,
+    ImageUploadResponse,RoomThumbnailResponse,
+    RoomThumbnailResult
 )
 from app.api.v1.schemas.post_schema import PostRequest
 
@@ -68,3 +71,21 @@ async def upload_video(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post(
+    "/room-thumbnails",
+    response_model=RoomThumbnailResponse,
+    responses={400: {"model": ErrorResponse, "description": "룸 썸네일 업로드 실패"}},
+    summary="룸 썸네일 이미지 업로드"
+)
+async def upload_room_thumbnail(file: UploadFile = File(...)):
+    try:
+        uploaded_url = await save_uploaded_image(file)
+        return RoomThumbnailResponse(
+            is_success=True,
+            code=200,
+            message="룸 썸네일 업로드 성공",
+            result=RoomThumbnailResult(url=uploaded_url)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"룸 썸네일 업로드 실패: {str(e)}")

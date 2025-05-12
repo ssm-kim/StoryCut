@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.api.v1.schemas.post_schema import PostResult
@@ -72,5 +73,32 @@ class ErrorResponse(BaseModel):
                 "code": 400,
                 "message": "에러 메시지",
                 "result": None
+            }
+        }
+
+
+class RoomThumbnailResult(BaseModel):
+    url: str = Field(..., example="https://your-bucket.s3.ap-northeast-2.amazonaws.com/images/thumb_123abc.jpg")
+
+    class Config:
+        allow_population_by_field_name = True
+
+
+class RoomThumbnailResponse(BaseModel):
+    is_success: bool = Field(..., alias="isSuccess", example=True)
+    code: int = Field(..., example=200)
+    message: str = Field(..., example="룸 썸네일 업로드 성공")
+    result: Optional[RoomThumbnailResult]
+
+    class Config:
+        allow_population_by_field_name = True
+        schema_extra = {
+            "example": {
+                "isSuccess": True,
+                "code": 200,
+                "message": "룸 썸네일 업로드 성공",
+                "result": {
+                    "url": "https://your-bucket.s3.ap-northeast-2.amazonaws.com/images/thumb_123abc.jpg"
+                }
             }
         }
