@@ -5,9 +5,9 @@ from operator import itemgetter
 from mmaction.apis import init_recognizer, inference_recognizer
 
 # 모델 설정 (초기화는 글로벌로 하여 성능 최적화)
-config_file = 'C:/ssafy/mmaction2/tsn_imagenet-pretrained-r50_8xb32-1x1x8-100e_kinetics400-rgb.py'
-checkpoint_file = 'C:/ssafy/mmaction2/tsn_imagenet-pretrained-r50_8xb32-1x1x8-100e_kinetics400-rgb_20220906-2692d16c.pth'
-label_file = 'C:/ssafy/mmaction2/tools/data/kinetics/label_map_k400.txt'
+config_file = './src/mmaction2/configs/recognition/tsn/tsn_imagenet-pretrained-r50_8xb32-1x1x8-100e_kinetics400-rgb.py'
+checkpoint_file = './src/mmaction2/checkpoints/tsn_imagenet-pretrained-r50_8xb32-1x1x8-100e_kinetics400-rgb_20220906-2692d16c.pth'
+label_file = './src/mmaction2/tools/data/kinetics/label_map_k400.txt'
 
 model = init_recognizer(config_file, checkpoint_file, device='cuda:0')
 
