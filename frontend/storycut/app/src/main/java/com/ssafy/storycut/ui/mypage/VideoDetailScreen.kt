@@ -1,7 +1,6 @@
 package com.ssafy.storycut.ui.mypage
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
@@ -23,6 +22,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
+import com.ssafy.storycut.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.first
 
 @UnstableApi
@@ -31,10 +31,12 @@ fun VideoDetailScreen(
     videoId: String,
     navController: NavController,
     videoViewModel: VideoViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),  // AuthViewModel 추가
     tokenManager: TokenManager
 ) {
     val context = LocalContext.current
     val videoList by videoViewModel.myVideos.collectAsState()
+    val userInfo by authViewModel.userState.collectAsState()  // 사용자 정보 가져오기
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -119,6 +121,9 @@ fun VideoDetailScreen(
         try {
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
+                // 사용자 정보 새로고침
+                authViewModel.refreshUserInfoFromRoom()
+                
                 // 만약 비디오 리스트가 비어있다면 불러오기
                 if (videoList.isEmpty()) {
                     videoViewModel.fetchMyVideos(token)
@@ -198,6 +203,9 @@ fun VideoDetailScreen(
                                 onPlayerCreated = { player ->
                                     players[page] = player
                                 },
+                                // 사용자 정보 전달
+                                userProfileImg = userInfo?.profileImg,
+                                userName = userInfo?.name,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

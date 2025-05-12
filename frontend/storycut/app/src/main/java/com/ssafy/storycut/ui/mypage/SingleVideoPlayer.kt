@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,17 +26,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import coil.compose.AsyncImage
+import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.VideoDto
 
 @UnstableApi
@@ -44,6 +50,8 @@ fun SingleVideoPlayer(
     video: VideoDto,
     isCurrentlyVisible: Boolean,
     onPlayerCreated: (ExoPlayer) -> Unit = {},
+    userProfileImg: String? = null,  // 사용자 프로필 이미지 URL 추가
+    userName: String? = null,        // 사용자 이름 추가
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -130,6 +138,7 @@ fun SingleVideoPlayer(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(bottom = 20.dp)
                 .align(Alignment.BottomCenter)
                 .background(
                     brush = Brush.verticalGradient(
@@ -144,6 +153,36 @@ fun SingleVideoPlayer(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
+
+                // 작성자 정보 (프로필 이미지와 함께 표시) - 더 크게 표시
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // 프로필 이미지 추가 - 크기 증가
+                    AsyncImage(
+                        model = userProfileImg ?: R.drawable.ic_launcher_foreground,  // 기본 이미지로 대체
+                        contentDescription = "작성자 프로필",
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        error = painterResource(id = R.drawable.ic_launcher_foreground)
+                    )
+
+                    Spacer(modifier = Modifier.padding(start = 10.dp))
+
+                    // 작성자 이름 - 폰트 크기 및 굵기 증가
+                    Text(
+                        text = userName ?: video.videoName,  // userName이 없는 경우 비디오 이름으로 대체
+                        color = Color.White,  // 투명도 제거하여 더 선명하게
+                        style = MaterialTheme.typography.bodyMedium.copy(  // bodySmall에서 bodyMedium으로 변경
+                            fontWeight = FontWeight.SemiBold,  // 글자 굵기 증가
+                            fontSize = 16.sp  // 폰트 크기 명시적으로 지정
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))  // 간격 약간 증가
+
                 // 비디오 제목
                 Text(
                     text = video.videoName,
@@ -151,15 +190,6 @@ fun SingleVideoPlayer(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     )
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // 추가 정보 (필요에 따라 수정)
-                Text(
-                    text = "작성자: ${video.videoName}",  // 실제 작성자 필드로 변경 필요
-                    color = Color.White.copy(alpha = 0.8f),
-                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
