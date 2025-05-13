@@ -39,19 +39,19 @@ async def process_video_job(
         os.remove(video_path)
         video_path = new_video_path
 
-    if images:
-        new_video_path = await run_mosaic_pipeline(video_path, images, 5, 3)
-        os.remove(video_path)
+    if subtitle:
+        new_video_path = await subtitles(video_path)
         video_path = new_video_path
-        is_blur = True
 
     if music_prompt:
         new_video_path = await process_bgm_service(video_path,prompt)
         os.remove(video_path)
         video_path = new_video_path
 
-    if subtitle:
-        new_video_path = await subtitles(video_path)
+    if images:
+        new_video_path = await run_mosaic_pipeline(video_path, images, 5, 3)
+        os.remove(video_path)
         video_path = new_video_path
+        is_blur = True
 
     return video_path, is_blur

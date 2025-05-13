@@ -217,6 +217,14 @@ async def run_mosaic_pipeline(input_path: str, target_paths: List[str], detect_i
     await loop.run_in_executor(executor, add_audio_to_video, merged_output, input_path, final_output)
     await loop.run_in_executor(executor, gpu_encode_video, final_output, encoded_output)
 
+    # 🔻 중간 파일 정리
+    for path in segment_paths + [merged_output, final_output]:
+        if os.path.exists(path):
+            os.remove(path)
+    
+    for path in target_paths[:2]:
+        if os.path.exists(path):
+            os.remove(path)
+
     release_face_model()
     return encoded_output
-
