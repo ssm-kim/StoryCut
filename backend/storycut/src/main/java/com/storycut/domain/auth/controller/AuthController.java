@@ -58,7 +58,7 @@ public class AuthController {
     public void googleWebLogin(
         HttpServletResponse response) throws IOException {
         log.info("[구글 로그인] 웹 요청 - OAuth 리다이렉트");
-        response.sendRedirect("/oauth2/authorization/google");
+        response.sendRedirect("/api/v1/spring/oauth2/authorization/google");
     }
 
     @Operation(summary = "테스트 로그인", description = "개발 환경에서만 사용 가능한 테스트 로그인")
