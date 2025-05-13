@@ -11,7 +11,7 @@ def custom_openapi():
         return app.openapi_schema
 
     openapi_schema = get_openapi(
-        title="Your API",
+        title="fast API",
         version="1.0.0",
         description="API with Authorization header",
         routes=app.routes,
