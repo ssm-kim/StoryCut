@@ -16,6 +16,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.ssafy.storycut.ui.edit.EditViewModel
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
 import com.ssafy.storycut.ui.room.RoomDetailScreen
 
@@ -38,7 +39,16 @@ fun NavGraphBuilder.mainGraph(
     }
 
     composable(Navigation.Main.EDIT) {
-        EditScreen()
+        // hiltViewModel()을 사용하여 EditViewModel 인스턴스 생성
+        val editViewModel = hiltViewModel<EditViewModel>()
+
+        EditScreen(
+            viewModel = editViewModel,
+            onEditSuccess = { videoId ->
+                // 편집 성공 시 비디오 상세 화면으로 이동
+                navController.navigate("video_detail/$videoId")
+            }
+        )
     }
 
     composable(Navigation.Main.SHORTS_UPLOAD) {

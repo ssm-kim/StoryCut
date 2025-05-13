@@ -1,8 +1,7 @@
 package com.ssafy.storycut.ui.edit
 
-import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -21,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -39,59 +37,53 @@ import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.edit.dialog.OptionDialog
 import com.ssafy.storycut.ui.edit.dialog.VideoUploadDialog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun EditScreen() {
+fun EditScreen(
+    viewModel: EditViewModel,
+    onEditSuccess: (String) -> Unit
+) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     var showVideoDialog by remember { mutableStateOf(false) }
     var showOptionDialog by remember { mutableStateOf(false) }
-    var selectedVideoUri by remember { mutableStateOf<Uri?>(null) }
-    var videoThumbnail by remember { mutableStateOf<Bitmap?>(null) }
-    var videoSelected by remember { mutableStateOf(false) }
 
-    // 선택된 옵션들 상태
-    var hasMosaic by remember { mutableStateOf(false) }
-    var hasKoreanSubtitle by remember { mutableStateOf(false) }
-    var hasBackgroundMusic by remember { mutableStateOf(false) }
+    // 오류 메시지 표시를 위한 효과
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
-    // 프롬프트 상태
-    var promptText by remember { mutableStateOf("") }
-
-    // 모자이크 대상 이미지 리스트 상태
-    var mosaicImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    // 이벤트 수집
+    LaunchedEffect(viewModel) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is EditViewModel.EditEvent.Success -> {
+                    onEditSuccess(event.videoId)
+                }
+                is EditViewModel.EditEvent.Error -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     // 갤러리에서 비디오 선택을 위한 런처
     val galleryVideoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) {
-            selectedVideoUri = uri
-            videoSelected = true
+        uri?.let { viewModel.setSelectedVideo(it) }
+    }
 
-            // 비디오 썸네일 추출 (IO 쓰레드에서 실행)
-            coroutineScope.launch {
-                val bitmap = withContext(Dispatchers.IO) {
-                    try {
-                        val retriever = MediaMetadataRetriever()
-                        retriever.setDataSource(context, uri)
-                        // 첫 프레임 가져오기
-                        val bitmap = retriever.getFrameAtTime(0)
-                        retriever.release()
-                        bitmap
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
-                }
-                videoThumbnail = bitmap
-            }
-        }
+    // 갤러리에서 이미지 선택을 위한 런처
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.addMosaicImage(it) }
     }
 
     // 비디오 선택 함수들
@@ -101,36 +93,8 @@ fun EditScreen() {
     }
 
     fun openMyShorts() {
-        // 실제 구현에서는 앱 내부의 쇼츠 비디오를 로드하는 로직이 필요
         galleryVideoLauncher.launch("video/*")
         showVideoDialog = false
-    }
-
-    // 옵션 적용 함수들
-    fun applyMosaic() {
-        hasMosaic = true
-    }
-
-    fun addKoreanSubtitle() {
-        hasKoreanSubtitle = true
-    }
-
-    fun addBackgroundMusic() {
-        hasBackgroundMusic = true
-    }
-
-    // 옵션 제거 함수들
-    fun removeMosaic() {
-        hasMosaic = false
-        mosaicImages = emptyList() // 모자이크 제거 시 이미지도 초기화
-    }
-
-    fun removeKoreanSubtitle() {
-        hasKoreanSubtitle = false
-    }
-
-    fun removeBackgroundMusic() {
-        hasBackgroundMusic = false
     }
 
     Column(
@@ -168,15 +132,15 @@ fun EditScreen() {
                 .clickable { showVideoDialog = true },
             contentAlignment = Alignment.Center
         ) {
-            if (videoSelected && videoThumbnail != null) {
+            if (viewModel.videoSelected && viewModel.videoThumbnail != null) {
                 // 비디오 썸네일 표시
                 Image(
-                    bitmap = videoThumbnail!!.asImageBitmap(),
+                    bitmap = viewModel.videoThumbnail!!.asImageBitmap(),
                     contentDescription = "선택된 비디오",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()
                 )
-            } else if (videoSelected) {
+            } else if (viewModel.videoSelected) {
                 // 비디오는 선택됐지만 썸네일이 아직 로드되지 않은 경우
                 CircularProgressIndicator()
             } else {
@@ -197,10 +161,10 @@ fun EditScreen() {
         )
 
         // 모자이크 옵션 (조건부 표시)
-        if (hasMosaic) {
+        if (viewModel.hasMosaic) {
             OptionalSection(
                 title = "모자이크",
-                onRemove = { removeMosaic() }
+                onRemove = { viewModel.toggleMosaic(false) }
             ) {
                 Column(
                     modifier = Modifier
@@ -208,14 +172,6 @@ fun EditScreen() {
                         .padding(vertical = 8.dp)
                 ) {
                     Text("제외할 인물을 올려 주세요", fontSize = 12.sp, color = Color.Gray)
-
-                    val photoPickerLauncher = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.GetContent()
-                    ) { uri: Uri? ->
-                        if (uri != null && mosaicImages.size < 2) {
-                            mosaicImages = mosaicImages + uri
-                        }
-                    }
 
                     Row(
                         modifier = Modifier
@@ -241,7 +197,7 @@ fun EditScreen() {
                                     )
                                 }
                                 .clickable {
-                                    if (mosaicImages.size < 2) {
+                                    if (viewModel.mosaicImages.size < 2) {
                                         photoPickerLauncher.launch("image/*")
                                     }
                                 },
@@ -257,7 +213,7 @@ fun EditScreen() {
                         }
 
                         // 선택된 인물 사진들
-                        mosaicImages.forEachIndexed { index, uri ->
+                        viewModel.mosaicImages.forEachIndexed { index, uri ->
                             Box(
                                 modifier = Modifier
                                     .size(100.dp)
@@ -283,7 +239,7 @@ fun EditScreen() {
                                         .offset(x = (-4).dp, y = 4.dp)
                                         .background(Color.White, CircleShape)
                                         .clickable {
-                                            mosaicImages = mosaicImages.filterIndexed { i, _ -> i != index }
+                                            viewModel.removeMosaicImage(index)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -302,28 +258,33 @@ fun EditScreen() {
         }
 
         // 한국어 자막 옵션 (조건부 표시)
-        if (hasKoreanSubtitle) {
+        if (viewModel.hasKoreanSubtitle) {
             OptionalSection(
                 title = "한국어 자막",
-                onRemove = { removeKoreanSubtitle() }
+                onRemove = { viewModel.toggleKoreanSubtitle(false) }
             ) {
                 // 자막 설정 영역 내용
+                Text(
+                    "한국어 자막이 자동으로 생성됩니다.",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
-
             HorizontalDivider(color = Color.LightGray)
         }
 
         // 배경 음악 옵션 (조건부 표시)
-        if (hasBackgroundMusic) {
+        if (viewModel.hasBackgroundMusic) {
             OptionalSection(
                 title = "배경 음악",
-                onRemove = { removeBackgroundMusic() }
+                onRemove = { viewModel.toggleBackgroundMusic(false) }
             ) {
                 // 배경 음악 설정 영역 내용
                 OutlinedTextField(
-                    value = promptText,
-                    onValueChange = { promptText = it },
-                    placeholder = { Text("프롬프트") },
+                    value = viewModel.promptText,
+                    onValueChange = { viewModel.updatePromptText(it) },
+                    placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),
@@ -334,11 +295,11 @@ fun EditScreen() {
                     shape = RoundedCornerShape(8.dp)
                 )
             }
-
             HorizontalDivider(color = Color.LightGray)
         }
 
         // 옵션추가 버튼 - 모든 옵션이 추가된 경우 비활성화
+        val allOptionsAdded = viewModel.hasMosaic && viewModel.hasKoreanSubtitle && viewModel.hasBackgroundMusic
         Button(
             onClick = { showOptionDialog = true },
             modifier = Modifier
@@ -349,19 +310,19 @@ fun EditScreen() {
                 disabledContainerColor = Color(0xFFDDDDDD)
             ),
             shape = RoundedCornerShape(8.dp),
-            enabled = !(hasMosaic && hasKoreanSubtitle && hasBackgroundMusic) // 모든 옵션이 추가된 경우 비활성화
+            enabled = !allOptionsAdded // 모든 옵션이 추가된 경우 비활성화
         ) {
             Text(
                 "옵션추가",
-                color = if (hasMosaic && hasKoreanSubtitle && hasBackgroundMusic) Color.Gray else Color.Black
+                color = if (allOptionsAdded) Color.Gray else Color.Black
             )
         }
 
         // 프롬프트 입력 영역
         OutlinedTextField(
-            value = promptText,
-            onValueChange = { promptText = it },
-            placeholder = { Text("프롬프트") },
+            value = viewModel.promptText,
+            onValueChange = { viewModel.updatePromptText(it) },
+            placeholder = { Text("영상에 대한 프롬프트를 입력하세요") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp),
@@ -376,16 +337,26 @@ fun EditScreen() {
 
         // 편집하기 버튼
         Button(
-            onClick = { },
+            onClick = { viewModel.processEditing() },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black
+                containerColor = Color.Black,
+                disabledContainerColor = Color.Gray
             ),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
+            enabled = !viewModel.isLoading && viewModel.videoSelected // 로딩 중이 아니고 비디오가 선택된 경우만 활성화
         ) {
-            Text("편집하기", color = Color.White)
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("편집하기", color = Color.White)
+            }
         }
     }
 
@@ -402,13 +373,35 @@ fun EditScreen() {
     if (showOptionDialog) {
         OptionDialog(
             onDismiss = { showOptionDialog = false },
-            onMosaicClick = { applyMosaic() },
-            onKoreanSubtitleClick = { addKoreanSubtitle() },
-            onBackgroundMusicClick = { addBackgroundMusic() },
-            hasMosaic = hasMosaic,
-            hasKoreanSubtitle = hasKoreanSubtitle,
-            hasBackgroundMusic = hasBackgroundMusic
+            onMosaicClick = { viewModel.toggleMosaic(true) },
+            onKoreanSubtitleClick = { viewModel.toggleKoreanSubtitle(true) },
+            onBackgroundMusicClick = { viewModel.toggleBackgroundMusic(true) },
+            hasMosaic = viewModel.hasMosaic,
+            hasKoreanSubtitle = viewModel.hasKoreanSubtitle,
+            hasBackgroundMusic = viewModel.hasBackgroundMusic
         )
+    }
+
+    // 로딩 오버레이
+    if (viewModel.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                CircularProgressIndicator(color = Color.White)
+                Text(
+                    "영상 처리 중...",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 

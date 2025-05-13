@@ -322,7 +322,7 @@ class AuthRepository @Inject constructor(
                 if (responseBody.isSuccess) {
                     // 응답에서 구글 토큰 정보 가져오기
                     val result = responseBody.result
-                    if (result != null && result.googleAccessToken != null) {
+                    if (result?.googleAccessToken != null) {
                         // 새 구글 액세스 토큰 저장
                         tokenManager.saveGoogleAccessTokens(result.googleAccessToken)
 

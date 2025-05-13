@@ -3,10 +3,12 @@ package com.ssafy.storycut.di
 import android.content.Context
 import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
+import com.ssafy.storycut.data.api.service.EditService
 import com.ssafy.storycut.data.api.service.RoomApiService
 import com.ssafy.storycut.data.api.service.VideoApiService
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
+import com.ssafy.storycut.data.repository.EditRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService
 import com.ssafy.storycut.data.repository.S3Repository
 import com.ssafy.storycut.util.network.AuthInterceptor // AuthInterceptor import는 유지
@@ -110,4 +112,21 @@ object AppModule {
     fun provideS3Repository(@ApplicationContext context: Context): S3Repository {
         return S3Repository(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideEditService(retrofit: Retrofit): EditService {
+        return retrofit.create(EditService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEditRepository(
+        editService: EditService,
+        @ApplicationContext context: Context,
+        tokenManager: TokenManager
+    ): EditRepository {
+        return EditRepository(editService, context, tokenManager)
+    }
+
 }

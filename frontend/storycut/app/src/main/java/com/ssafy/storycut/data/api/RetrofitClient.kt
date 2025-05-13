@@ -3,7 +3,7 @@ package com.ssafy.storycut.data.api
 import com.google.gson.GsonBuilder
 import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
-import com.ssafy.storycut.data.api.service.S3Service
+import com.ssafy.storycut.data.api.service.EditService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -59,8 +59,8 @@ object RetrofitClient {
         retrofit.create(AuthApiService::class.java)
     }
 
-    val s3Service: S3Service by lazy {
-        secondRetrofit.create(S3Service::class.java)
+    val editService: EditService by lazy {
+        secondRetrofit.create(EditService::class.java)
     }
 
 }

@@ -44,7 +44,7 @@ class S3Repository @Inject constructor(
             Log.d("S3Repository", "Created part with name 'file' and filename '${file.name}'")
 
             // S3 업로드 API 호출
-            val response = RetrofitClient.s3Service.uploadRoomThumbNailImage(imagePart)
+            val response = RetrofitClient.editService.uploadRoomThumbNailImage(imagePart)
             Log.d("S3Repository", "Response: ${response.code()}, ${response.message()}")
 
             if (response.isSuccessful) {
