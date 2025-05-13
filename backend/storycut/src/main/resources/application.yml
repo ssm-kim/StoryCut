@@ -43,11 +43,12 @@ springdoc:
   swagger-ui:
     urls:
       - name: "Storycut API"
-        url: ${app.baseUrl}/v3/api-docs
+        url: ${app.baseUrl}/api/v1/spring/v3/api-docs
+        # url: ${app.baseUrl}/v3/api-docs
         # url: /v3/api-docs
-    path: /swagger-ui.html
+    path: /api/v1/spring/swagger-ui.html
+    # path: /swagger-ui.html
     disable-swagger-default-url: true
-
 
 application:
   version: 1.0.0
