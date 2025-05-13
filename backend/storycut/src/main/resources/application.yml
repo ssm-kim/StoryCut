@@ -52,7 +52,7 @@ management:
 
 springdoc:
   swagger-ui:
-    path: /api/v1/spring/swagger-ui.html
+    path: /swagger-ui.html
     disable-swagger-default-url: true
     urls:
       - name: "Storycut API"
