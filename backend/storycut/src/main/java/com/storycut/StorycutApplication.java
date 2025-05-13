@@ -3,6 +3,16 @@ package com.storycut;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@OpenAPIDefinition(
+    info = @Info(
+        title = "Storycut API",
+        version = "1.0.0",
+        description = "공유방 기반 영상 프로젝트 플랫폼 API 명세"
+    ),
+    servers = {
+        @Server(url = "/api/v1/spring", description = "Spring Context Path")
+    }
+)
 @SpringBootApplication
 public class StorycutApplication {
 
