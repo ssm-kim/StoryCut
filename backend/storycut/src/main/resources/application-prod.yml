@@ -27,6 +27,10 @@ app:
   mobile:
     redirectScheme: stroycut://oauth2/redirect
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
 logging:
   file:
     name: /logs/app.log
