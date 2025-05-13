@@ -2,6 +2,7 @@ package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.BaseResponse
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.VideoShareDto
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import retrofit2.Response
@@ -55,5 +56,29 @@ interface RoomApiService {
     // 초대코드로 공유방 ID 조회
     @GET("api/room/decode")
     suspend fun decodeInviteCode(@Query("inviteCode") inviteCode: String, @Header("Authorization") token: String): Response<BaseResponse<String>>
+
+    // 공유방 비디오 업로드
+    @POST("api/chat/")
+    suspend fun <VideoShareRequest> shareVideo(
+        @Query("roomId") roomId: Long,
+        @Body videoShareRequest: VideoShareRequest,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<VideoShareDto>>
+
+    // 공유방 비디오 목록 조회
+    @GET("api/chat/{roomId}")
+    suspend fun getSharedVideos(
+        @Path("roomId") roomId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<List<VideoShareDto>>>
+
+    // 공유방 비디오 삭제
+    @DELETE("api/chat/{chatId}")
+    suspend fun deleteSharedVideo(
+        @Path("chatId") chatId: String,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<Boolean>>
 
 }

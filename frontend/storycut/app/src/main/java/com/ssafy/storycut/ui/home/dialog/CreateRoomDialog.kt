@@ -33,7 +33,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
-
 @Composable
 fun CreateRoomDialog(
     onDismiss: () -> Unit,
@@ -50,6 +49,9 @@ fun CreateRoomDialog(
 
     // 현재 컨텍스트
     val context = LocalContext.current
+
+    // 제목 유효성 검사 함수 추가
+    val isTitleValid = roomTitle.length >= 2
 
     // 이미지 선택을 위한 액티비티 런처
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -72,7 +74,7 @@ fun CreateRoomDialog(
                 modifier = Modifier
                     .padding(20.dp)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()), // 스크롤 가능하도록 설정
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -83,7 +85,7 @@ fun CreateRoomDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // 썸네일 이미지 선택 영역
+                // 썸네일 이미지 선택 영역 (기존 코드 유지)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -100,6 +102,7 @@ fun CreateRoomDialog(
                         },
                     contentAlignment = Alignment.Center
                 ) {
+                    // 기존 이미지 처리 코드 유지
                     if (imageUri != null) {
                         // 선택한 이미지 표시
                         Image(
@@ -121,7 +124,7 @@ fun CreateRoomDialog(
                         ) {
                             // 삭제 아이콘
                             Icon(
-                                painter = painterResource(id = R.drawable.glogo), // 적절한 아이콘으로 변경 필요
+                                painter = painterResource(id = R.drawable.glogo),
                                 contentDescription = "이미지 삭제",
                                 tint = Color.White,
                                 modifier = Modifier
@@ -143,7 +146,7 @@ fun CreateRoomDialog(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.copy), // 적절한 아이콘으로 변경 필요
+                                painter = painterResource(id = R.drawable.copy),
                                 contentDescription = "이미지 선택",
                                 tint = Color.Gray,
                                 modifier = Modifier.size(36.dp)
@@ -170,20 +173,20 @@ fun CreateRoomDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 방 제목 입력
+                // 방 제목 입력 (수정됨 - 유효성 검사 조건 추가)
                 OutlinedTextField(
                     value = roomTitle,
                     onValueChange = { roomTitle = it },
-                    label = { Text("방 제목") },
-                    placeholder = { Text("방 제목을 입력하세요") },
+                    label = { Text("방 제목 (2자 이상)") }, // 라벨 수정
+                    placeholder = { Text("방 제목을 입력하세요 (2자 이상)") }, // 플레이스홀더 수정
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                     singleLine = true,
-                    isError = showErrorMessage && roomTitle.isBlank()
+                    isError = showErrorMessage && (!isTitleValid) // 유효성 검사 조건 변경
                 )
 
-                // 방 비밀번호 입력
+                // 나머지 필드는 동일하게 유지
                 OutlinedTextField(
                     value = roomPassword,
                     onValueChange = { roomPassword = it },
@@ -224,17 +227,29 @@ fun CreateRoomDialog(
                     isError = showErrorMessage && roomContext.isBlank()
                 )
 
-                // 에러 메시지
-                if (showErrorMessage && (roomTitle.isBlank() || roomContext.isBlank())) {
-                    Text(
-                        text = "방 제목과 설명은 필수 입력 항목입니다",
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                // 에러 메시지 (수정됨 - 제목 길이 조건 추가)
+                if (showErrorMessage) {
+                    when {
+                        roomTitle.isBlank() || roomContext.isBlank() -> {
+                            Text(
+                                text = "방 제목과 설명은 필수 입력 항목입니다",
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                        !isTitleValid -> {
+                            Text(
+                                text = "방 제목은 2자 이상이어야 합니다",
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
                 }
 
-                // 버튼 영역
+                // 버튼 영역 (수정됨 - 유효성 검사 조건 추가)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -250,7 +265,7 @@ fun CreateRoomDialog(
 
                     Button(
                         onClick = {
-                            if (roomTitle.isBlank() || roomContext.isBlank()) {
+                            if (roomTitle.isBlank() || roomContext.isBlank() || !isTitleValid) {
                                 showErrorMessage = true
                             } else {
                                 // CreateRoomRequest 객체 생성
@@ -260,6 +275,9 @@ fun CreateRoomDialog(
                                     roomContext = roomContext,
                                     roomThumbnail = ""
                                 )
+                                // 다이얼로그 닫기
+                                onDismiss()
+                                // 방 생성 요청
                                 onCreateRoom(request, imageUri)
                             }
                         },

@@ -43,7 +43,7 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState("")
 
-    // 새로 생성된 방 ID 관찰 (추가된 부분)
+    // 새로 생성된 방 ID 관찰
     val createdRoomId by viewModel.createdRoomId.observeAsState("")
     val enteredRoomId by viewModel.enteredRoomId.observeAsState("")
 
@@ -52,9 +52,13 @@ fun HomeScreen(
     var showCreateRoomDialog by remember { mutableStateOf(false) }
     var showEnterRoomDialog by remember { mutableStateOf(false) }
 
-    // 새로 생성된 방으로 자동 이동 (추가된 부분)
+    // 생성 또는 입장 진행 상태
+    var isProcessingRoom by remember { mutableStateOf(false) }
+
+    // 새로 생성된 방으로 자동 이동
     LaunchedEffect(createdRoomId) {
         if (createdRoomId.isNotEmpty()) {
+            isProcessingRoom = false // 처리 완료
             // 방으로 이동
             onRoomClick(createdRoomId)
             // ID 초기화
@@ -62,9 +66,10 @@ fun HomeScreen(
         }
     }
 
-    // 입장한 방으로 자동 이동 (추가된 부분)
+    // 입장한 방으로 자동 이동
     LaunchedEffect(enteredRoomId) {
         if (enteredRoomId.isNotEmpty()) {
+            isProcessingRoom = false // 처리 완료
             // 방으로 이동
             onRoomClick(enteredRoomId)
             // ID 초기화
@@ -77,95 +82,126 @@ fun HomeScreen(
         viewModel.getMyRooms()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // 상단 헤더
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5))
         ) {
-            Text(
-                text = "Room",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
-
-            // 방 추가 버튼
-            IconButton(
-                onClick = { showRoomOptionsDialog = true },
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "방 추가",
-                    tint = Color.Gray
-                )
-            }
-        }
-
-        // 로딩 상태 표시
-        if (isLoading) {
+            // 상단 헤더
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (error.isNotEmpty()) {
-            // 에러 메시지 표시
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error
+                    text = "Room",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterStart)
                 )
+
+                // 방 추가 버튼
+                IconButton(
+                    onClick = { showRoomOptionsDialog = true },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "방 추가",
+                        tint = Color.Gray
+                    )
+                }
             }
-        } else {
-            // 방 목록 표시
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                if (myRooms.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+
+            // 로딩 상태 표시
+            if (isLoading && !isProcessingRoom) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (error.isNotEmpty()) {
+                // 에러 메시지 표시
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                // 방 목록 표시
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    if (myRooms.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "참가중인 공유방이 없습니다",
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    } else {
+                        // 참가중인 방 목록
+                        item {
                             Text(
-                                text = "참가중인 공유방이 없습니다",
-                                color = Color.Gray
+                                text = "참가중인방",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        items(myRooms) { room ->
+                            RoomItem(
+                                room = room,
+                                onClick = { onRoomClick(room.roomId.toString()) }
                             )
                         }
                     }
-                } else {
-                    // 참가중인 방 목록
-                    item {
-                        Text(
-                            text = "참가중인방",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                }
+            }
+        }
 
-                    items(myRooms) { room ->
-                        RoomItem(
-                            room = room,
-                            onClick = { onRoomClick(room.roomId.toString()) }
-                        )
+        // 방 생성/입장 진행 중 오버레이 (추가된 부분)
+        if (isProcessingRoom) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .width(200.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "방으로 이동 중...", fontSize = 14.sp)
                     }
                 }
             }
@@ -192,8 +228,9 @@ fun HomeScreen(
         CreateRoomDialog(
             onDismiss = { showCreateRoomDialog = false },
             onCreateRoom = { request, imageUri ->
-                viewModel.createRoom(request, imageUri)
                 showCreateRoomDialog = false // 다이얼로그 닫기
+                isProcessingRoom = true // 방 생성/이동 처리 중 플래그 설정
+                viewModel.createRoom(request, imageUri)
             }
         )
     }
@@ -203,12 +240,15 @@ fun HomeScreen(
         EnterRoomDialog(
             onDismiss = { showEnterRoomDialog = false },
             onEnterRoom = { inviteCode ->
-                viewModel.enterRoom(inviteCode)
                 showEnterRoomDialog = false // 다이얼로그 닫기
+                isProcessingRoom = true // 방 입장/이동 처리 중 플래그 설정
+                viewModel.enterRoom(inviteCode)
             }
         )
     }
-}@Composable
+}
+
+@Composable
 fun RoomItem(
     room: RoomDto,
     onClick: () -> Unit

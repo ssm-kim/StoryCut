@@ -7,6 +7,7 @@ data class VideoDto(
     val videoUrl: String,
     val thumbnail: String,
     val originalVideoId: Long,
+    val blur: Boolean,
     val createdAt: String,
     val updatedAt: String
 )

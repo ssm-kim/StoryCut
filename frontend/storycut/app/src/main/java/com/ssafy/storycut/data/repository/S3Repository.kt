@@ -2,10 +2,10 @@ package com.ssafy.storycut.data.repository
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log // 로깅용 추가
+import android.util.Log
 import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.BaseResponse
-import com.ssafy.storycut.data.api.model.ImageUrlResponse
+import com.ssafy.storycut.data.api.model.ThumbNailUploadResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -32,23 +32,29 @@ class S3Repository @Inject constructor(
         return file
     }
 
-    suspend fun uploadRoomThumbNailImage(imageUri: Uri): Response<BaseResponse<ImageUrlResponse>> {
+    suspend fun uploadRoomThumbNailImage(imageUri: Uri): Response<BaseResponse<ThumbNailUploadResponse>> {
         try {
             Log.d("S3Repository", "Starting upload with URI: $imageUri")
             val file = getFileFromUri(imageUri)
             Log.d("S3Repository", "File created: ${file.absolutePath}, Size: ${file.length()}")
 
-            // MultipartBody.Part 생성
+            // MultipartBody.Part 생성 - "file" 파라미터명 사용
             val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-            // 여기서 "file"을 "files"로 변경
-            val imagePart = MultipartBody.Part.createFormData("files", file.name, requestFile)
-            Log.d("S3Repository", "Created part with name 'files' and filename '${file.name}'")
+            val imagePart = MultipartBody.Part.createFormData("file", file.name, requestFile)
+            Log.d("S3Repository", "Created part with name 'file' and filename '${file.name}'")
 
             // S3 업로드 API 호출
             val response = RetrofitClient.s3Service.uploadRoomThumbNailImage(imagePart)
             Log.d("S3Repository", "Response: ${response.code()}, ${response.message()}")
 
-            if (!response.isSuccessful) {
+            if (response.isSuccessful) {
+                val result = response.body()?.result
+                Log.d("S3Repository", "Upload successful, result: $result")
+
+                // URL 확인 로깅
+                val url = result?.url
+                Log.d("S3Repository", "Uploaded image URL: $url")
+            } else {
                 Log.e("S3Repository", "Error body: ${response.errorBody()?.string()}")
             }
 
