@@ -7,7 +7,7 @@ app = FastAPI(
     root_path="/api/v1/fastapi",      # Nginx proxy 경로와 일치
     docs_url="/docs",                 # Swagger UI 경로
     redoc_url=None,                   # Redoc 비활성화
-    openapi_url="/openapi.json"       # OpenAPI JSON 경로
+    openapi_url="/openapi.json",       # OpenAPI JSON 경로
     root_path_in_servers=True
 )
 
