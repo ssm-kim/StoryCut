@@ -14,8 +14,10 @@ from app.api.v1.services.upload_service import (
 )
 from app.api.v1.schemas.mosaic_schema import MosaicRequest
 from app.api.v1.schemas.video_schema import VideoPostResponse
-from app.api.v1.schemas.post_schema import UploadRequest, CompleteRequest
-from app.core.fcm import send_result_fcm  
+from app.api.v1.schemas.post_schema import UploadRequest, CompleteRequest, CompleteResponse
+from app.core.fcm import send_result_fcm, send_failed_fcm  # ✅
+from app.api.v1.schemas.upload_schema import ErrorResponse
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -33,9 +35,9 @@ async def process_video_from_json(
         video_info = await get_video_from_springboot(request.video_id, token)
 
         if video_info.result.is_blur:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=400,
-                detail="이미 모자이크 처리된 영상입니다."
+                content=ErrorResponse(code=400,message="이미 모자이크 처리된 영상입니다.",result=None).dict(by_alias=True)
             )
 
         payload = UploadRequest(
@@ -57,7 +59,6 @@ async def process_video_from_json(
             )
         )
 
-        # 📦 즉시 응답
         return VideoPostResponse(
             is_success=True,
             code=202,
@@ -65,14 +66,13 @@ async def process_video_from_json(
             result=None
         )
 
-    except HTTPException as e:
-        raise e  # ⚠️ FastAPI가 자동 처리하게 그냥 raise
     except Exception as e:
         logger.exception("예외 발생:")
-        raise HTTPException(status_code=500, detail=f"처리 중 오류 발생: {str(e)}")
+        return JSONResponse(status_code=500,
+        content=ErrorResponse(code=500,message=f"처리 중 오류 발생: {str(e)}",result=None).dict(by_alias=True)
+        )
 
-
-# ✅ 백그라운드 모자이크 처리 파이프라인
+# ✅ 백그라운드 모자이크 처리 함수
 async def process_video_pipeline(token: str, request: MosaicRequest, video_url: str, device_token: str, id: int):
     try:
         video_path = await run_mosaic_pipeline(
@@ -88,7 +88,7 @@ async def process_video_pipeline(token: str, request: MosaicRequest, video_url: 
         logger.info(f"썸네일 URL: {thumbnail_url}")
 
         s3_url = await save_uploaded_video(video_path, video_name)
-        logger.info(f"영상 S3 URL: {s3_url}")
+        logger.info(f"S3 업로드 완료: {s3_url}")
 
         payload = CompleteRequest(
             video_id=id,
@@ -98,9 +98,11 @@ async def process_video_pipeline(token: str, request: MosaicRequest, video_url: 
 
         spring_response = await post_video_to_springboot_complete(token, payload)
 
-        # ✅ FCM 푸시 전송
         if spring_response.result:
-            send_result_fcm(device_token, spring_response.result)
+            send_result_fcm(device_token, spring_response)
+        else:
+            send_failed_fcm(device_token, code=500, message="Spring 응답에 result가 없습니다.")
 
     except Exception as e:
         logger.exception(f"[백그라운드 처리 오류]: {str(e)}")
+        send_failed_fcm(device_token, code=500, message="영상 처리 중 오류가 발생했습니다.", error=e)
