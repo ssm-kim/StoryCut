@@ -90,13 +90,13 @@ class RoomRepository @Inject constructor(
      * @param token 사용자 인증 토큰
      * @return API 응답
      */
-    suspend fun getRoomChats(
+    suspend fun getRoomVideos(
         roomId: Long,
         page: Int = 0,
         size: Int = 10,
         token: String
     ): Response<BaseResponse<List<ChatDto>>> {
-        return chatApiService.getRoomChats(roomId, page, size, "Bearer $token")
+        return chatApiService.getRoomVideos(roomId, page, size, "Bearer $token")
     }
 
     /**
