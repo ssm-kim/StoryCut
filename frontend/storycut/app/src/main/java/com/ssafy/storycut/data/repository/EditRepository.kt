@@ -2,7 +2,6 @@ package com.ssafy.storycut.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.data.api.model.edit.ImageUploadResponse
 import com.ssafy.storycut.data.api.model.edit.VideoProcessRequest

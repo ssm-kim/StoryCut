@@ -11,7 +11,7 @@ import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.EditRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService
 import com.ssafy.storycut.data.repository.S3Repository
-import com.ssafy.storycut.util.network.AuthInterceptor // AuthInterceptor import는 유지
+import com.ssafy.storycut.util.network.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,13 +22,24 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+// 한정자(Qualifier) 정의
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class BaseRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AiRetrofit
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
     private const val BASE_URL = BuildConfig.BASE_URL
+    private const val AI_URL = BuildConfig.AI_URL
 
     @Provides
     @Singleton
@@ -51,36 +62,40 @@ object AppModule {
         return AuthRepository(tokenManager, context)
     }
 
-    // AuthInterceptor를 생성하는 Provides 메서드 추가
     @Provides
     @Singleton
     fun provideAuthInterceptor(
         tokenManager: TokenManager,
         authRepository: AuthRepository,
-        @ApplicationContext context: Context // Context 파라미터 추가
+        @ApplicationContext context: Context
     ): AuthInterceptor {
         return AuthInterceptor(tokenManager, authRepository, context)
     }
 
     @Provides
     @Singleton
-    // Hilt가 AuthInterceptor를 자동으로 주입해 줍니다.
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor) // Hilt가 제공한 AuthInterceptor 인스턴스 사용
+            .addInterceptor(authInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
+    // 기본 Retrofit 인스턴스 (BASE_URL 사용)
     @Provides
     @Singleton
+    @BaseRetrofit
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -89,21 +104,33 @@ object AppModule {
             .build()
     }
 
+    // AI URL을 위한 Retrofit 인스턴스
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+    @AiRetrofit
+    fun provideAiRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(AI_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(@BaseRetrofit retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideVideoApiService(retrofit: Retrofit): VideoApiService {
+    fun provideVideoApiService(@BaseRetrofit retrofit: Retrofit): VideoApiService {
         return retrofit.create(VideoApiService::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideRoomApiService(retrofit: Retrofit): RoomApiService {
+    fun provideRoomApiService(@BaseRetrofit retrofit: Retrofit): RoomApiService {
         return retrofit.create(RoomApiService::class.java)
     }
 
@@ -113,9 +140,10 @@ object AppModule {
         return S3Repository(context)
     }
 
+    // EditService는 AI URL을 사용하는 Retrofit으로 생성
     @Provides
     @Singleton
-    fun provideEditService(retrofit: Retrofit): EditService {
+    fun provideEditService(@AiRetrofit retrofit: Retrofit): EditService {
         return retrofit.create(EditService::class.java)
     }
 
@@ -128,5 +156,4 @@ object AppModule {
     ): EditRepository {
         return EditRepository(editService, context, tokenManager)
     }
-
 }

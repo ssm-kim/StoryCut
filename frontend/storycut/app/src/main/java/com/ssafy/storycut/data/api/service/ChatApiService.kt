@@ -1,4 +1,40 @@
 package com.ssafy.storycut.data.api.service
 
-class ChatApiService {
+import com.ssafy.storycut.data.api.model.BaseResponse
+import com.ssafy.storycut.data.api.model.chat.ChatDto
+import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+interface ChatApiService {
+
+    // 공유방 비디오 업로드
+    @POST("api/chat/")
+    suspend fun sendChatMessage(
+        @Query("roomId") roomId: Long,
+        @Body chatMessage: ChatMessageRequest,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<ChatDto>>
+
+    // 공유방 비디오 목록 조회
+    @GET("api/chat/{roomId}")
+    suspend fun getRoomChats(
+        @Path("roomId") roomId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<List<ChatDto>>>
+
+    // 공유방 비디오 삭제
+    @DELETE("api/chat/{chatId}")
+    suspend fun deleteChat(
+        @Path("chatId") chatId: String,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<Boolean>>
 }

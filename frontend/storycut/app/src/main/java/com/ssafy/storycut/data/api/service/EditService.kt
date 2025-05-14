@@ -12,31 +12,31 @@ interface EditService {
 
     // 이미지 업로드 API - 여러 파일 업로드 가능
     @Multipart
-    @POST("/api/upload/images")
+    @POST("upload/images")
     suspend fun uploadImages(@Part files: List<MultipartBody.Part>):
             Response<BaseResponse<List<ImageUploadResponse>>>
 
     // 영상 업로드 API - 단일 파일 업로드
     @Multipart
-    @POST("/api/upload/videos")
+    @POST("upload/videos")
     suspend fun uploadVideo(@Part file: MultipartBody.Part):
             Response<BaseResponse<List<ImageUploadResponse>>>
 
     // 룸 썸네일 이미지 업로드 API
     @Multipart
-    @POST("/api/upload/room-thumbnails")
+    @POST("upload/room-thumbnails")
     suspend fun uploadRoomThumbNailImage(@Part file: MultipartBody.Part):
             Response<BaseResponse<ThumbNailUploadResponse>>
 
     // 영상 처리 API (요약 + 모자이크 + 자막)
-    @POST("/api/videos")
+    @POST("videos")
     suspend fun processVideo(
         @Header("authorization") authorization: String,
         @Body request: VideoProcessRequest
     ): Response<BaseResponse<VideoDto>>
 
     // 모자이크 API
-    @POST("/api/mosaic")
+    @POST("mosaic")
     suspend fun applyMosaic(
         @Header("authorization") authorization: String, @Body request: MosaicRequest
     ): Response<BaseResponse<VideoDto>>
