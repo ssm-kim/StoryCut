@@ -18,12 +18,11 @@ router = APIRouter()
 async def process_video(
     request: VideoProcessRequest,
     authorization: str = Header(...),
-    # device_token: str = Header(...)  # ✅ FCM 푸시 토큰 받기 (옵션)
+    device_token: str = Header(...)  # ✅ FCM 푸시 토큰 받기 (옵션)
 ):
     token = authorization.replace("Bearer ", "")
 
     # ✅ 백그라운드 작업 실행
-    device_token="ss"
     asyncio.create_task(process_video_pipeline(request, token, device_token))
 
     # ✅ 즉시 응답 반환
@@ -48,28 +47,28 @@ async def process_video_pipeline(request: VideoProcessRequest, token: str, devic
             music_prompt=request.music_prompt,
             token=token
         )
-        # video_name = os.path.basename(video_path)
-        # logger.info(f"✅ 처리된 영상 경로: {video_path}")
+        video_name = os.path.basename(video_path)
+        logger.info(f"✅ 처리된 영상 경로: {video_path}")
 
-        # thumbnail_url = await generate_and_upload_thumbnail(video_path)
-        # logger.info(f"🖼️ 썸네일 생성 완료: {thumbnail_url}")
+        thumbnail_url = await generate_and_upload_thumbnail(video_path)
+        logger.info(f"🖼️ 썸네일 생성 완료: {thumbnail_url}")
 
-        # s3_url = await save_uploaded_video(video_path, video_name)
-        # logger.info(f"☁️ S3 업로드 완료: {s3_url}")
+        s3_url = await save_uploaded_video(video_path, video_name)
+        logger.info(f"☁️ S3 업로드 완료: {s3_url}")
 
-        # payload = PostRequest(
-        #     video_name=video_name,
-        #     video_url=s3_url,
-        #     thumbnail=thumbnail_url,
-        #     original_video_id=request.video_id,
-        #     is_blur=is_blur
-        # )
+        payload = PostRequest(
+            video_name=video_name,
+            video_url=s3_url,
+            thumbnail=thumbnail_url,
+            original_video_id=request.video_id,
+            is_blur=is_blur
+        )
 
         spring_response = await post_video_to_springboot(token, payload)
         logger.info("📦 SpringBoot 업로드 완료")
 
-        # if spring_response.result:
-        #     send_result_fcm(device_token, spring_response.result)
+        if spring_response.result:
+            send_result_fcm(device_token, spring_response.result)
 
     except Exception as e:
         logger.exception("❌ 백그라운드 처리 중 오류 발생:")
