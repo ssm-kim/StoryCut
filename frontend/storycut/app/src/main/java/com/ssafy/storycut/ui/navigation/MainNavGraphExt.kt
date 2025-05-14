@@ -18,7 +18,8 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.ssafy.storycut.ui.edit.EditViewModel
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
-import com.ssafy.storycut.ui.room.RoomDetailScreen
+import com.ssafy.storycut.ui.room.RoomDetailScreen // 추가된 import
+import com.ssafy.storycut.ui.room.RoomVideoDetailScreen
 
 /**
  * 메인 화면의 네비게이션 그래프를 확장 함수로 정의
@@ -41,7 +42,6 @@ fun NavGraphBuilder.mainGraph(
     composable(Navigation.Main.EDIT) {
         // hiltViewModel()을 사용하여 EditViewModel 인스턴스 생성
         val editViewModel = hiltViewModel<EditViewModel>()
-
         EditScreen(
             viewModel = editViewModel,
             onEditSuccess = { videoId ->
@@ -58,13 +58,12 @@ fun NavGraphBuilder.mainGraph(
     composable(Navigation.Main.MYPAGE) {
         // hiltViewModel()을 사용하여 VideoViewModel 인스턴스 생성
         val myVideoViewModel = hiltViewModel<VideoViewModel>()
-
         MyPageScreen(
             authViewModel = authViewModel,
             myVideoViewModel = myVideoViewModel,
             tokenManager = tokenManager,
             navController = navController,
-            onNavigateToLogin = onNavigateToLogin  // 이 부분이 올바르게 전달되고 있는지 확
+            onNavigateToLogin = onNavigateToLogin
         )
     }
 
@@ -72,7 +71,7 @@ fun NavGraphBuilder.mainGraph(
         SettingsScreen(
             authViewModel = authViewModel,
             onBackPressed = { navController.popBackStack() },
-            onNavigateToLogin = onNavigateToLogin // 콜백 전달
+            onNavigateToLogin = onNavigateToLogin
         )
     }
 
@@ -100,4 +99,21 @@ fun NavGraphBuilder.mainGraph(
         )
     }
 
+    // Room Video Detail 화면 (중복 제거함)
+    composable(
+        route = "room_video_detail/{roomId}/{videoId}",
+        arguments = listOf(
+            navArgument("roomId") { type = NavType.StringType },
+            navArgument("videoId") { type = NavType.StringType }
+        )
+    ) { backStackEntry ->
+        val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+        val videoId = backStackEntry.arguments?.getString("videoId") ?: ""
+        RoomVideoDetailScreen(
+            roomId = roomId,
+            videoId = videoId,
+            navController = navController,
+            tokenManager = tokenManager
+        )
+    }
 }

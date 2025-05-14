@@ -1,4 +1,4 @@
-package com.ssafy.storycut.ui.mypage
+package com.ssafy.storycut.ui.room
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -7,13 +7,14 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -22,21 +23,20 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
-import com.ssafy.storycut.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.first
 
 @UnstableApi
 @Composable
-fun VideoDetailScreen(
+fun RoomVideoDetailScreen(
+    roomId: String,
     videoId: String,
     navController: NavController,
-    videoViewModel: VideoViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel(),  // AuthViewModel 추가
+    roomViewModel: RoomViewModel = hiltViewModel(),
     tokenManager: TokenManager
 ) {
     val context = LocalContext.current
-    val videoList by videoViewModel.myVideos.collectAsState()
-    val userInfo by authViewModel.userState.collectAsState()  // 사용자 정보 가져오기
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val roomVideos by roomViewModel.roomVideos.collectAsState()
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -50,14 +50,14 @@ fun VideoDetailScreen(
     var appInBackground by remember { mutableStateOf(false) }
 
     // 현재 선택된 비디오의 위치 찾기
-    val initialPage = remember(videoId, videoList) {
-        videoList.indexOfFirst { it.videoId.toString() == videoId }.takeIf { it >= 0 } ?: 0
+    val initialPage = remember(videoId, roomVideos) {
+        roomVideos.indexOfFirst { it.id.toString() == videoId }.takeIf { it >= 0 } ?: 0
     }
 
     // VerticalPager 상태 설정
-    val pagerState = rememberPagerState(initialPage = initialPage) { videoList.size }
+    val pagerState = rememberPagerState(initialPage = initialPage) { roomVideos.size }
 
-    // 뒤로가기 처리 함수 정의 - 먼저 선언
+    // 뒤로가기 처리 함수 정의
     val handleBackPress = {
         // 종료 상태로 변경하고 모든 플레이어 즉시 해제
         isExiting = true
@@ -72,7 +72,7 @@ fun VideoDetailScreen(
     }
 
     // 생명주기 감지를 위한 효과
-    DisposableEffect(true) {
+    DisposableEffect(lifecycleOwner) {
         val activity = context as? androidx.activity.ComponentActivity
         val callback = object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -121,15 +121,10 @@ fun VideoDetailScreen(
         try {
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
-                // 사용자 정보 새로고침
-                authViewModel.refreshUserInfoFromRoom()
-                
                 // 만약 비디오 리스트가 비어있다면 불러오기
-                if (videoList.isEmpty()) {
-                    videoViewModel.fetchMyVideos(token)
+                if (roomVideos.isEmpty()) {
+                    roomViewModel.getRoomVideos(roomId)
                 }
-                // 현재 비디오 상세정보 불러오기
-                videoViewModel.getVideoDetail(videoId, token)
             } else {
                 error = "인증 정보가 없습니다. 다시 로그인해주세요."
             }
@@ -179,7 +174,7 @@ fun VideoDetailScreen(
                     }
                 }
             }
-            videoList.isEmpty() -> {
+            roomVideos.isEmpty() -> {
                 Text(
                     text = "비디오가 없습니다",
                     modifier = Modifier.align(Alignment.Center),
@@ -188,23 +183,21 @@ fun VideoDetailScreen(
             }
             else -> {
                 if (!isExiting) {
+                    // VerticalPager로 정확히 한 비디오씩만 스와이프 가능하게 구현
                     VerticalPager(
                         state = pagerState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .systemBarsPadding() // 시스템 바 영역 제외
+                            .statusBarsPadding() // 상태 바 영역만 패딩 적용
                     ) { page ->
-                        val video = videoList.getOrNull(page)
+                        val video = roomVideos.getOrNull(page)
                         if (video != null) {
-                            SingleVideoPlayer(
+                            RoomSingleVideoPlayer(
                                 video = video,
                                 isCurrentlyVisible = page == pagerState.currentPage && !isExiting && !appInBackground,
                                 onPlayerCreated = { player ->
                                     players[page] = player
                                 },
-                                // 사용자 정보 전달
-                                userProfileImg = userInfo?.profileImg,
-                                userName = userInfo?.name,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -216,12 +209,13 @@ fun VideoDetailScreen(
                     onClick = { handleBackPress() },
                     modifier = Modifier
                         .align(Alignment.TopStart)
+                        .statusBarsPadding() // 상태 바 패딩 적용
                         .padding(16.dp)
                         .size(48.dp)
                         .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "뒤로가기",
                         tint = Color.White
                     )

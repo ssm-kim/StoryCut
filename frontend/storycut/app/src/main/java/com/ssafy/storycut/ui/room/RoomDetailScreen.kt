@@ -9,7 +9,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -19,7 +21,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -85,6 +86,7 @@ fun RoomDetailScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     // 다이얼로그 상태 초기화 함수
     fun resetDialogStates() {
@@ -164,110 +166,138 @@ fun RoomDetailScreen(
                         .padding(16.dp)
                 )
             } else {
+                // 전체 화면을 스크롤 가능하게 수정
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .verticalScroll(scrollState)
                 ) {
-                    // 방 정보 헤더
-                    Card(
+                    // 썸네일 이미지
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 2.dp
-                        )
+                            .height(180.dp)
+                    ) {
+                        // 썸네일 이미지 로드
+                        if (roomDetail?.roomThumbnail != null && roomDetail?.roomThumbnail != "default_thumbnail") {
+                            // 서버 URL에서 이미지 로드
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(roomDetail?.roomThumbnail)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "방 썸네일",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            // 기본 이미지 표시
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.logo),
+                                    contentDescription = "기본 썸네일",
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(64.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 방 정보 카드 (디자인을 이미지처럼 수정)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            // 방 제목
-                            Text(
-                                text = roomDetail?.roomTitle ?: "방 제목",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // 방 설명
-                            Text(
-                                text = "방 설명",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // 멤버 정보와 버튼 행
+                            // 방 제목과 정보 (좌우 배열)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                // 멤버 수 표시
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = "멤버",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = Color.Gray
-                                    )
-
-                                    Spacer(modifier = Modifier.width(4.dp))
-
+                                    // 방 제목
                                     Text(
-                                        text = "${roomMembers.size}명",
-                                        fontSize = 14.sp,
-                                        color = Color.Gray
+                                        text = roomDetail?.roomTitle ?: "방 제목",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // 방 설명
+                                    Text(
+                                        text = roomDetail?.roomContext ?: "방 설명",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    // 멤버 수
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "멤버 : ",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                        Text(
+                                            text = "${roomMembers.size}명",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 }
 
-                                // 버튼 영역
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     // 쇼츠 업로드 버튼
-                                    Button(
+                                    FilledTonalButton(
                                         onClick = {
                                             showUploadDialog = true
                                         },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = Color(0xFFE0E0E0),
+                                            contentColor = Color.Black
                                         ),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(4.dp),
                                         contentPadding = PaddingValues(
                                             horizontal = 12.dp,
                                             vertical = 8.dp
-                                        )
+                                        ),
+                                        modifier = Modifier.width(120.dp)  // 버튼 가로 길이 120dp로 늘림
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = "쇼츠 업로드",
-                                            modifier = Modifier.size(16.dp)
+                                        Text(
+                                            text = "쇼츠 업로드",
+                                            fontSize = 12.sp
                                         )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("쇼츠 업로드")
                                     }
 
-                                    // 초대코드 생성 버튼 (수정된 부분)
-                                    OutlinedButton(
+                                    // 초대코드 버튼
+                                    FilledTonalButton(
                                         onClick = {
                                             if (inviteCode.isNotEmpty()) {
-                                                // 이미 코드가 있으면 바로 다이얼로그 표시
                                                 showInviteCodeDialog = true
                                             } else {
-                                                // 코드가 없는 경우에만 API 호출
                                                 scope.launch {
                                                     try {
                                                         isGeneratingCode = true
@@ -281,40 +311,30 @@ fun RoomDetailScreen(
                                                 }
                                             }
                                         },
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = MaterialTheme.colorScheme.primary
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = Color(0xFFE0E0E0),
+                                            contentColor = Color.Black
                                         ),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(4.dp),
                                         contentPadding = PaddingValues(
                                             horizontal = 12.dp,
                                             vertical = 8.dp
                                         ),
-                                        border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                                        enabled = !isLoading && !isGeneratingCode
+                                        border = null,
+                                        enabled = !isLoading && !isGeneratingCode,
+                                        modifier = Modifier.width(120.dp)  // 버튼 가로 길이 120dp로 늘림
                                     ) {
-                                        Box(
-                                            modifier = Modifier.height(24.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (isGeneratingCode) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    strokeWidth = 2.dp,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            } else {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(id = R.drawable.copy),
-                                                        contentDescription = "초대코드",
-                                                        modifier = Modifier.size(16.dp)
-                                                    )
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text("초대코드")
-                                                }
-                                            }
+                                        if (isGeneratingCode) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "초대 코드",
+                                                fontSize = 12.sp
+                                            )
                                         }
                                     }
                                 }
@@ -322,15 +342,21 @@ fun RoomDetailScreen(
                         }
                     }
 
+                    HorizontalDivider(
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
                     // 비디오 목록 제목
                     Text(
                         text = "쇼츠 목록",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
                     )
 
-                    // 비디오 목록 또는 비디오가 없을 때 메시지 표시
+                    // 비디오 목록 표시 방식 변경 - LazyVerticalGrid 대신 일반 Column으로 대체
                     if (roomVideos.isEmpty()) {
                         // 비디오가 없는 경우 메시지 표시
                         Box(
@@ -343,99 +369,96 @@ fun RoomDetailScreen(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "비디오 추가",
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .padding(8.dp),
-                                    tint = Color.Gray
-                                )
-
                                 Text(
                                     text = "업로드된 쇼츠가 없습니다",
                                     color = Color.Gray,
                                     textAlign = TextAlign.Center
                                 )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = { showUploadDialog = true },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary
-                                    )
-                                ) {
-                                    Text("첫 쇼츠 업로드하기")
-                                }
                             }
                         }
                     } else {
-                        // 비디오 목록이 있는 경우 LazyVerticalGrid로 표시
-                        Box(
+                        // 비디오 목록 표시 - 그리드 형태로 배치
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f) // 남은 공간 채우기
+                                .padding(horizontal = 16.dp)
                         ) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                contentPadding = PaddingValues(vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                items(roomVideos) { video ->
-                                    RoomVideoItem(
-                                        video = video,
-                                        onClick = {
-                                            // 비디오 클릭 시 처리 (예: 상세 화면으로 이동 또는 재생)
-                                            // navController.navigate("video_player/${video.id}")
-                                        }
-                                    )
-                                }
+                            // 항목을 2개씩 묶어서 행으로 표시
+                            val videoChunks = roomVideos.chunked(2)
 
-                                // 더 불러오기 아이템
-                                item(span = { GridItemSpan(2) }) {
-                                    if (hasMoreVideos) {
-                                        // 더 불러오기 버튼 또는 로딩 표시
+                            videoChunks.forEach { rowVideos ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    rowVideos.forEach { video ->
                                         Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
+                                            modifier = Modifier.weight(1f)
                                         ) {
-                                            if (isVideosLoading && currentPage > 0) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(32.dp),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            } else {
-                                                Button(
-                                                    onClick = { roomViewModel.loadMoreVideos(roomId) },
-                                                    modifier = Modifier.fillMaxWidth(0.7f)
-                                                ) {
-                                                    Text("더 보기")
+                                            RoomVideoItem(
+                                                video = video,
+                                                onClick = {
+                                                    navController.navigate("room_video_detail/${roomId}/${video.id}")
                                                 }
-                                            }
+                                            )
                                         }
+                                    }
+
+                                    // 한 행에 비디오가 1개만 있는 경우 빈 공간 추가
+                                    if (rowVideos.size == 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
                                     }
                                 }
                             }
 
-                            // 초기 로딩 중인 경우 로딩 표시
-                            if (isVideosLoading && currentPage == 0) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
+                            // 더 불러오기 버튼
+                            if (hasMoreVideos) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isVideosLoading && currentPage > 0) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(32.dp),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Button(
+                                            onClick = { roomViewModel.loadMoreVideos(roomId) },
+                                            modifier = Modifier.fillMaxWidth(0.7f)
+                                        ) {
+                                            Text("더 보기")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    // 초기 로딩 중인 경우 로딩 표시
+                    if (isVideosLoading && currentPage == 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    // 하단 여백 추가
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
     }
 
-    // 초대코드 다이얼로그
+    // 초대코드 다이얼로그 코드는 그대로 유지
     if (showInviteCodeDialog && inviteCode.isNotEmpty()) {
         val creationTime by roomViewModel.inviteCodeCreationTime.collectAsState()
         val currentTime = System.currentTimeMillis()
@@ -454,6 +477,7 @@ fun RoomDetailScreen(
         )
     }
 
+    // 업로드 다이얼로그 코드는 그대로 유지
     if (showUploadDialog) {
         UploadShortDialog(
             roomId = roomId,
@@ -500,7 +524,7 @@ fun RoomDetailScreen(
         )
     }
 
-    // 비디오 선택 전체 화면 다이얼로그
+    // 비디오 선택 전체 화면 다이얼로그 코드는 그대로 유지
     if (showVideoSelectorDialog) {
         VideoSelectorFullScreenDialog(
             myVideos = myVideos,

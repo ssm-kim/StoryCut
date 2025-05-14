@@ -48,7 +48,8 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
 
     // 비디오 상세 화면인지 확인 (video_detail/숫자 형식의 경로 확인)
-    val isVideoDetailScreen = currentRoute?.startsWith("video_detail/") == true
+    val isVideoDetailScreen = currentRoute?.startsWith("video_detail/") == true ||
+            currentRoute?.startsWith("room_video_detail/") == true
 
     // 이전 화면 상태 추적
     val wasVideoDetailScreen = remember { mutableStateOf(false) }
@@ -76,7 +77,6 @@ fun MainScreen(
                             onClick = {
                                 // 현재 선택된 아이템이 아닌 경우에만 네비게이션 처리
                                 if (currentRoute != item.route) {
-                                    // navigateToMainTab 함수 사용
                                     navController.navigateToMainTab(item.route)
                                 }
                             }
