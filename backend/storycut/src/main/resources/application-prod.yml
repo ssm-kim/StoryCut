@@ -21,7 +21,7 @@ server:
 app:
   baseUrl: https://k12d108.p.ssafy.io
   # 앱 리다이렉션 스키마 설정
-  dev-mode: true  # 개발 모드 활성화 (더미 데이터 사용)
+  dev-mode: false  # 개발 모드 활성화 (더미 데이터 사용)
   encryption:
     key: "storycutencryptionkey123456"  # 암호화 키 (실제 환경에서는 보안 설정 필요)
   mobile:
