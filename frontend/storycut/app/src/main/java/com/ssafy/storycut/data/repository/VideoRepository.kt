@@ -9,8 +9,8 @@ import javax.inject.Inject
 class VideoRepository @Inject constructor(
     private val videoApiService: VideoApiService
 ) {
-    suspend fun getMyVideos(token: String): Response<BaseResponse<List<VideoDto>>> {
-        return videoApiService.getMyVideos("Bearer $token")
+    suspend fun getMyVideos(token: String, isOriginal: Boolean = false): Response<BaseResponse<List<VideoDto>>> {
+        return videoApiService.getMyVideos("Bearer $token", isOriginal)
     }
 
     // 단일 비디오 상세 정보

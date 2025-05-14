@@ -6,13 +6,14 @@ import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface VideoApiService {
 
-    // 내 비디오 목록 조회
-    @GET("video/member")
-    suspend fun getMyVideos(@Header("Authorization") token: String): Response<BaseResponse<List<VideoDto>>>
-
+    @GET("video")
+    suspend fun getMyVideos(
+        @Header("Authorization") token: String,
+        @Query("isOriginal") isOriginal: Boolean = false): Response<BaseResponse<List<VideoDto>>>
     @GET("video/{videoId}")
     suspend fun getMyVideo(@Path("videoId") videoId: String, @Header("Authorization") token: String
     ): Response<BaseResponse<VideoDto>>

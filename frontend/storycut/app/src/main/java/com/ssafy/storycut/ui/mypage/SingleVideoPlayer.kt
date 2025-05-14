@@ -172,7 +172,7 @@ fun SingleVideoPlayer(
 
                     // 작성자 이름 - 폰트 크기 및 굵기 증가
                     Text(
-                        text = userName ?: video.videoName,  // userName이 없는 경우 비디오 이름으로 대체
+                        text = userName ?: video.videoTitle,  // userName이 없는 경우 비디오 이름으로 대체
                         color = Color.White,  // 투명도 제거하여 더 선명하게
                         style = MaterialTheme.typography.bodyMedium.copy(  // bodySmall에서 bodyMedium으로 변경
                             fontWeight = FontWeight.SemiBold,  // 글자 굵기 증가
@@ -185,7 +185,7 @@ fun SingleVideoPlayer(
 
                 // 비디오 제목
                 Text(
-                    text = video.videoName,
+                    text = video.videoTitle,
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold

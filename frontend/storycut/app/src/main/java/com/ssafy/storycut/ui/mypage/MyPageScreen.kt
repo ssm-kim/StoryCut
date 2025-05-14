@@ -270,7 +270,7 @@ fun MyPageScreen(
                 ) {
                     items(videoList.filter {
                         searchQuery.isEmpty() ||
-                                it.videoName.contains(searchQuery, ignoreCase = true)
+                                it.videoTitle.contains(searchQuery, ignoreCase = true)
                     }) { video ->
                         Box(
                             modifier = Modifier
@@ -288,7 +288,7 @@ fun MyPageScreen(
                             // 썸네일 이미지
                             AsyncImage(
                                 model = video.thumbnail,
-                                contentDescription = video.videoName,
+                                contentDescription = video.videoTitle,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
                                 error = painterResource(id = R.drawable.ic_launcher_foreground)
@@ -302,7 +302,7 @@ fun MyPageScreen(
                                     .padding(vertical = 8.dp, horizontal = 10.dp)
                             ) {
                                 Text(
-                                    text = video.videoName,
+                                    text = video.videoTitle,
                                     color = Color.White,
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,  // 글자 굵게 설정
