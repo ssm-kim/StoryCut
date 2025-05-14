@@ -3,6 +3,7 @@ package com.ssafy.storycut.ui.splash
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,6 +25,7 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
+import com.ssafy.storycut.ui.splash.components.Loader
 
 private const val TAG = "SplashScreen"
 
@@ -87,19 +89,10 @@ fun SplashScreen(navController: NavHostController, authViewModel: AuthViewModel)
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column (
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "앱 로고",
-                modifier = Modifier.size(360.dp)
-            )
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 32.dp)
-            )
+        ){
+            Loader()
         }
     }
 }

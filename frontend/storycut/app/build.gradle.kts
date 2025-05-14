@@ -145,5 +145,6 @@ dependencies {
     //라이프 사이클
     implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
 
+    implementation("com.airbnb.android:lottie-compose:6.6.6")
 
 }

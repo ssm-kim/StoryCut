@@ -1,7 +1,13 @@
 package com.ssafy.storycut.ui.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Home
@@ -10,6 +16,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,7 +24,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -26,6 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun MainScreen(
@@ -65,22 +76,56 @@ fun MainScreen(
 
     Scaffold(
         bottomBar = {
-            // 비디오 상세 화면이 아닐 때만 하단 네비게이션 바 표시
             if (!isVideoDetailScreen) {
-                NavigationBar {
-                    items.forEach { item ->
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.title) },
-                            label = { Text(text = item.title) },
-                            selected = currentRoute == item.route,
-                            onClick = {
-                                // 현재 선택된 아이템이 아닌 경우에만 네비게이션 처리
-                                if (currentRoute != item.route) {
-                                    // navigateToMainTab 함수 사용
-                                    navController.navigateToMainTab(item.route)
-                                }
-                            }
-                        )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                ) {
+                    NavigationBar(
+                        modifier = Modifier.height(64.dp),
+                        containerColor = Color.Transparent
+                    ) {
+                        items.forEach { item ->
+                            NavigationBarItem(
+                                icon = { 
+                                    Box(
+                                        modifier = if (currentRoute == item.route) {
+                                            Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFFFFB800))
+                                                .padding(8.dp)
+                                        } else {
+                                            Modifier
+                                                .size(48.dp)
+                                                .padding(8.dp)
+                                        },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            item.icon,
+                                            contentDescription = item.title,
+                                            tint = if (currentRoute == item.route) Color.White else Color.Gray,
+                                        )
+                                    }
+                                },
+                                label = null,
+                                selected = currentRoute == item.route,
+                                onClick = {
+                                    if (currentRoute != item.route) {
+                                        navController.navigateToMainTab(item.route)
+                                    }
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color.White,
+                                    unselectedIconColor = Color.Gray,
+                                    indicatorColor = Color.Transparent
+                                )
+                            )
+                        }
                     }
                 }
             }
