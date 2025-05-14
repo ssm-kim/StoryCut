@@ -22,7 +22,7 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    🔥 root_path가 Swagger 서버 URL에 반영되도록 수동 삽입
+    # 🔥 root_path가 Swagger 서버 URL에 반영되도록 수동 삽입
     openapi_schema["servers"] = [{"url": "/api/v1/fastapi"}]
 
     openapi_schema["components"]["securitySchemes"] = {
