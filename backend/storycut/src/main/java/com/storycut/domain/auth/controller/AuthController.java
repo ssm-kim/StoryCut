@@ -40,7 +40,7 @@ public class AuthController implements AuthAPI {
     @Override
     public void googleWebLogin(HttpServletResponse response) throws Exception {
         log.info("[구글 로그인] 웹 요청 - OAuth 리다이렉트");
-        response.sendRedirect("/oauth2/authorization/google");
+        response.sendRedirect("/api/v1/spring/oauth2/authorization/google");
     }
 
     @Override
