@@ -91,8 +91,8 @@ async def subtitles(video_path: str) -> str:
             await f.write("Format: Name, Fontname, Fontsize, PrimaryColour, BackColour, Bold, Italic, "
                           "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
                           "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
-            await f.write(f"Style: Default,Arial,{fontsize},&H00FFFFFF,&H80000000,0,0,0,0,100,100,0,0,"
-                          f"3,2,0,2,30,30,{margin_v},1\n\n")
+            await f.write(f"Style: Default,Noto Sans CJK KR,{fontsize},&H00FFFFFF,&H80000000,0,0,0,0,100,100,0,0,"
+                        f"3,2,0,2,30,30,{margin_v},1\n\n")
             await f.write("[Events]\n")
             await f.write("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
 
