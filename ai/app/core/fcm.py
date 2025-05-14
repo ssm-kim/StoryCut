@@ -1,7 +1,7 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, messaging
-from app.api.v1.schemas.post_schema import PostResult
+from app.api.v1.schemas.post_schema import CompleteResult
 
 # ✅ 서비스 계정 JSON 경로
 SERVICE_ACCOUNT_PATH = "app/firebase/firebase-service-account.json"
@@ -26,11 +26,10 @@ def send_fcm_notification(token: str, title: str, body: str, data: dict = {}):
     response = messaging.send(message)
     return response
 
-# ✅ PostResult 기반 전송 헬퍼
-def send_result_fcm(device_token: str, result: PostResult):
+def send_result_fcm(device_token: str, result: CompleteResult):
     send_fcm_notification(
         token=device_token,
         title="📹 영상 업로드 완료",
-        body=f"'{result.video_name}' 영상이 성공적으로 업로드되었습니다.",
+        body="영상 처리가 완료되었습니다.",
         data=result.dict(by_alias=True)
     )

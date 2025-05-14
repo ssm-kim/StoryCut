@@ -3,12 +3,20 @@ import logging
 import asyncio
 from fastapi import APIRouter, Header, HTTPException
 from app.api.v1.services.mosaic_service import run_mosaic_pipeline
-from app.api.v1.services.springboot_service import get_video_from_springboot, post_video_to_springboot
-from app.api.v1.services.upload_service import generate_and_upload_thumbnail, save_uploaded_video
+from app.api.v1.services.springboot_service import (
+    get_video_from_springboot,
+    post_video_to_springboot_complete,
+    post_video_to_springboot_upload,
+)
+from app.api.v1.services.upload_service import (
+    generate_and_upload_thumbnail,
+    save_uploaded_video,
+)
 from app.api.v1.schemas.mosaic_schema import MosaicRequest
 from app.api.v1.schemas.video_schema import VideoPostResponse
-from app.api.v1.schemas.post_schema import PostRequest
+from app.api.v1.schemas.post_schema import UploadRequest, CompleteRequest
 from app.core.fcm import send_result_fcm  
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -18,7 +26,7 @@ router = APIRouter()
 async def process_video_from_json(
     request: MosaicRequest,
     authorization: str = Header(...),
-    device_token: str = Header(...)  
+    device_token: str = Header(...)
 ):
     try:
         token = authorization.replace("Bearer ", "")
@@ -30,11 +38,26 @@ async def process_video_from_json(
                 detail="이미 모자이크 처리된 영상입니다."
             )
 
-        asyncio.create_task(
-            process_video_pipeline(token, request, video_info.result.video_url, device_token)
+        payload = UploadRequest(
+            videoTitle=request.video_title,
+            original_video_id=request.video_id,
+            is_blur=True
         )
 
-        # ✅ 즉시 응답
+        spring_response = await post_video_to_springboot_upload(token, payload)
+
+        # 🎬 백그라운드 비동기 처리
+        asyncio.create_task(
+            process_video_pipeline(
+                token,
+                request,
+                video_info.result.video_url,
+                device_token,
+                spring_response.result  # video_id
+            )
+        )
+
+        # 📦 즉시 응답
         return VideoPostResponse(
             is_success=True,
             code=202,
@@ -42,13 +65,15 @@ async def process_video_from_json(
             result=None
         )
 
+    except HTTPException as e:
+        raise e  # ⚠️ FastAPI가 자동 처리하게 그냥 raise
     except Exception as e:
         logger.exception("예외 발생:")
         raise HTTPException(status_code=500, detail=f"처리 중 오류 발생: {str(e)}")
 
 
-# ✅ 비동기 백그라운드 파이프라인
-async def process_video_pipeline(token: str, request: MosaicRequest, video_url: str, device_token: str):
+# ✅ 백그라운드 모자이크 처리 파이프라인
+async def process_video_pipeline(token: str, request: MosaicRequest, video_url: str, device_token: str, id: int):
     try:
         video_path = await run_mosaic_pipeline(
             input_path=video_url,
@@ -65,15 +90,13 @@ async def process_video_pipeline(token: str, request: MosaicRequest, video_url: 
         s3_url = await save_uploaded_video(video_path, video_name)
         logger.info(f"영상 S3 URL: {s3_url}")
 
-        payload = PostRequest(
-            video_name=video_name,
-            video_url=s3_url,
+        payload = CompleteRequest(
+            video_id=id,
             thumbnail=thumbnail_url,
-            original_video_id=request.video_id,
-            is_blur=True
+            video_url=s3_url,
         )
 
-        spring_response = await post_video_to_springboot(token, payload)
+        spring_response = await post_video_to_springboot_complete(token, payload)
 
         # ✅ FCM 푸시 전송
         if spring_response.result:

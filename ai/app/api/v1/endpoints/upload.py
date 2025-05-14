@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, UploadFile, File, HTTPException, Header
+from fastapi import APIRouter, UploadFile, Form, File, HTTPException, Header
 from typing import List
 
 # 비동기 서비스 로직 불러오기
@@ -10,14 +10,17 @@ from app.api.v1.services.upload_service import (
     generate_and_upload_thumbnail,
     save_uploaded_image
 )
-from app.api.v1.services.springboot_service import post_video_to_springboot
+from app.api.v1.services.springboot_service import (
+    post_video_to_springboot_upload,
+    post_video_to_springboot_complete
+)
 from app.api.v1.schemas.upload_schema import (
     ImageUploadResponse, ErrorResponse,
     ImageUploadResult,VideoUploadResponse,
     ImageUploadResponse,RoomThumbnailResponse,
     RoomThumbnailResult
 )
-from app.api.v1.schemas.post_schema import PostRequest
+from app.api.v1.schemas.post_schema import CompleteRequest,UploadRequest
 
 router = APIRouter()
 @router.post(
@@ -42,6 +45,7 @@ async def upload_images(files: List[UploadFile] = File(...)):
 @router.post("/videos", response_model=VideoUploadResponse, summary="영상 업로드")
 async def upload_video(
     file: UploadFile = File(...),
+    video_title: str = Form(...),
     authorization: str = Header(..., alias="Authorization")
 ):
     token = authorization.replace("Bearer ", "")
@@ -52,16 +56,23 @@ async def upload_video(
         video_name = os.path.basename(local_path)
         thumbnail_url = await generate_and_upload_thumbnail(local_path)
         s3_url = await save_uploaded_video(local_path, video_name)
-
-        payload = PostRequest(
-            video_name=video_name,
-            video_url=s3_url,
-            thumbnail=thumbnail_url,
+        print("dddddddddddddddddddddddddddddddd")
+        print(s3_url)
+        payload = UploadRequest(
+            video_title=video_title,
             original_video_id=None,
-            is_blur=False
+            is_blur=False,
         )
-        spring_response = await post_video_to_springboot(token, payload)
 
+        id = await post_video_to_springboot_upload(token, payload)
+        payload = CompleteRequest(
+            video_id=id.result,
+            thumbnail=thumbnail_url,
+            video_url=s3_url,
+        )
+
+        spring_response=await post_video_to_springboot_complete(token,payload)
+        print(spring_response.result)
         return VideoUploadResponse(
             is_success=True,
             code=200,
