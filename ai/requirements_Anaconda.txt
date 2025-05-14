@@ -22,6 +22,7 @@ babel==2.17.0
 bcrypt==4.0.1
 boto3==1.37.3
 botocore==1.37.3
+CacheControl==0.14.2
 cachetools==5.5.2
 certifi==2025.4.26
 cffi==1.17.1
@@ -47,6 +48,7 @@ eval_type_backport==0.2.2
 exceptiongroup==1.2.2
 fastapi==0.95.2
 filelock==3.14.0
+firebase-admin==6.8.0
 flake8==7.1.2
 flatbuffers==25.2.10
 fonttools==4.57.0
@@ -56,11 +58,23 @@ ftfy==6.2.3
 future==1.0.0
 gitdb==4.0.12
 GitPython==3.1.44
+google-ai-generativelanguage==0.1.0
+google-api-core==2.24.2
+google-api-python-client==2.169.0
 google-auth==2.40.1
+google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.0.0
+google-cloud-core==2.4.3
+google-cloud-firestore==2.20.2
+google-cloud-storage==3.1.0
+google-crc32c==1.5.0
+google-resumable-media==2.7.2
+googleapis-common-protos==1.70.0
 grpcio==1.70.0
+grpcio-status==1.62.3
 h11==0.16.0
 httpcore==1.0.9
+httplib2==0.22.0
 httpx==0.25.1
 huggingface-hub==0.31.1
 humanfriendly==10.0
@@ -135,7 +149,8 @@ pooch==1.8.2
 prettytable==3.11.0
 proglog==0.1.12
 propcache==0.2.0
-protobuf==5.29.4
+proto-plus==1.26.1
+protobuf==4.23.4
 psutil==7.0.0
 py==1.11.0
 pyasn1==0.6.1
@@ -148,6 +163,7 @@ pydantic==1.10.14
 pydub==0.25.1
 pyflakes==3.2.0
 Pygments==2.19.1
+PyJWT==2.9.0
 pyparsing==3.1.4
 pyreadline3==3.5.4
 pytest==8.3.5
@@ -215,6 +231,7 @@ tqdm==4.65.0
 transformers==4.46.3
 typing_extensions==4.13.2
 tzdata==2025.2
+uritemplate==4.1.1
 urllib3==1.26.20
 uvicorn==0.23.2
 wandb==0.19.11
