@@ -158,7 +158,7 @@ public class GoogleAuthService {
             formData.add("client_secret", GOOGLE_CLIENT_SECRET);
             formData.add("code", code);
             formData.add("grant_type", "authorization_code");
-            formData.add("redirect_uri", BASE_URL + "/api/auth/oauth2/callback");
+            formData.add("redirect_uri", BASE_URL + "/api/v1/spring/auth/oauth2/callback");
             
             // WebClient를 사용하여 Google Token API 호출
             Map<String, Object> response = WebClient.builder().build()
