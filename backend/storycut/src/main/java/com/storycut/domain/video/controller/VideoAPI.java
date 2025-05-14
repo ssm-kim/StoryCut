@@ -32,7 +32,7 @@ public interface VideoAPI {
     @PostMapping
     @Operation(
         summary = "비디오 업로드",
-        description = "비디오 정보를 DB에 저장합니다. FastAPI에서 S3에 업로드한 후 호출해야 합니다.",
+        description = "비디오 정보를 DB에 저장합니다. FastAPI에서 S3에 업로드 시작 전 호출해야 합니다.",
         security = @SecurityRequirement(name = "JWT")
     )
     @ApiResponses(value = {
