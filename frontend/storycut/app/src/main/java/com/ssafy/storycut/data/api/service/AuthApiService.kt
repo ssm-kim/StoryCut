@@ -12,23 +12,23 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface AuthApiService {
-    @POST("api/auth/login")
+    @POST("auth/login")
     suspend fun googleLogin(@Body request: GoogleLoginRequest): Response<BaseResponse<TokenResult>>
 
-    @GET("api/members/detail")
+    @GET("members/detail")
     suspend fun getUserInfo(@Header("Authorization") authorization: String): Response<BaseResponse<UserInfo>>
 
     // 토큰 갱신 API 추가
-    @POST("api/auth/refresh")
+    @POST("auth/refresh")
     suspend fun refreshToken(@Header("Authorization") refreshToken: String): Response<BaseResponse<TokenResult>>
 
-    @POST("api/auth/logout")
+    @POST("auth/logout")
     suspend fun logout(@Header("Authorization") authorization: String): Response<BaseResponse<Unit>>
 
-    @GET("/api/auth/youtube/auth")
+    @GET("auth/youtube/auth")
     suspend fun getYouTubeAuthUrl(@Header("Authorization") authorization: String): Response<BaseResponse<GooglePermissionResponse>>
 
-    @POST("/api/auth/google-refresh")
+    @POST("auth/google-refresh")
     suspend fun refreshGoogleToken(@Header("Authorization") authorization: String): Response<BaseResponse<TokenResult>>
 
 }

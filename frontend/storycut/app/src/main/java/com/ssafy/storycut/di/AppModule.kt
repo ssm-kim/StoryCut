@@ -3,6 +3,7 @@ package com.ssafy.storycut.di
 import android.content.Context
 import com.ssafy.storycut.BuildConfig
 import com.ssafy.storycut.data.api.service.AuthApiService
+import com.ssafy.storycut.data.api.service.ChatApiService
 import com.ssafy.storycut.data.api.service.EditService
 import com.ssafy.storycut.data.api.service.RoomApiService
 import com.ssafy.storycut.data.api.service.VideoApiService
@@ -132,6 +133,12 @@ object AppModule {
     @Singleton
     fun provideRoomApiService(@BaseRetrofit retrofit: Retrofit): RoomApiService {
         return retrofit.create(RoomApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatApiService(@BaseRetrofit retrofit: Retrofit): ChatApiService {
+        return retrofit.create(ChatApiService::class.java)
     }
 
     @Provides

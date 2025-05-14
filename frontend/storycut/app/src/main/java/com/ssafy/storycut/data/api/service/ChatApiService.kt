@@ -15,15 +15,15 @@ import retrofit2.http.Query
 interface ChatApiService {
 
     // 공유방 비디오 업로드
-    @POST("api/chat/")
-    suspend fun sendChatMessage(
+    @POST("chat/")
+    suspend fun uploadRoomVideo(
         @Query("roomId") roomId: Long,
         @Body chatMessage: ChatMessageRequest,
         @Header("Authorization") token: String
     ): Response<BaseResponse<ChatDto>>
 
     // 공유방 비디오 목록 조회
-    @GET("api/chat/{roomId}")
+    @GET("chat/{roomId}")
     suspend fun getRoomChats(
         @Path("roomId") roomId: Long,
         @Query("page") page: Int = 0,
@@ -32,7 +32,7 @@ interface ChatApiService {
     ): Response<BaseResponse<List<ChatDto>>>
 
     // 공유방 비디오 삭제
-    @DELETE("api/chat/{chatId}")
+    @DELETE("chat/{chatId}")
     suspend fun deleteChat(
         @Path("chatId") chatId: String,
         @Header("Authorization") token: String

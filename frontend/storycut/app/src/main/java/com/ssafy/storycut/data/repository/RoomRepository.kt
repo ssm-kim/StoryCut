@@ -3,7 +3,10 @@ package com.ssafy.storycut.data.repository
 import com.ssafy.storycut.data.api.model.BaseResponse
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.chat.ChatDto
+import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
+import com.ssafy.storycut.data.api.service.ChatApiService
 import com.ssafy.storycut.data.api.service.RoomApiService
 import retrofit2.Response
 import javax.inject.Inject
@@ -11,7 +14,8 @@ import javax.inject.Singleton
 
 @Singleton
 class RoomRepository @Inject constructor(
-    private val roomApiService: RoomApiService
+    private val roomApiService: RoomApiService,
+    private val chatApiService: ChatApiService
 ) {
     // 내 공유방 목록 조회
     suspend fun getMyRooms(token: String): Response<BaseResponse<List<RoomDto>>> {
@@ -61,5 +65,50 @@ class RoomRepository @Inject constructor(
     // 초대코드로 공유방 ID 조회
     suspend fun decodeInviteCode(inviteCode: String, token: String): Response<BaseResponse<String>> {
         return roomApiService.decodeInviteCode(inviteCode, "Bearer $token")
+    }
+
+    /**
+     * 공유방에 비디오 업로드
+     * @param roomId 공유방 ID
+     * @param chatMessage 업로드할 채팅 메시지 요청 객체
+     * @param token 사용자 인증 토큰
+     * @return API 응답
+     */
+    suspend fun uploadRoomVideo(
+        roomId: Long,
+        chatMessage: ChatMessageRequest,
+        token: String
+    ): Response<BaseResponse<ChatDto>> {
+        return chatApiService.uploadRoomVideo(roomId, chatMessage, "Bearer $token")
+    }
+
+    /**
+     * 공유방의 채팅(비디오) 목록 조회
+     * @param roomId 공유방 ID
+     * @param page 페이지 번호 (기본값: 0)
+     * @param size 페이지 크기 (기본값: 10)
+     * @param token 사용자 인증 토큰
+     * @return API 응답
+     */
+    suspend fun getRoomChats(
+        roomId: Long,
+        page: Int = 0,
+        size: Int = 10,
+        token: String
+    ): Response<BaseResponse<List<ChatDto>>> {
+        return chatApiService.getRoomChats(roomId, page, size, "Bearer $token")
+    }
+
+    /**
+     * 공유방 채팅(비디오) 삭제
+     * @param chatId 채팅 ID
+     * @param token 사용자 인증 토큰
+     * @return API 응답
+     */
+    suspend fun deleteChat(
+        chatId: String,
+        token: String
+    ): Response<BaseResponse<Boolean>> {
+        return chatApiService.deleteChat(chatId, "Bearer $token")
     }
 }

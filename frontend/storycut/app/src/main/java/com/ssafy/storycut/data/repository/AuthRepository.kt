@@ -48,6 +48,7 @@ class AuthRepository @Inject constructor(
     ) {
         withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "토큰 전송")
                 val response = RetrofitClient.authService.googleLogin(GoogleLoginRequest(idToken))
 
                 if (response.isSuccessful) {
@@ -59,8 +60,8 @@ class AuthRepository @Inject constructor(
                             val accessToken = result.accessToken
                             val refreshToken = result.refreshToken
 
-                            Log.d("mine", accessToken)
-                            Log.d("mine", refreshToken)
+                            Log.d(TAG, accessToken)
+                            Log.d(TAG, refreshToken)
 
                             // 토큰 저장
                             tokenManager.saveTokens(accessToken, refreshToken)

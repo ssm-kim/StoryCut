@@ -36,7 +36,6 @@ class RoomViewModel @Inject constructor(
     val error: StateFlow<String> = _error
 
     // 공유방 상세 정보 가져오기
-// RoomViewModel의 getRoomDetail 함수에 로그 추가
     fun getRoomDetail(roomId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -135,4 +134,6 @@ class RoomViewModel @Inject constructor(
     fun clearError() {
         _error.value = ""
     }
+
+
 }

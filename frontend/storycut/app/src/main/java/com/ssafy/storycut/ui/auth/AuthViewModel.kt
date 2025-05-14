@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "AuthViewModel"
+private const val TAG = "AuthRepository"
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
