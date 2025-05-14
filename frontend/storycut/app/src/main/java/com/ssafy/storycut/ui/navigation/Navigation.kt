@@ -51,16 +51,25 @@ fun NavController.navigateToShorts() {
     navigate(Navigation.SHORTS)
 }
 
-// 메인 화면 내에서 탭 이동 (하단 탭 네비게이션)
+// 하단 네비게이션
 fun NavController.navigateToMainTab(route: String) {
+    Log.d("Navigation", "메인 탭 이동: $route")
+
+    // 완전히 새로운 화면으로 이동하도록 설정
     navigate(route) {
-        // 네비게이션 컨트롤러의 스택을 초기화하여 백 스택 관리
-        popUpTo(this@navigateToMainTab.graph.findStartDestination().id) {
-            saveState = true
+        // 백스택 완전히 정리 (MAIN까지의 모든 백스택 삭제)
+        popUpTo(Navigation.MAIN) {
+            // MAIN 포함 여부 - 여기서는 제외하여 MAIN은 남기고 그 위의 화면들만 제거
+            inclusive = false
+
+            // 상태 저장 안 함
+            saveState = false
         }
-        // 같은 아이템을 여러 번 클릭했을 때 같은 화면의 여러 인스턴스가 쌓이는 것을 방지
+
+        // 같은 화면 여러번 쌓이지 않도록
         launchSingleTop = true
-        // 이전 상태를 복원
-        restoreState = true
+
+        // 이전 상태 복원 안 함
+        restoreState = false
     }
 }

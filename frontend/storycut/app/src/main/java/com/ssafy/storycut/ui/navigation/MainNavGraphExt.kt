@@ -19,6 +19,7 @@ import androidx.navigation.navArgument
 import com.ssafy.storycut.ui.edit.EditViewModel
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
 import com.ssafy.storycut.ui.room.RoomDetailScreen
+import com.ssafy.storycut.ui.room.upload.RoomShortUploadScreen
 
 /**
  * 메인 화면의 네비게이션 그래프를 확장 함수로 정의
@@ -98,5 +99,13 @@ fun NavGraphBuilder.mainGraph(
             navController = navController,
             tokenManager = tokenManager
         )
+    }
+
+    composable(
+        route = "room_short_upload/{roomId}",
+        arguments = listOf(navArgument("roomId") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+        RoomShortUploadScreen(roomId = roomId, navController = navController)
     }
 }

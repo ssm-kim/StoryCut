@@ -175,7 +175,8 @@ fun RoomDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Person,                                        contentDescription = "멤버",
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = "멤버",
                                         modifier = Modifier.size(18.dp),
                                         tint = Color.Gray
                                     )
@@ -196,7 +197,7 @@ fun RoomDetailScreen(
                                     // 쇼츠 업로드 버튼
                                     Button(
                                         onClick = {
-                                            navController.navigate("upload_video/$roomId")
+                                            navController.navigate("room_short_upload/${roomDetail?.roomId}")
                                         },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = MaterialTheme.colorScheme.primary
@@ -236,9 +237,7 @@ fun RoomDetailScreen(
                                             horizontal = 12.dp,
                                             vertical = 8.dp
                                         ),
-                                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                                            width = 1.dp
-                                        )
+                                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
@@ -291,7 +290,7 @@ fun RoomDetailScreen(
 //                                Spacer(modifier = Modifier.height(16.dp))
 //
 //                                Button(
-//                                    onClick = { navController.navigate("upload_video/$roomId") },
+//                                    onClick = { navController.navigate("room_short_upload/$roomId") },
 //                                    colors = ButtonDefaults.buttonColors(
 //                                        containerColor = MaterialTheme.colorScheme.primary
 //                                    )

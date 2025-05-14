@@ -1,9 +1,11 @@
 package com.ssafy.storycut.ui.room
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.RoomRepository
@@ -34,6 +36,10 @@ class RoomViewModel @Inject constructor(
 
     private val _error = MutableStateFlow("")
     val error: StateFlow<String> = _error
+
+    // 비디오 업로드 성공 여부
+    private val _uploadSuccess = MutableStateFlow(false)
+    val uploadSuccess: StateFlow<Boolean> = _uploadSuccess
 
     // 공유방 상세 정보 가져오기
     fun getRoomDetail(roomId: String) {
@@ -130,10 +136,70 @@ class RoomViewModel @Inject constructor(
         }
     }
 
+    // 쇼츠 업로드
+    fun uploadShort(
+        roomId: String,
+        videoUri: Uri,
+        title: String,
+        thumbnailUri: Uri? = null
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = ""
+            _uploadSuccess.value = false
+
+            try {
+                Log.d("RoomViewModel", "Uploading short for roomId: $roomId with title: $title")
+                val token = tokenManager.accessToken.first()
+                if (token == null) {
+                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                    Log.e("RoomViewModel", "Token is null")
+                    return@launch
+                }
+
+                // 업로드할 메시지 요청 객체 생성
+                val chatMessage = ChatMessageRequest(
+                    videoId = "", // 비디오 ID는 서버에서 생성하거나 빈 값으로 전송
+                    title = title,
+                    mediaUrl = videoUri.toString(), // 실제 구현에서는 파일 경로 처리가 필요할 수 있음
+                    thumbnailUrl = thumbnailUri?.toString() ?: "" // 썸네일이 없으면 빈 문자열
+                )
+
+                // 방 ID를 Long으로 변환
+                val roomIdLong = try {
+                    roomId.toLong()
+                } catch (e: Exception) {
+                    _error.value = "잘못된 방 ID 형식입니다."
+                    Log.e("RoomViewModel", "Invalid room ID format", e)
+                    return@launch
+                }
+
+                // 리포지토리를 통해 API 호출
+                val response = roomRepository.uploadRoomVideo(roomIdLong, chatMessage, token)
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    Log.d("RoomViewModel", "Short upload successful: ${response.body()}")
+                    _uploadSuccess.value = true
+                } else {
+                    _error.value = response.body()?.message ?: "쇼츠 업로드에 실패했습니다."
+                    Log.e("RoomViewModel", "Failed to upload short: ${_error.value}")
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "네트워크 오류가 발생했습니다."
+                Log.e("RoomViewModel", "Exception uploading short", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     // 에러 메시지 초기화
     fun clearError() {
         _error.value = ""
     }
 
-
+    // 업로드 상태 초기화
+    fun resetUploadState() {
+        _uploadSuccess.value = false
+    }
 }

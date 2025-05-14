@@ -1,4 +1,4 @@
-package com.ssafy.storycut.ui.edit.dialog
+package com.ssafy.storycut.ui.common
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

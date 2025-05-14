@@ -36,7 +36,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.edit.dialog.OptionDialog
-import com.ssafy.storycut.ui.edit.dialog.VideoUploadDialog
+import com.ssafy.storycut.ui.common.VideoUploadDialog
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
