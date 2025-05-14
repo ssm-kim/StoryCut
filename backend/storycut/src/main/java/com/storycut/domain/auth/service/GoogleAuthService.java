@@ -115,7 +115,8 @@ public class GoogleAuthService {
         // 인증 URL 생성 (PKCE 없이)
         String authUrl = GOOGLE_AUTH_URL + "?" +
                 "client_id=" + GOOGLE_CLIENT_ID + "&" +
-                "redirect_uri=" + BASE_URL + "/api/auth/oauth2/callback" + "&" +
+//                "redirect_uri=" + BASE_URL + "/api/auth/oauth2/callback" + "&" +
+                "redirect_uri=" + BASE_URL + "/api/v1/spring/auth/oauth2/callback" + "&" +
                 "response_type=code&" +
                 "scope=openid%20email%20profile%20" + YOUTUBE_UPLOAD_SCOPE + "&" +
                 "access_type=offline&" +
