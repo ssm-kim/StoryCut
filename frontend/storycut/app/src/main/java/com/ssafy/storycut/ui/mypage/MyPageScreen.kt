@@ -18,8 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,7 +56,7 @@ fun MyPageScreen(
     myVideoViewModel: VideoViewModel = hiltViewModel(),
     navController: NavController? = null,
     tokenManager: TokenManager,
-    onNavigateToLogin: () -> Unit = {} // 올바른 람다 함수 기본값
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val userInfo by authViewModel.userState.collectAsState()
     val videoList by myVideoViewModel.myVideos.collectAsState()
@@ -200,7 +198,7 @@ fun MyPageScreen(
                             else MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(32.dp)
                         )
-                        .height(36.dp)  // 원하는 낮은 높이로 설정
+                        .height(36.dp)
                         .focusRequester(focusRequester)
                         .onFocusChanged { focusState ->
                             isFocused = focusState.isFocused
@@ -262,10 +260,10 @@ fun MyPageScreen(
             } else {
                 // 비디오 그리드 표시
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),  // 3에서 2로 열 수 감소 (세로로 길어질 것이므로 가로 공간 확보)
+                    columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),  // 세로 간격 증가
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(videoList.filter {
@@ -275,13 +273,17 @@ fun MyPageScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                // 9:16 비율로 변경 (9/16 = 0.5625)
                                 .aspectRatio(9f/16f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
-                                    // 비디오 상세 페이지로 이동 - 이동 시 포커스 해제 추가
+                                    // 비디오 클릭 시 로그 추가
+                                    Log.d("MyPageScreen", "비디오 클릭: ID=${video.videoId}, 제목=${video.videoTitle}")
+
+                                    // 포커스 해제
                                     focusManager.clearFocus()
+
+                                    // 비디오 상세 페이지로 이동
                                     navController?.navigate("video_detail/${video.videoId}")
                                 }
                         ) {
@@ -305,8 +307,8 @@ fun MyPageScreen(
                                     text = video.videoTitle,
                                     color = Color.White,
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold,  // 글자 굵게 설정
-                                        shadow = Shadow(  // 텍스트 그림자 추가
+                                        fontWeight = FontWeight.Bold,
+                                        shadow = Shadow(
                                             color = Color.Black,
                                             blurRadius = 4f,
                                             offset = androidx.compose.ui.geometry.Offset(1f, 1f)
@@ -324,7 +326,7 @@ fun MyPageScreen(
             }
         }
 
-        // 설정 화면 오버레이 (z-index가 더 높아 위에 표시됨)
+        // 설정 화면 오버레이
         if (navController != null) {
             Box(
                 modifier = Modifier

@@ -23,13 +23,21 @@ class VideoViewModel @Inject constructor(
     private val _videoDetail = MutableStateFlow<VideoDto?>(null)
     val videoDetail: StateFlow<VideoDto?> = _videoDetail
 
+    // 로딩 상태를 위한 StateFlow 추가
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    // 비디오 목록 가져오기 (최신순 정렬 추가)
     fun fetchMyVideos(token: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val response = videoRepository.getMyVideos(token)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    response.body()?.result?.let {
-                        _myVideos.value = it
+                    response.body()?.result?.let { videos ->
+                        // 최신순 정렬 (videoId 기준 내림차순)
+                        _myVideos.value = videos.sortedByDescending { it.videoId }
+                        Log.d("VideoViewModel", "비디오 ${videos.size}개 로드됨, 최신순 정렬 완료")
                     }
                 } else {
                     // 에러 처리 - 로그 추가
@@ -39,6 +47,8 @@ class VideoViewModel @Inject constructor(
             } catch (e: Exception) {
                 // 예외 처리 - 로그 추가
                 Log.d("VideoViewModel", "비디오 목록 가져오기 에러 : ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -98,7 +108,6 @@ class VideoViewModel @Inject constructor(
         }
     }
 
-
     // 이전 비디오 가져오기
     fun getPreviousVideo(currentVideoId: String): VideoDto? {
         val currentList = myVideos.value
@@ -112,6 +121,7 @@ class VideoViewModel @Inject constructor(
             null  // 또는 currentList.lastOrNull()
         }
     }
+
     // 비디오 리스트에서 특정 인덱스부터 원하는 개수만큼 가져오기 (페이징 구현 시 유용)
     fun getVideosFromIndex(startIndex: Int, count: Int = 5): List<VideoDto> {
         val currentList = myVideos.value
@@ -123,7 +133,6 @@ class VideoViewModel @Inject constructor(
             emptyList()
         }
     }
-
 
     private val _roomVideos = MutableStateFlow<List<VideoDto>>(emptyList())
     val roomVideos: StateFlow<List<VideoDto>> = _roomVideos

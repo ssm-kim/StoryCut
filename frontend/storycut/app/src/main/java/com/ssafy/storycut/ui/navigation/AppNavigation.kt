@@ -8,12 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
 import com.ssafy.storycut.ui.auth.LoginScreen
+import com.ssafy.storycut.ui.mypage.VideoDetailScreen
 import com.ssafy.storycut.ui.splash.SplashScreen
 
 private const val TAG = "AppNavigation"
@@ -82,5 +85,6 @@ fun AppNavigation(
         composable(Navigation.SHORTS) {
             ShortsScreen()
         }
+
     }
 }
