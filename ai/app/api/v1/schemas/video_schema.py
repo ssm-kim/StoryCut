@@ -16,11 +16,11 @@ class VideoProcessRequest(BaseModel):
         schema_extra = {
            "example": {
                 "prompt":"축구하는 장면",
-                "video_id":1,
+                "videoId":1,
                 "images":[
                     "app/images/face1.jpg"
                 ],
-                "video_title":"제목",
+                "videoTitle":"제목",
                 "subtitle":True,
                 "musicPrompt":"댄스음악"
            }
