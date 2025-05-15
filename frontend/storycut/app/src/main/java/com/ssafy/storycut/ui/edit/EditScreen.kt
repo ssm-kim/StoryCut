@@ -42,7 +42,6 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun EditScreen(
     viewModel: EditViewModel,
-    onEditSuccess: (String) -> Unit
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -58,12 +57,24 @@ fun EditScreen(
         }
     }
 
-    // 이벤트 수집
+    // LaunchedEffect 블록 내부의 이벤트 처리 수정
     LaunchedEffect(viewModel) {
         viewModel.events.collectLatest { event ->
             when (event) {
                 is EditViewModel.EditEvent.Success -> {
-                    onEditSuccess(event.videoId)
+                    // 상태 초기화
+                    viewModel.resetState()
+                }
+                is EditViewModel.EditEvent.Processing -> {
+                    // 토스트 메시지 표시
+                    Toast.makeText(
+                        context,
+                        "영상 처리 중입니다. 완료되면 알림이 전송됩니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // 상태 초기화
+                    viewModel.resetState()
                 }
                 is EditViewModel.EditEvent.Error -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()

@@ -141,10 +141,10 @@ class EditRepository @Inject constructor(
         videoTitle: String,
         applySubtitle: Boolean,
         musicPrompt: String?
-    ): Result<VideoDto> {
+    ): Result<Boolean> {  // VideoDto 대신 Boolean으로 변경 (성공 여부만 반환)
         return withContext(Dispatchers.IO) {
             try {
-                // API 요청 문서에 맞게 VideoProcessRequest 객체 생성
+                // 요청 객체 생성
                 val request = VideoProcessRequest(
                     prompt = prompt ?: "",
                     videoId = videoId,
@@ -157,23 +157,26 @@ class EditRepository @Inject constructor(
                 // 인증 토큰 가져오기
                 val authToken = "Bearer ${tokenManager.accessToken.first() ?: ""}"
 
-                // FCM 토큰 가져오기 (없으면 새로 요청)
+                // FCM 토큰 가져오기
                 val deviceToken = getFCMToken()
 
-                // FCM 토큰과 함께 API 호출
+                // API 호출
                 val response = editService.processVideo(authToken, deviceToken, request)
 
-                if (response.isSuccessful) {
-                    val baseResponse = response.body()
-                    if (baseResponse?.isSuccess == true && baseResponse.result != null) {
-                        Result.success(baseResponse.result)
-                    } else {
-                        Result.failure(Exception("영상 처리 실패: ${baseResponse?.message ?: "알 수 없는 오류"}"))
-                    }
+                // 응답 처리 (단순화)
+                val baseResponse = response.body()
+
+                if (response.isSuccessful && baseResponse?.isSuccess == true) {
+                    Log.d("EditRepository", "영상 처리 요청 성공: ${baseResponse.message}")
+                    Result.success(true)
                 } else {
-                    Result.failure(Exception("영상 처리 실패: ${response.message()}"))
+                    // 실패 처리
+                    val errorMsg = baseResponse?.message ?: response.message() ?: "알 수 없는 오류"
+                    Log.e("EditRepository", "영상 처리 요청 실패: $errorMsg")
+                    Result.failure(Exception(errorMsg))
                 }
             } catch (e: Exception) {
+                Log.e("EditRepository", "영상 처리 예외 발생", e)
                 Result.failure(e)
             }
         }

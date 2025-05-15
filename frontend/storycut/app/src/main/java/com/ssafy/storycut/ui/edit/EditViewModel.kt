@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 class EditViewModel @Inject constructor(
     private val repository: EditRepository,
     @ApplicationContext private val context: Context,
-    private val tokenManager: TokenManager
 ) : ViewModel() {
     // UI 상태 관련 변수들
     var videoSelected by mutableStateOf(false)
@@ -173,16 +172,12 @@ class EditViewModel @Inject constructor(
                 )
 
                 isLoading = false
-
+                Log.e("test","값 : ${processResult.isSuccess}")
                 if (processResult.isSuccess) {
-                    val processedVideo = processResult.getOrNull()
-                    if (processedVideo != null) {
-                        _events.emit(EditEvent.Success(processedVideo.videoId.toString(), processedVideo))
-                    } else {
-                        error = "처리된 비디오 정보를 가져올 수 없습니다"
-                    }
+                    _events.emit(EditEvent.Processing(videoId.toString()))
                 } else {
-                    throw processResult.exceptionOrNull() ?: Exception("영상 처리 실패")
+                    error = processResult.exceptionOrNull()?.message ?: "영상 처리 실패"
+                    _events.emit(EditEvent.Error(error ?: "알 수 없는 오류"))
                 }
 
             } catch (e: Exception) {
@@ -194,9 +189,33 @@ class EditViewModel @Inject constructor(
         }
     }
 
+    // 상태 초기화 함수
+    fun resetState() {
+        // 비디오 관련 상태 초기화
+        selectedVideoUri = null
+        videoThumbnail = null
+        videoSelected = false
+
+        // 제목과 프롬프트 초기화
+        videoTitle = ""
+        promptText = ""
+
+        // 옵션 초기화
+        hasMosaic = false
+        applySubtitle = false
+        hasBackgroundMusic = false
+
+        // 모자이크 이미지 및 음악 프롬프트 초기화
+        mosaicImages = emptyList()
+        musicPromptText = ""
+    }
+
+
+
     // 이벤트 클래스
     sealed class EditEvent {
-        data class Success(val videoId: String, val videoDto: VideoDto) : EditEvent()
+        data class Success(val videoId: String, val videoData: VideoDto) : EditEvent()
+        data class Processing(val videoId: String) : EditEvent()
         data class Error(val message: String) : EditEvent()
     }
 }

@@ -43,11 +43,7 @@ fun NavGraphBuilder.mainGraph(
         // hiltViewModel()을 사용하여 EditViewModel 인스턴스 생성
         val editViewModel = hiltViewModel<EditViewModel>()
         EditScreen(
-            viewModel = editViewModel,
-            onEditSuccess = { videoId ->
-                // 편집 성공 시 비디오 상세 화면으로 이동
-                navController.navigate("video_detail/$videoId")
-            }
+            viewModel = editViewModel
         )
     }
 

@@ -79,8 +79,6 @@ class StoryCutApplication : Application() {
             // 로그로 토큰 출력
             Log.d(TAG, "FCM 토큰: $token")
 
-            // 이 토큰을 서버에 전송해야 합니다 (서버 측에서 이 토큰으로 푸시 알림을 보냄)
-            // TODO: 서버에 토큰 전송 로직 추가 (API 호출 등)
         }
     }
 }
