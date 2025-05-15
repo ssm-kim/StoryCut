@@ -24,7 +24,7 @@ interface ChatApiService {
 
     // 공유방 비디오 목록 조회
     @GET("chat/{roomId}")
-    suspend fun getRoomChats(
+    suspend fun getRoomVideos(
         @Path("roomId") roomId: Long,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10,
