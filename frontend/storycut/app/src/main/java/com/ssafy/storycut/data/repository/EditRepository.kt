@@ -2,30 +2,36 @@ package com.ssafy.storycut.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
 import com.ssafy.storycut.data.api.model.VideoDto
-import com.ssafy.storycut.data.api.model.edit.ImageUploadResponse
 import com.ssafy.storycut.data.api.model.edit.VideoProcessRequest
 import com.ssafy.storycut.data.api.service.EditService
+import com.ssafy.storycut.data.local.datastore.FCMTokenManager
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.coroutines.resume
 
 @Singleton
 class EditRepository @Inject constructor(
     private val editService: EditService,
     @ApplicationContext private val context: Context,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val fcmTokenManager: FCMTokenManager
 ) {
-    suspend fun uploadVideo(videoUri: Uri): Result<Long> {
+    suspend fun uploadVideo(videoUri: Uri, videoTitle: String): Result<Long> {
         return withContext(Dispatchers.IO) {
             try {
                 // URI에서 파일 생성
@@ -37,26 +43,47 @@ class EditRepository @Inject constructor(
                     tempFile
                 } ?: throw Exception("비디오 파일을 처리할 수 없습니다")
 
-                // MultipartBody.Part 생성
-                val videoRequestBody = videoFile.asRequestBody("video/mp4".toMediaTypeOrNull())
+                // 파일이 비어있는지 확인
+                if (videoFile.length() == 0L) {
+                    return@withContext Result.failure(Exception("비디오 파일이 비어있습니다"))
+                }
+
+                // 파일 확장자 확인
+                val mimeType = context.contentResolver.getType(videoUri) ?: "video/mp4"
+
+                // MultipartBody.Part 생성 - 필드명을 'file'로 설정 (서버 요구사항에 맞춤)
+                val videoRequestBody = videoFile.asRequestBody(mimeType.toMediaTypeOrNull())
                 val videoPart = MultipartBody.Part.createFormData("file", videoFile.name, videoRequestBody)
 
-                // API 호출
-                val response = editService.uploadVideo(videoPart)
+                // video_title Form 데이터 생성
+                val titlePart = videoTitle.toRequestBody("text/plain".toMediaTypeOrNull())
+
+                // 로그 추가
+                Log.d("EditRepository", "업로드 요청: 파일이름=${videoFile.name}, MIME=$mimeType, 크기=${videoFile.length()}, 제목=$videoTitle")
+
+                // API 호출 - 수정된 파라미터로 호출
+                val response = editService.uploadVideo(videoPart, titlePart)
 
                 if (response.isSuccessful) {
                     val baseResponse = response.body()
-                    if (baseResponse?.isSuccess == true && baseResponse.result != null && baseResponse.result.isNotEmpty()) {
-                        // 첫 번째 응답의 URL에서 비디오 ID 추출 (실제 구현은 서버 응답에 따라 다를 수 있음)
-                        // 예시로 1L 반환
-                        Result.success(1L)
+                    if (baseResponse?.isSuccess == true && baseResponse.result != null) {
+                        // VideoDto에서 videoId 추출
+                        val videoDto = baseResponse.result
+                        Log.d("EditRepository", "업로드 성공")
+
+                        Result.success(videoDto.videoId)
                     } else {
                         Result.failure(Exception("비디오 업로드 실패: ${baseResponse?.message ?: "알 수 없는 오류"}"))
                     }
                 } else {
+                    // 오류 응답의 바디를 로그에 기록
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("EditRepository", "서버 오류 응답: ${errorBody ?: "없음"}")
+
                     Result.failure(Exception("비디오 업로드 실패: ${response.message()}"))
                 }
             } catch (e: Exception) {
+                Log.e("EditRepository", "비디오 업로드 예외", e)
                 Result.failure(e)
             }
         }
@@ -111,7 +138,8 @@ class EditRepository @Inject constructor(
         prompt: String?,
         videoId: Long,
         imageUrls: List<String>,
-        generateSubtitles: Boolean,
+        videoTitle: String,
+        applySubtitle: Boolean,
         musicPrompt: String?
     ): Result<VideoDto> {
         return withContext(Dispatchers.IO) {
@@ -121,13 +149,19 @@ class EditRepository @Inject constructor(
                     prompt = prompt ?: "",
                     videoId = videoId,
                     images = imageUrls,
-                    subtitle = generateSubtitles,
+                    videoTitle = videoTitle,
+                    subtitle = applySubtitle,
                     musicPrompt = musicPrompt ?: ""
                 )
 
-                // 토큰 가져오기
-                val token = tokenManager.accessToken.first() ?: ""
-                val response = editService.processVideo("Bearer $token", request)
+                // 인증 토큰 가져오기
+                val authToken = "Bearer ${tokenManager.accessToken.first() ?: ""}"
+
+                // FCM 토큰 가져오기 (없으면 새로 요청)
+                val deviceToken = getFCMToken()
+
+                // FCM 토큰과 함께 API 호출
+                val response = editService.processVideo(authToken, deviceToken, request)
 
                 if (response.isSuccessful) {
                     val baseResponse = response.body()
@@ -141,6 +175,34 @@ class EditRepository @Inject constructor(
                 }
             } catch (e: Exception) {
                 Result.failure(e)
+            }
+        }
+    }
+
+    // FCM 토큰 가져오기 (없으면 새로 요청)
+    private suspend fun getFCMToken(): String {
+        // 저장된 토큰 확인
+        val savedToken = fcmTokenManager.getToken()
+
+        // 토큰이 있으면 바로 반환
+        if (savedToken.isNotEmpty()) {
+            return savedToken
+        }
+
+        // 토큰이 없으면 새로 요청
+        return suspendCancellableCoroutine { continuation ->
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    // 토큰 저장
+                    fcmTokenManager.saveToken(token)
+                    // 결과 반환
+                    continuation.resume(token)
+                } else {
+                    Log.e("EditRepository", "FCM 토큰 가져오기 실패", task.exception)
+                    // 빈 문자열 반환
+                    continuation.resume("")
+                }
             }
         }
     }

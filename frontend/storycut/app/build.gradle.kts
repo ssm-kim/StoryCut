@@ -11,6 +11,7 @@ plugins {
     // Room을 위한 KSP 플러그인
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 
 }
 
@@ -91,6 +92,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -145,5 +147,8 @@ dependencies {
     //라이프 사이클
     implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
 
+    //FCM
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-messaging")
 
 }

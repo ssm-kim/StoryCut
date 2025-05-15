@@ -19,8 +19,8 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
 @HiltViewModel
 class EditViewModel @Inject constructor(
     private val repository: EditRepository,
@@ -36,11 +36,14 @@ class EditViewModel @Inject constructor(
         private set
     var hasMosaic by mutableStateOf(false)
         private set
-    var hasKoreanSubtitle by mutableStateOf(false)
+    var applySubtitle by mutableStateOf(false)
         private set
     var hasBackgroundMusic by mutableStateOf(false)
         private set
     var promptText by mutableStateOf("")
+        private set
+    // 배경음악을 위한 별도의 프롬프트 변수 추가
+    var musicPromptText by mutableStateOf("")
         private set
     var mosaicImages by mutableStateOf<List<Uri>>(emptyList())
         private set
@@ -48,6 +51,12 @@ class EditViewModel @Inject constructor(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var videoTitle by mutableStateOf("")
+        private set
+
+    fun updateVideoTitle(title: String) {
+        videoTitle = title
+    }
 
     // 이벤트 플로우
     private val _events = MutableSharedFlow<EditEvent>()
@@ -85,7 +94,7 @@ class EditViewModel @Inject constructor(
 
     // 한국어 자막 옵션 토글
     fun toggleKoreanSubtitle(enable: Boolean) {
-        hasKoreanSubtitle = enable
+        applySubtitle = enable
     }
 
     // 배경 음악 옵션 토글
@@ -96,6 +105,11 @@ class EditViewModel @Inject constructor(
     // 프롬프트 텍스트 업데이트
     fun updatePromptText(text: String) {
         promptText = text
+    }
+
+    // 배경음악 프롬프트 텍스트 업데이트 함수 추가
+    fun updateMusicPromptText(text: String) {
+        musicPromptText = text
     }
 
     // 모자이크 이미지 추가
@@ -121,6 +135,10 @@ class EditViewModel @Inject constructor(
             error = "비디오를 선택해주세요"
             return
         }
+        if (videoTitle.isBlank()) {
+            error = "비디오 제목을 입력해주세요"
+            return
+        }
 
         isLoading = true
         error = null
@@ -128,7 +146,7 @@ class EditViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // 1. 비디오 업로드
-                val videoUploadResult = repository.uploadVideo(selectedVideoUri!!)
+                val videoUploadResult = repository.uploadVideo(selectedVideoUri!!, videoTitle)
                 if (videoUploadResult.isFailure) {
                     throw videoUploadResult.exceptionOrNull() ?: Exception("비디오 업로드 실패")
                 }
@@ -144,16 +162,14 @@ class EditViewModel @Inject constructor(
                     }
                 }
 
-                // 3. 토큰 가져오기
-                val token = tokenManager.accessToken.first() ?: ""
-
-                // 4. 비디오 처리 요청
+                // 4. 비디오 처리 요청 - 배경 음악 프롬프트와 일반 프롬프트 분리
                 val processResult = repository.processVideo(
                     prompt = promptText.takeIf { it.isNotBlank() },
                     videoId = videoId,
                     imageUrls = imageUrls,
-                    generateSubtitles = hasKoreanSubtitle,
-                    musicPrompt = if (hasBackgroundMusic) promptText.takeIf { it.isNotBlank() } else null
+                    videoTitle = videoTitle,
+                    applySubtitle = applySubtitle,
+                    musicPrompt = if (hasBackgroundMusic) musicPromptText.takeIf { it.isNotBlank() } else null
                 )
 
                 isLoading = false

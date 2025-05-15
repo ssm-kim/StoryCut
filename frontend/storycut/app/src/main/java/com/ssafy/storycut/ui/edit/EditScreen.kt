@@ -258,7 +258,7 @@ fun EditScreen(
         }
 
         // 한국어 자막 옵션 (조건부 표시)
-        if (viewModel.hasKoreanSubtitle) {
+        if (viewModel.applySubtitle) {
             OptionalSection(
                 title = "한국어 자막",
                 onRemove = { viewModel.toggleKoreanSubtitle(false) }
@@ -280,10 +280,10 @@ fun EditScreen(
                 title = "배경 음악",
                 onRemove = { viewModel.toggleBackgroundMusic(false) }
             ) {
-                // 배경 음악 설정 영역 내용
+                // 배경 음악 설정 영역 내용 - musicPromptText 사용으로 변경
                 OutlinedTextField(
-                    value = viewModel.promptText,
-                    onValueChange = { viewModel.updatePromptText(it) },
+                    value = viewModel.musicPromptText,
+                    onValueChange = { viewModel.updateMusicPromptText(it) },
                     placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -299,7 +299,7 @@ fun EditScreen(
         }
 
         // 옵션추가 버튼 - 모든 옵션이 추가된 경우 비활성화
-        val allOptionsAdded = viewModel.hasMosaic && viewModel.hasKoreanSubtitle && viewModel.hasBackgroundMusic
+        val allOptionsAdded = viewModel.hasMosaic && viewModel.applySubtitle && viewModel.hasBackgroundMusic
         Button(
             onClick = { showOptionDialog = true },
             modifier = Modifier
@@ -317,6 +317,20 @@ fun EditScreen(
                 color = if (allOptionsAdded) Color.Gray else Color.Black
             )
         }
+
+        OutlinedTextField(
+            value = viewModel.videoTitle,
+            onValueChange = { viewModel.updateVideoTitle(it) },
+            placeholder = { Text("영상 제목을 입력하세요") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color.LightGray,
+                focusedBorderColor = Color.Gray
+            ),
+            shape = RoundedCornerShape(8.dp)
+        )
 
         // 프롬프트 입력 영역
         OutlinedTextField(
@@ -377,7 +391,7 @@ fun EditScreen(
             onKoreanSubtitleClick = { viewModel.toggleKoreanSubtitle(true) },
             onBackgroundMusicClick = { viewModel.toggleBackgroundMusic(true) },
             hasMosaic = viewModel.hasMosaic,
-            hasKoreanSubtitle = viewModel.hasKoreanSubtitle,
+            hasKoreanSubtitle = viewModel.applySubtitle,
             hasBackgroundMusic = viewModel.hasBackgroundMusic
         )
     }
