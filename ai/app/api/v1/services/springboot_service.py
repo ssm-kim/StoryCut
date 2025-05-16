@@ -1,4 +1,5 @@
 import httpx
+import os
 from app.api.v1.schemas.post_schema import (
     UploadRequest, UploadResponse,
     CompleteRequest, CompleteResponse
