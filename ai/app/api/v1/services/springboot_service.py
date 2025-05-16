@@ -3,9 +3,7 @@ from app.api.v1.schemas.post_schema import (
     UploadRequest, UploadResponse,
     CompleteRequest, CompleteResponse
 )
-
-BASE_URL = "https://k12d108.p.ssafy.io/api/v1/spring"
-# BASE_URL = "http://localhost:8080/api/v1/spring"
+BASE_URL = os.getenv("BASE_URL")
 
 def get_auth_headers(token: str) -> dict:
     return {

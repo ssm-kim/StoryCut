@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # 서비스 계정 JSON 경로
-SERVICE_ACCOUNT_PATH = "app/firebase/firebase-service-account.json"
+SERVICE_ACCOUNT_PATH = os.getenv("SERVICE_ACCOUNT_PATH")
 
 # Firebase Admin 초기화 (이미 되어있으면 패스)
 try:
