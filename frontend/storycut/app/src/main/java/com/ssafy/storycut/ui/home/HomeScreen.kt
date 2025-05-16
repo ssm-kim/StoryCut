@@ -1,5 +1,7 @@
 package com.ssafy.storycut.ui.home
 
+
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,7 +90,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
+                .background(Color.White)
         ) {
             // 상단 헤더
             Box(
@@ -263,8 +265,9 @@ fun RoomItem(
             containerColor = Color.White
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+            defaultElevation = 1.dp
+        ),
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))  // 연한 회색 테두리 추가
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -290,7 +293,7 @@ fun RoomItem(
                 } else {
                     // 기본 이미지 표시
                     Image(
-                        painter = painterResource(id = R.drawable.logo), // 적절한 기본 이미지 리소스 필요
+                        painter = painterResource(id = R.drawable.logo),
                         contentDescription = "기본 썸네일",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

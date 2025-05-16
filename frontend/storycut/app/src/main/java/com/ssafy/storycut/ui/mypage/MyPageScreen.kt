@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.mypage
 
+
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -117,6 +118,7 @@ fun MyPageScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null

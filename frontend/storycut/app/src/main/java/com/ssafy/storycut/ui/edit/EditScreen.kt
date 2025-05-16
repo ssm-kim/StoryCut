@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.edit
 
+
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -97,265 +98,271 @@ fun EditScreen(
         showVideoDialog = false
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .background(Color.White)
     ) {
-        // 상단 타이틀
-        Text(
-            text = "영상 편집",
-            fontSize = 16.sp,
-            color = Color.Black,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-
-        // 동영상 업로드 레이블
-        Text(
-            text = "동영상 업로드",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
-            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-        )
-
-        // 동영상 업로드 영역 - 선택된 비디오 썸네일 표시 또는 + 아이콘
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .border(2.dp, Color(0xFF2196F3), RoundedCornerShape(4.dp))
-                .clickable { showVideoDialog = true },
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (viewModel.videoSelected && viewModel.videoThumbnail != null) {
-                // 비디오 썸네일 표시
-                Image(
-                    bitmap = viewModel.videoThumbnail!!.asImageBitmap(),
-                    contentDescription = "선택된 비디오",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else if (viewModel.videoSelected) {
-                // 비디오는 선택됐지만 썸네일이 아직 로드되지 않은 경우
-                CircularProgressIndicator()
-            } else {
-                // 비디오가 선택되지 않은 경우 + 아이콘 표시
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "동영상 추가",
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.Black
-                )
-            }
-        }
+            // 상단 타이틀
+            Text(
+                text = "영상 편집",
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
 
-        // 구분선
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = Color.LightGray
-        )
+            // 동영상 업로드 레이블
+            Text(
+                text = "동영상 업로드",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
 
-        // 모자이크 옵션 (조건부 표시)
-        if (viewModel.hasMosaic) {
-            OptionalSection(
-                title = "모자이크",
-                onRemove = { viewModel.toggleMosaic(false) }
+            // 동영상 업로드 영역 - 선택된 비디오 썸네일 표시 또는 + 아이콘
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .border(2.dp, Color(0xFF2196F3), RoundedCornerShape(4.dp))
+                    .clickable { showVideoDialog = true },
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Text("제외할 인물을 올려 주세요", fontSize = 12.sp, color = Color.Gray)
+                if (viewModel.videoSelected && viewModel.videoThumbnail != null) {
+                    // 비디오 썸네일 표시
+                    Image(
+                        bitmap = viewModel.videoThumbnail!!.asImageBitmap(),
+                        contentDescription = "선택된 비디오",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (viewModel.videoSelected) {
+                    // 비디오는 선택됐지만 썸네일이 아직 로드되지 않은 경우
+                    CircularProgressIndicator()
+                } else {
+                    // 비디오가 선택되지 않은 경우 + 아이콘 표시
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "동영상 추가",
+                        modifier = Modifier.size(40.dp),
+                        tint = Color.Black
+                    )
+                }
+            }
 
-                    Row(
+            // 구분선
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = Color.LightGray
+            )
+
+            // 모자이크 옵션 (조건부 표시)
+            if (viewModel.hasMosaic) {
+                OptionalSection(
+                    title = "모자이크",
+                    onRemove = { viewModel.toggleMosaic(false) }
+                ) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(vertical = 8.dp)
                     ) {
-                        // + 아이콘 (사진 추가 버튼) - 점선 테두리로 변경
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .drawWithContent {
-                                    // 점선 테두리 그리기
-                                    drawContent()
-                                    val stroke = Stroke(
-                                        width = 1f,
-                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                                    )
-                                    drawRoundRect(
-                                        color = Color.LightGray,
-                                        style = stroke,
-                                        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                                    )
-                                }
-                                .clickable {
-                                    if (viewModel.mosaicImages.size < 2) {
-                                        photoPickerLauncher.launch("image/*")
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // 회색 + 아이콘
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "인물 사진 추가",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(40.dp)
-                            )
-                        }
+                        Text("제외할 인물을 올려 주세요", fontSize = 12.sp, color = Color.Gray)
 
-                        // 선택된 인물 사진들
-                        viewModel.mosaicImages.forEachIndexed { index, uri ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // + 아이콘 (사진 추가 버튼) - 점선 테두리로 변경
                             Box(
                                 modifier = Modifier
                                     .size(100.dp)
+                                    .drawWithContent {
+                                        // 점선 테두리 그리기
+                                        drawContent()
+                                        val stroke = Stroke(
+                                            width = 1f,
+                                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                                        )
+                                        drawRoundRect(
+                                            color = Color.LightGray,
+                                            style = stroke,
+                                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                                        )
+                                    }
+                                    .clickable {
+                                        if (viewModel.mosaicImages.size < 2) {
+                                            photoPickerLauncher.launch("image/*")
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
                             ) {
-                                // 사진 - 수정자 추가
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(uri)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = "인물 ${index + 1}",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp)),
-                                    contentScale = ContentScale.Crop
+                                // 회색 + 아이콘
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "인물 사진 추가",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(40.dp)
                                 )
+                            }
 
-                                // 삭제 버튼
+                            // 선택된 인물 사진들
+                            viewModel.mosaicImages.forEachIndexed { index, uri ->
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = (-4).dp, y = 4.dp)
-                                        .background(Color.White, CircleShape)
-                                        .clickable {
-                                            viewModel.removeMosaicImage(index)
-                                        },
-                                    contentAlignment = Alignment.Center
+                                        .size(100.dp)
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.remove),
-                                        contentDescription = "사진 삭제",
-                                        modifier = Modifier.size(16.dp)
+                                    // 사진 - 수정자 추가
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(uri)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "인물 ${index + 1}",
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp)),
+                                        contentScale = ContentScale.Crop
                                     )
+
+                                    // 삭제 버튼
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .align(Alignment.TopEnd)
+                                            .offset(x = (-4).dp, y = 4.dp)
+                                            .background(Color.White, CircleShape)
+                                            .clickable {
+                                                viewModel.removeMosaicImage(index)
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.remove),
+                                            contentDescription = "사진 삭제",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                HorizontalDivider(color = Color.LightGray)
             }
-            HorizontalDivider(color = Color.LightGray)
-        }
 
-        // 한국어 자막 옵션 (조건부 표시)
-        if (viewModel.hasKoreanSubtitle) {
-            OptionalSection(
-                title = "한국어 자막",
-                onRemove = { viewModel.toggleKoreanSubtitle(false) }
+            // 한국어 자막 옵션 (조건부 표시)
+            if (viewModel.hasKoreanSubtitle) {
+                OptionalSection(
+                    title = "한국어 자막",
+                    onRemove = { viewModel.toggleKoreanSubtitle(false) }
+                ) {
+                    // 자막 설정 영역 내용
+                    Text(
+                        "한국어 자막이 자동으로 생성됩니다.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+                HorizontalDivider(color = Color.LightGray)
+            }
+
+            // 배경 음악 옵션 (조건부 표시)
+            if (viewModel.hasBackgroundMusic) {
+                OptionalSection(
+                    title = "배경 음악",
+                    onRemove = { viewModel.toggleBackgroundMusic(false) }
+                ) {
+                    // 배경 음악 설정 영역 내용
+                    OutlinedTextField(
+                        value = viewModel.promptText,
+                        onValueChange = { viewModel.updatePromptText(it) },
+                        placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color.LightGray,
+                            focusedBorderColor = Color.Gray
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                HorizontalDivider(color = Color.LightGray)
+            }
+
+            // 옵션추가 버튼 - 모든 옵션이 추가된 경우 비활성화
+            val allOptionsAdded = viewModel.hasMosaic && viewModel.hasKoreanSubtitle && viewModel.hasBackgroundMusic
+            Button(
+                onClick = { showOptionDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFBBBBBB),
+                    disabledContainerColor = Color(0xFFDDDDDD)
+                ),
+                shape = RoundedCornerShape(8.dp),
+                enabled = !allOptionsAdded // 모든 옵션이 추가된 경우 비활성화
             ) {
-                // 자막 설정 영역 내용
                 Text(
-                    "한국어 자막이 자동으로 생성됩니다.",
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    "옵션추가",
+                    color = if (allOptionsAdded) Color.Gray else Color.Black
                 )
             }
-            HorizontalDivider(color = Color.LightGray)
-        }
 
-        // 배경 음악 옵션 (조건부 표시)
-        if (viewModel.hasBackgroundMusic) {
-            OptionalSection(
-                title = "배경 음악",
-                onRemove = { viewModel.toggleBackgroundMusic(false) }
-            ) {
-                // 배경 음악 설정 영역 내용
-                OutlinedTextField(
-                    value = viewModel.promptText,
-                    onValueChange = { viewModel.updatePromptText(it) },
-                    placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedBorderColor = Color.Gray
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                )
-            }
-            HorizontalDivider(color = Color.LightGray)
-        }
-
-        // 옵션추가 버튼 - 모든 옵션이 추가된 경우 비활성화
-        val allOptionsAdded = viewModel.hasMosaic && viewModel.hasKoreanSubtitle && viewModel.hasBackgroundMusic
-        Button(
-            onClick = { showOptionDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFBBBBBB),
-                disabledContainerColor = Color(0xFFDDDDDD)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            enabled = !allOptionsAdded // 모든 옵션이 추가된 경우 비활성화
-        ) {
-            Text(
-                "옵션추가",
-                color = if (allOptionsAdded) Color.Gray else Color.Black
+            // 프롬프트 입력 영역
+            OutlinedTextField(
+                value = viewModel.promptText,
+                onValueChange = { viewModel.updatePromptText(it) },
+                placeholder = { Text("영상에 대한 프롬프트를 입력하세요") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedBorderColor = Color.Gray
+                ),
+                shape = RoundedCornerShape(8.dp)
             )
-        }
 
-        // 프롬프트 입력 영역
-        OutlinedTextField(
-            value = viewModel.promptText,
-            onValueChange = { viewModel.updatePromptText(it) },
-            placeholder = { Text("영상에 대한 프롬프트를 입력하세요") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color.LightGray,
-                focusedBorderColor = Color.Gray
-            ),
-            shape = RoundedCornerShape(8.dp)
-        )
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 편집하기 버튼
-        Button(
-            onClick = { viewModel.processEditing() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black,
-                disabledContainerColor = Color.Gray
-            ),
-            shape = RoundedCornerShape(8.dp),
-            enabled = !viewModel.isLoading && viewModel.videoSelected // 로딩 중이 아니고 비디오가 선택된 경우만 활성화
-        ) {
-            if (viewModel.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("편집하기", color = Color.White)
+            // 편집하기 버튼
+            Button(
+                onClick = { viewModel.processEditing() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Black,
+                    disabledContainerColor = Color.Gray
+                ),
+                shape = RoundedCornerShape(8.dp),
+                enabled = !viewModel.isLoading && viewModel.videoSelected // 로딩 중이 아니고 비디오가 선택된 경우만 활성화
+            ) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("편집하기", color = Color.White)
+                }
             }
         }
     }

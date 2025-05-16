@@ -2,6 +2,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.storycut.ui.shorts.ShortsViewModel
 import com.ssafy.storycut.ui.shorts.components.AuthScreen
 import com.ssafy.storycut.ui.shorts.components.UploadScreen
+import androidx.compose.ui.graphics.Color
+
 
 @Composable
 fun ShortsScreen(
@@ -54,7 +57,11 @@ fun ShortsScreen(
     }
 
     // 메인 화면 구성
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         // 구글 인증 토큰 없으면 받아오기
         if (accessToken.isEmpty()) {
             AuthScreen(
