@@ -15,7 +15,7 @@ interface EditService {
     @Multipart
     @POST("upload/images")
     suspend fun uploadImages(@Part files: List<MultipartBody.Part>):
-            Response<BaseResponse<List<ImageUploadResponse>>>
+            Response<BaseResponse<ImageUploadResponse>>
 
     // 영상 업로드 API - 단일 파일 업로드
     @Multipart

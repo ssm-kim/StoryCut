@@ -96,15 +96,30 @@ class EditRepository @Inject constructor(
 
                 // 각 URI에서 파일 생성 및 MultipartBody.Part 추가
                 for (imageUri in imageUris) {
+                    // 실제 MIME 타입 가져오기
+                    val mimeType = context.contentResolver.getType(imageUri) ?: "image/*"
+
                     val imageFile = context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
-                        val tempFile = File.createTempFile("image", ".jpg", context.cacheDir)
+                        // 파일 확장자를 MIME 타입에서 추출
+                        val extension = when (mimeType) {
+                            "image/jpeg", "image/jpg" -> ".jpg"
+                            "image/png" -> ".png"
+                            "image/gif" -> ".gif"
+                            "image/webp" -> ".webp"
+                            "image/heic", "image/heif" -> ".heic"
+                            "image/bmp" -> ".bmp"
+                            else -> ".tmp" // 기본 확장자
+                        }
+
+                        val tempFile = File.createTempFile("image", extension, context.cacheDir)
                         FileOutputStream(tempFile).use { outputStream ->
                             inputStream.copyTo(outputStream)
                         }
                         tempFile
                     } ?: continue
 
-                    val imageRequestBody = imageFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                    // 실제 MIME 타입으로 RequestBody 생성
+                    val imageRequestBody = imageFile.asRequestBody(mimeType.toMediaTypeOrNull())
                     val imagePart = MultipartBody.Part.createFormData("files", imageFile.name, imageRequestBody)
                     imageParts.add(imagePart)
                 }
@@ -119,9 +134,9 @@ class EditRepository @Inject constructor(
                 if (response.isSuccessful) {
                     val baseResponse = response.body()
                     if (baseResponse?.isSuccess == true && baseResponse.result != null) {
-                        // 응답에서 이미지 URL 목록 추출
-                        val allImageUrls = baseResponse.result.map { it.imageUrls }
-                        Result.success(allImageUrls)
+                        // ImageUploadResponse 객체에서 URL 리스트를 추출
+                        val imageUrls = baseResponse.result.imageUrls
+                        Result.success(imageUrls)
                     } else {
                         Result.failure(Exception("이미지 업로드 실패: ${baseResponse?.message ?: "알 수 없는 오류"}"))
                     }

@@ -1,5 +1,5 @@
 package com.ssafy.storycut.data.api.model.edit
 
 data class ImageUploadResponse(
-    val imageUrls: String
+    val imageUrls: List<String>
 )
