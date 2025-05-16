@@ -192,6 +192,8 @@ async def run_mosaic_pipeline(input_path: str, target_paths: List[str], detect_i
 
     target_embeddings = []
     for path in target_paths[:2]:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"잘못된 주소입니다: {path}")
         img = cv2.imread(path)
         _, embeddings = await loop.run_in_executor(executor, detect_faces, img)
         if not embeddings.any():
