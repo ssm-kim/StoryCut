@@ -43,10 +43,12 @@ fun RoomVideoDetailScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val roomVideos by roomViewModel.roomVideos.collectAsState()
 
-    // 비디오 업로더 정보 상태 수집
+    // 비디오 및 업로더 정보 상태 수집
+    val videoDetail by roomViewModel.currentVideoDetail.collectAsState()
     val uploaderInfo by roomViewModel.videoUploaderInfo.collectAsState()
     val isUploaderInfoLoading by roomViewModel.isUploaderInfoLoading.collectAsState()
     val uploaderInfoError by roomViewModel.uploaderInfoError.collectAsState()
+    val videoDetailError by roomViewModel.videoDetailError.collectAsState()
 
     // 상태 변수들
     var isInitialLoading by remember { mutableStateOf(true) } // 초기 로딩 (데이터 로드 전)
@@ -55,7 +57,10 @@ fun RoomVideoDetailScreen(
     var targetIndex by remember { mutableStateOf(-1) } // 대상 비디오 인덱스
     var initializationComplete by remember { mutableStateOf(false) } // 완전한 초기화 완료 여부
 
-    // 플레이어 맵
+    // 현재 페이지의 비디오 ID를 추적
+    var currentVideoId by remember { mutableStateOf(videoId) }
+
+    // 플레이어 맵 (페이지 인덱스 -> ExoPlayer)
     val players = remember { mutableMapOf<Int, ExoPlayer>() }
     var appInBackground by remember { mutableStateOf(false) }
 
@@ -76,7 +81,7 @@ fun RoomVideoDetailScreen(
                 return@LaunchedEffect
             }
 
-            // 비디오 상세 정보 조회 (이 부분 추가)
+            // 초기 비디오 상세 정보 조회
             roomViewModel.getVideoDetail(videoId)
 
             // 비디오 목록 로드 및 대기
@@ -84,10 +89,9 @@ fun RoomVideoDetailScreen(
                 Log.d(TAG, "비디오 목록 로드 시작")
                 roomViewModel.getRoomVideos(roomId)
 
-                // 비디오 목록 로드 대기
+                // 비디오 목록 로드 대기 (최대 10번, 각 300ms)
                 var attempts = 0
-                val maxAttempts = 10  // 더 긴 대기 시간 허용
-
+                val maxAttempts = 10
                 while (roomVideos.isEmpty() && attempts < maxAttempts) {
                     delay(300)
                     attempts++
@@ -122,12 +126,22 @@ fun RoomVideoDetailScreen(
             // 로딩 완료 - 이제 UI 표시 가능
             isInitialLoading = false
             initializationComplete = true
-
             Log.d(TAG, "초기화 완료: targetIndex=$targetIndex, error=$error")
         }
     }
 
-    // 페이지 변경 시 해당 비디오의 업로더 정보 로드
+    // 에러 상태 업데이트
+    LaunchedEffect(videoDetailError, uploaderInfoError) {
+        if (!videoDetailError.isNullOrEmpty()) {
+            error = videoDetailError
+            Log.e(TAG, "비디오 상세 정보 오류: $videoDetailError")
+        } else if (!uploaderInfoError.isNullOrEmpty()) {
+            // 업로더 정보 오류는 치명적이지 않으므로 UI 오류로 처리하지 않음
+            Log.w(TAG, "업로더 정보 오류: $uploaderInfoError")
+        }
+    }
+
+    // 페이저 상태 설정
     val pagerState = if (initializationComplete && targetIndex >= 0) {
         rememberPagerState(initialPage = targetIndex) { roomVideos.size }
     } else {
@@ -135,18 +149,25 @@ fun RoomVideoDetailScreen(
         rememberPagerState(initialPage = 0) { 1 }
     }
 
-    // 페이지가 변경될 때 해당 비디오의 업로더 정보를 가져오는 효과
+    // 페이지가 변경될 때 해당 비디오의 상세 정보와 업로더 정보를 가져오는 효과
     LaunchedEffect(pagerState.currentPage, initializationComplete) {
         if (initializationComplete && pagerState.currentPage >= 0 && pagerState.currentPage < roomVideos.size) {
             val currentVideo = roomVideos[pagerState.currentPage]
-            roomViewModel.getVideoDetail(currentVideo.id.toString())
+            val newVideoId = currentVideo.id.toString()
+
+            if (newVideoId != currentVideoId) {
+                // 페이지가 변경되었고 새 비디오 ID가 다른 경우에만 새로 로드
+                Log.d(TAG, "페이지 변경됨: index=${pagerState.currentPage}, videoId=$newVideoId")
+                currentVideoId = newVideoId
+                roomViewModel.getVideoDetail(newVideoId)
+            }
         }
     }
 
     // 뒤로가기 처리
     val handleBackPress = {
         if (!isExiting) {
-            Log.d(TAG, "뒤로가기 처리")
+            Log.d(TAG, "뒤로가기 처리 시작")
             isExiting = true
 
             // 플레이어 해제
@@ -165,6 +186,7 @@ fun RoomVideoDetailScreen(
 
             // 화면 전환
             navController.popBackStack()
+            Log.d(TAG, "뒤로가기 처리 완료")
         }
     }
 
@@ -179,6 +201,7 @@ fun RoomVideoDetailScreen(
 
         val lifecycleObserver = object : DefaultLifecycleObserver {
             override fun onPause(owner: LifecycleOwner) {
+                Log.d(TAG, "앱 일시 중지 (백그라운드로 전환)")
                 appInBackground = true
                 players.values.forEach { player ->
                     if (player.isPlaying) player.pause()
@@ -187,6 +210,7 @@ fun RoomVideoDetailScreen(
 
             override fun onResume(owner: LifecycleOwner) {
                 if (appInBackground) {
+                    Log.d(TAG, "앱 재개 (포그라운드로 복귀)")
                     appInBackground = false
                     players[pagerState.currentPage]?.play()
                 }
@@ -276,9 +300,14 @@ fun RoomVideoDetailScreen(
                 ) { page ->
                     val video = roomVideos.getOrNull(page)
                     if (video != null) {
-                        // 현재 페이지가 보이는 비디오인 경우, 업로더 정보 전달
+                        // 현재 페이지에 표시되는 비디오에 대한 업로더 정보 준비
                         val showUploaderInfo = page == pagerState.currentPage
-                        val currentUploaderInfo = if (showUploaderInfo && video.id.toString() == videoId) uploaderInfo else null
+                        val currentUploaderInfo = if (showUploaderInfo && video.id.toString() == currentVideoId) {
+                            // 로그에 현재 비디오 및 업로더 정보 추가
+                            Log.d(TAG, "현재 비디오: id=${video.id}, title=${video.title}")
+                            Log.d(TAG, "업로더 정보: ${uploaderInfo?.nickname ?: "없음"}")
+                            uploaderInfo
+                        } else null
 
                         RoomSingleVideoPlayer(
                             video = video,
@@ -286,6 +315,7 @@ fun RoomVideoDetailScreen(
                             isCurrentlyVisible = page == pagerState.currentPage && !isExiting && !appInBackground,
                             onPlayerCreated = { player ->
                                 players[page] = player
+                                Log.d(TAG, "플레이어 생성: page=$page, videoId=${video.id}")
                             },
                             modifier = Modifier.fillMaxSize()
                         )
