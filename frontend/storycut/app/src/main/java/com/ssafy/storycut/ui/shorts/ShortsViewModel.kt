@@ -12,10 +12,16 @@ import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+// UI 상태를 나타내는 sealed class
+sealed class ShortsUiState {
+    object Loading : ShortsUiState()
+    object Unauthenticated : ShortsUiState()
+    object Authenticated : ShortsUiState()
+}
 
 @HiltViewModel
 class ShortsViewModel @Inject constructor(
@@ -24,13 +30,22 @@ class ShortsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _youtubeAuthUrl = MutableLiveData<GooglePermissionResponse?>()
-    val youtubeAuthUrl: MutableLiveData<GooglePermissionResponse?> = _youtubeAuthUrl
+    val youtubeAuthUrl: LiveData<GooglePermissionResponse?> = _youtubeAuthUrl
 
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
 
-    private val _accessToken = MutableLiveData<String>()
-    val accessToken: LiveData<String> = _accessToken
+    private val _accessToken = MutableLiveData<String?>()
+    val accessToken: MutableLiveData<String?> = _accessToken
+
+    // UI 상태 관리
+    private val _uiState = MutableLiveData<ShortsUiState>(ShortsUiState.Loading)
+    val uiState: LiveData<ShortsUiState> = _uiState
+
+    init {
+        // 초기화 시 토큰 확인
+        loadAccessToken()
+    }
 
     fun getYouTubeAuthUrl() {
         viewModelScope.launch {
@@ -46,17 +61,24 @@ class ShortsViewModel @Inject constructor(
     fun loadAccessToken() {
         viewModelScope.launch {
             try {
+                _uiState.value = ShortsUiState.Loading
                 val token = tokenManager.googleAccessToken.first()
-                _accessToken.value = token ?: ""
+
+                if (token.isNullOrEmpty()) {
+                    _accessToken.value = ""
+                    _uiState.value = ShortsUiState.Unauthenticated
+                } else {
+                    _accessToken.value = token
+                    _uiState.value = ShortsUiState.Authenticated
+                }
             } catch (e: Exception) {
                 _error.value = "토큰을 불러오는 데 실패했습니다: ${e.message}"
+                _uiState.value = ShortsUiState.Unauthenticated
             }
         }
     }
 
-
-
-    // ShortsViewModel의 uploadToYouTube 함수 수정
+    // ShortsViewModel의 uploadToYouTube 함수
     fun uploadToYouTube(videoUri: Uri, title: String, description: String, tags: List<String> = emptyList()) {
         viewModelScope.launch {
             try {
@@ -94,6 +116,12 @@ class ShortsViewModel @Inject constructor(
             }
         }
     }
+
+    // 에러 메시지 초기화
+    fun clearError() {
+        _error.value = null
+    }
+
     // 401 에러인지 확인하는 헬퍼 함수
     private fun isUnauthorizedError(e: Exception): Boolean {
         // Google API에서 발생하는 401 에러 체크
@@ -105,6 +133,4 @@ class ShortsViewModel @Inject constructor(
                     e.message?.contains("invalid_token") == true
         }
     }
-
-
 }

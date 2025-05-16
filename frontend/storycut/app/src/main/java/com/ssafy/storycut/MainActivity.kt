@@ -16,9 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.navigation.AppNavigation
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "MainActivity"
@@ -59,13 +61,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val deepLinkToken = remember { deepLinkTokenState }
                     val isDeepLink = remember { isDeepLinkState }
 
                     // 분리된 AppNavigation 컴포저블 사용
                     AppNavigation(
                         tokenManager = tokenManager,
-                        deepLinkToken = deepLinkToken.value,
                         isDeepLink = isDeepLink.value
                     )
                 }
@@ -110,8 +110,13 @@ class MainActivity : ComponentActivity() {
             val token = uri.getQueryParameter("token")
             if (!token.isNullOrEmpty()) {
                 Log.d(TAG, "딥링크 URI: $uri, 토큰: $token")
-                deepLinkTokenState.value = token
                 isDeepLinkState.value = true
+
+                // 코루틴 스코프에서 토큰 저장 (이 부분을 추가)
+                lifecycleScope.launch {
+                    tokenManager.saveGoogleAccessTokens(token)
+                    Log.d(TAG, "구글 액세스 토큰 저장 완료")
+                }
             }
         }
 

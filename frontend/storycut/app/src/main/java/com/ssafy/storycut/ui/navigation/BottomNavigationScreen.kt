@@ -134,7 +134,9 @@ class CustomNavigationShape(private val selectedIndex: Int, private val totalIte
 fun MainScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     tokenManager: TokenManager,
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    navigateToShorts: Boolean = false,
+    onShortsNavigationConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -165,6 +167,18 @@ fun MainScreen(
             delay(100)
         }
         wasVideoDetailScreen.value = isVideoDetailScreen
+    }
+
+    LaunchedEffect(navigateToShorts) {
+        if (navigateToShorts) {
+            // 아주 짧은 딜레이 후 이동 (이는 메인 화면이 완전히 로드된 후 이동하도록 함)
+            delay(50)
+            navController.navigate(Navigation.Main.SHORTS_UPLOAD) {
+                // 애니메이션을 자연스럽게 설정
+                launchSingleTop = true
+            }
+            onShortsNavigationConsumed()
+        }
     }
 
     Scaffold(

@@ -2,6 +2,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -12,22 +15,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ssafy.storycut.ui.shorts.ShortsUiState
 import com.ssafy.storycut.ui.shorts.ShortsViewModel
 import com.ssafy.storycut.ui.shorts.components.AuthScreen
 import com.ssafy.storycut.ui.shorts.components.UploadScreen
 import androidx.compose.ui.graphics.Color
-
+import kotlinx.coroutines.delay
 
 @Composable
 fun ShortsScreen(
     viewModel: ShortsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+
+    // UI 상태 관찰
+    val uiState by viewModel.uiState.observeAsState(ShortsUiState.Loading)
     val youtubeAuthResponse by viewModel.youtubeAuthUrl.observeAsState()
     val error by viewModel.error.observeAsState()
-    val accessToken by viewModel.accessToken.observeAsState("")
 
-    var isLoading by remember { mutableStateOf(false) }
+    var isActionLoading by remember { mutableStateOf(false) }
     var selectedVideoUri by remember { mutableStateOf<Uri?>(null) }
 
     // 갤러리에서 영상 선택
@@ -37,20 +43,20 @@ fun ShortsScreen(
         selectedVideoUri = uri
     }
 
-    // 초기 액세스 토큰 로드
-    LaunchedEffect(Unit) {
-        viewModel.loadAccessToken()
-    }
-
     // 에러 발생 시 로딩 상태 해제
     LaunchedEffect(error) {
-        error?.let { isLoading = false }
+        error?.let {
+            isActionLoading = false
+            // 몇 초 후 에러 메시지 초기화
+            delay(3000)
+            viewModel.clearError()
+        }
     }
 
     // 인증 URL 응답 처리
     LaunchedEffect(youtubeAuthResponse) {
         youtubeAuthResponse?.let { response ->
-            isLoading = false
+            isActionLoading = false
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(response.authUrl))
             context.startActivity(intent)
         }
@@ -62,53 +68,70 @@ fun ShortsScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // 구글 인증 토큰 없으면 받아오기
-        if (accessToken.isEmpty()) {
-            AuthScreen(
-                onRequestAuth = {
-                    isLoading = true
-                    viewModel.getYouTubeAuthUrl()
-                },
-                isLoading = isLoading
-            )
-        } else {
-            // 인증된 경우 - 업로드 화면 표시
-            UploadScreen(
-                selectedVideoUri = selectedVideoUri,
-                onSelectVideo = { videoPickerLauncher.launch("video/*") },
-                onUpload = { uri, title, description, tags ->  // 태그 매개변수 추가
-                    isLoading = true
-                    viewModel.uploadToYouTube(
-                        videoUri = uri,
-                        title = title.ifBlank { "스토리컷에서 올린 영상" },
-                        description = description.ifBlank { "앱에서 자동 업로드된 영상입니다" },
-                        tags = tags
-                    )
-                },
-                isLoading = isLoading
-            )
-        }
+        // UI 상태에 따른 화면 표시
+        when (uiState) {
+            ShortsUiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
 
-        // 에러 메시지 표시
-        error?.let {
-            Snackbar(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter)
-            ) {
-                Text(it)
+            ShortsUiState.Unauthenticated -> {
+                AuthScreen(
+                    onRequestAuth = {
+                        isActionLoading = true
+                        viewModel.getYouTubeAuthUrl()
+                    },
+                    isLoading = isActionLoading
+                )
+            }
+
+            ShortsUiState.Authenticated -> {
+                UploadScreen(
+                    selectedVideoUri = selectedVideoUri,
+                    onSelectVideo = { videoPickerLauncher.launch("video/*") },
+                    onUpload = { uri, title, description, tags ->
+                        isActionLoading = true
+                        viewModel.uploadToYouTube(
+                            videoUri = uri,
+                            title = title.ifBlank { "스토리컷에서 올린 영상" },
+                            description = description.ifBlank { "앱에서 자동 업로드된 영상입니다" },
+                            tags = tags
+                        )
+                    },
+                    isLoading = isActionLoading
+                )
             }
         }
 
-        // 로딩 인디케이터
-        if (isLoading) {
+        // 에러 메시지 표시 (모든 상태에서 공통)
+        AnimatedVisibility(
+            visible = error != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.BottomCenter)
+        ) {
+            error?.let {
+                Snackbar {
+                    Text(it)
+                }
+            }
+        }
+
+        // 액션 진행 중일 때 로딩 인디케이터 (인증/업로드 등)
+        if (isActionLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .background(Color.Black.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color.White)
             }
         }
     }
