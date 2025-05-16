@@ -14,11 +14,7 @@ import soundfile as sf
 import requests
 import re
 import asyncio
-import logging
-
-# === 로거 설정 ===
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logger import logger
 
 UPLOAD_DIR = "app/videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -62,11 +58,11 @@ async def generate_bgm(prompt, segment_duration=20, total_duration=60, device='c
         dbfs = 20 * np.log10(rms) if rms > 0 else -100
 
         if dbfs < -35 and dbfs > -100:
-            logger.info(f" 구간 볼륨이 작음({dbfs:.2f}dB), 10dB 증폭")
+            logger.info(f"[볼륨 조정] 구간 볼륨: {dbfs:.2f} dB → 10dB 증폭")
             audio *= 10 ** (10 / 20)
             audio = np.clip(audio, -1.0, 1.0)
         elif dbfs <= -80:
-            logger.info(f"구간 볼륨이 너무 작음({dbfs:.2f}dB), 건너뜀")
+            logger.info(f"[볼륨 조정] 구간 볼륨 매우 낮음: {dbfs:.2f} dB → 생략")
             continue
 
         generated_audio = audio if generated_audio is None else blend_audio_segments(generated_audio, audio, overlap_samples)
@@ -123,7 +119,7 @@ async def detect_voice_regions(wav_path, frame_duration=30):
         return regions
 
     regions = await loop.run_in_executor(None, _inner)
-    logger.info("감지된 음성 구간: %s", regions)
+    # logger.info("[음성 감지 완료] 총 %d개 구간: %s", len(regions), regions)
     return merge_regions(regions)
 
 def merge_regions(regions, merge_threshold=0.2, min_region_length=0.4):
@@ -164,7 +160,7 @@ async def adjust_bgm_dynamic(bgm_path, voice_path, voice_regions, total_duration
             voice_chunk = voice_audio[int(start * 1000):int(end * 1000)]
             voice_db = voice_chunk.dBFS if voice_chunk.dBFS != float('-inf') else -40
             bgm_gain = -max(15, voice_db + 35)
-            logger.info(f"voice_db: {voice_db}, bgm_gain: {bgm_gain}, 구간: {start}-{end}")
+            # logger.info("[BGM 조정] 구간 %.2fs~%.2fs | 음성 dB: %.2f | 적용 볼륨: %.2f dB",start, end, voice_db, bgm_gain)
             chunk = bgm[int(start * 1000):int(end * 1000)]
             output += apply_gain_with_fade(chunk, bgm_gain, fade_ms)
 
@@ -251,10 +247,10 @@ async def process_bgm_service(video_path: str, prompt: str):
                           .strip()
                 )
             except Exception:
-                logger.warning("응답 파싱 실패: %s", result)
+                logger.exception("[Gemini 응답 파싱 실패]")
                 return ""
         else:
-            logger.error(" Gemini API 오류: %s", response.text)
+            logger.error("[Gemini API 오류] 상태코드: %d | 응답 내용: %s", response.status_code, response.text.strip())
             return ""
 
     prompt = await loop.run_in_executor(None, functools.partial(gemini_translate_ko_to_en, prompt))
@@ -271,7 +267,7 @@ async def process_bgm_service(video_path: str, prompt: str):
     bgm_path = await generate_bgm(prompt, total_duration=duration)
 
     if await has_audio_stream(video_path):
-        logger.info("오디오 있음 - 음성 추출 및 믹싱 시작")
+        logger.info("[오디오 감지] 음성 추출 및 BGM 믹싱 시작")
         await extract_audio(video_path, voice_path)
         regions = await detect_voice_regions(voice_path)
         if regions:
@@ -288,8 +284,8 @@ async def process_bgm_service(video_path: str, prompt: str):
                 except Exception as e:
                     logger.warning(f"파일 삭제 실패: {path} ({e})")
     else:
-        logger.info("오디오 없음 - BGM 단독 삽입")
-        logger.info(f"ffmpeg 명령 실행: {video_path} + {bgm_path} -> {output_path}")
+        logger.info("[오디오 없음] 배경음악 단독 삽입 진행")
+        logger.info("[FFmpeg 실행] 입력: %s + %s → 출력: %s", video_path, bgm_path, output_path)
         await loop.run_in_executor(None, functools.partial(subprocess.run, [
             "ffmpeg", "-y", "-i", video_path, "-i", bgm_path,
             "-c:v", "copy", "-c:a", "aac", "-shortest", output_path
@@ -299,7 +295,7 @@ async def process_bgm_service(video_path: str, prompt: str):
             try:
                 os.remove(bgm_path)
             except Exception as e:
-                logger.warning(f"파일 삭제 실패: {bgm_path} ({e})")
+                logger.warning("[파일 삭제 실패] 경로: %s | 오류: %s", bgm_path, str(e))
 
-    logger.info(f"최종 결과 저장 완료: {output_path}")
+    logger.info("[처리 완료] 최종 결과 파일 저장: %s", output_path)
     return output_path
