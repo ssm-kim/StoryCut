@@ -10,6 +10,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface AuthApiService {
     @POST("auth/login")
@@ -17,6 +18,13 @@ interface AuthApiService {
 
     @GET("members/detail")
     suspend fun getUserInfo(@Header("Authorization") authorization: String): Response<BaseResponse<UserInfo>>
+
+    // 특정 회원 정보 조회 API 추가
+    @GET("members/{memberId}")
+    suspend fun getMemberById(
+        @Header("Authorization") authorization: String,
+        @Path("memberId") memberId: Long
+    ): Response<BaseResponse<UserInfo>>
 
     // 토큰 갱신 API 추가
     @POST("auth/refresh")
