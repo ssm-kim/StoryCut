@@ -28,9 +28,9 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
 
-    public ChatMessageResponse getById(Long chatId) {
+    public ChatMessageResponse getById(String chatId) {
         // 채팅 메시지 조회
-        Optional<ChatMessage> messageOpt = chatMessageRepository.findById(chatId.toString());
+        Optional<ChatMessage> messageOpt = chatMessageRepository.findById(chatId);
         if (messageOpt.isEmpty()) {
             throw new BusinessException(BaseResponseStatus.NOT_FOUND_MESSAGE);
         }

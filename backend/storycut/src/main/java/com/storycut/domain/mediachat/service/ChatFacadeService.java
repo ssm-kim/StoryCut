@@ -50,7 +50,7 @@ public class ChatFacadeService implements ChatService {
     }
 
     @Override
-    public ChatMessageResponse getChatMessage(Long chatId){
+    public ChatMessageResponse getChatMessage(String chatId){
         // 메시지 존재 여부 확인
         ChatMessageResponse message = chatMessageService.getById(chatId);
         if (message == null) {

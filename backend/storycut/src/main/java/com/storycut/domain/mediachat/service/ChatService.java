@@ -41,7 +41,7 @@ public interface ChatService {
      * @param chatId 채팅 ID
      * @return 채팅 메시지 페이지
      */
-    ChatMessageResponse getChatMessage(Long chatId);
+    ChatMessageResponse getChatMessage(String chatId);
 
     /**
      * 특정 시간 이후의 채팅 메시지를 조회합니다.

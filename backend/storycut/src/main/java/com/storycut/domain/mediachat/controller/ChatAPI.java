@@ -86,7 +86,7 @@ public interface ChatAPI {
     })
     @GetMapping("/detail/{chatId}")
     ResponseEntity<BaseResponse<ChatMessageResponse>> getMessage(
-        @Parameter(description = "조회할 메시지 ID", required = true) @PathVariable Long chatId);
+        @Parameter(description = "조회할 메시지 ID", required = true) @PathVariable String chatId);
 
     /**
      * 단일 채팅 메시지 삭제 API
