@@ -1,6 +1,5 @@
 package com.ssafy.storycut.ui.navigation
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Home
@@ -27,19 +25,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Density
@@ -50,9 +44,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.delay
+import androidx.compose.ui.Alignment
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.auth.AuthViewModel
-import kotlinx.coroutines.delay
 
 class CustomNavigationShape(private val selectedIndex: Int, private val totalItems: Int) : Shape {
     override fun createOutline(
@@ -212,8 +207,8 @@ fun MainScreen(
                                 .height(64.dp),
                             containerColor = Color.Transparent,
                             tonalElevation = 0.dp
-                    ) {
-                        items.forEach { item ->
+                        ) {
+                            items.forEach { item ->
                                 Box(
                                     modifier = Modifier
                                         .weight(1f),
@@ -284,9 +279,9 @@ fun MainScreen(
                                                 spotColor = Color.Black.copy(alpha = 0.35f),
                                                 ambientColor = Color.Black.copy(alpha = 0.3f)
                                             )
-                                                .size(48.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFFFFB800))
+                                            .size(48.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFFFB800))
                                             .padding(12.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -308,10 +303,12 @@ fun MainScreen(
         Box(
             modifier = if (isVideoDetailScreen) {
                 Modifier
+                    .fillMaxSize()
             } else {
                 Modifier
-                    .fillMaxSize()  // fillMaxSize로 변경
-                    .zIndex(0f)     // z-index를 가장 낮게 설정
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .zIndex(0f)
             }
         ) {
             Box(

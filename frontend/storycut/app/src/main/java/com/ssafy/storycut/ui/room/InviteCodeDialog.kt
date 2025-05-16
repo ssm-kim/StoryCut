@@ -1,12 +1,14 @@
 package com.ssafy.storycut.ui.room
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,13 +19,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ssafy.storycut.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun InviteCodeDialog(
     inviteCode: String,
+    initialRemainingSeconds: Int = 600, // 초기 남은 시간(초)을 매개변수로 받음
     onDismiss: () -> Unit,
     onCopy: () -> Unit
 ) {
+    // 유효 시간을 표시하기 위한 카운트다운 상태
+    val remainingTime = remember { mutableStateOf(initialRemainingSeconds) }
+
+    // 카운트다운 효과
+    LaunchedEffect(key1 = Unit) {
+        while (remainingTime.value > 0) {
+            delay(1000) // 1초마다 업데이트
+            remainingTime.value -= 1
+        }
+    }
+
+    // 분과 초로 변환
+    val minutes = remainingTime.value / 60
+    val seconds = remainingTime.value % 60
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -51,6 +70,22 @@ fun InviteCodeDialog(
                     fontSize = 14.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // 유효 시간 표시 - 시간이 만료된 경우 표시 변경
+                Text(
+                    text = if (remainingTime.value > 0)
+                        "유효 시간: ${minutes}분 ${seconds}초"
+                    else
+                        "유효 시간이 만료되었습니다. 새 코드를 생성하세요.",
+                    fontSize = 12.sp,
+                    color = when {
+                        remainingTime.value <= 0 -> Color.Red
+                        minutes < 2 -> Color.Red.copy(alpha = 0.8f)
+                        else -> Color.Gray
+                    },
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
@@ -75,7 +110,10 @@ fun InviteCodeDialog(
                         text = inviteCode,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (remainingTime.value > 0)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            Color.Gray,
                         textAlign = TextAlign.Center,
                         letterSpacing = 2.sp
                     )
@@ -97,7 +135,8 @@ fun InviteCodeDialog(
 
                     Button(
                         onClick = onCopy,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        enabled = remainingTime.value > 0 // 시간이 만료되면 복사 버튼 비활성화
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.copy),
@@ -106,6 +145,18 @@ fun InviteCodeDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "복사하기")
+                    }
+                }
+
+                // 시간이 만료되었을 때 표시할 버튼
+                if (remainingTime.value <= 0) {
+                    Button(
+                        onClick = onDismiss, // 닫기 후 새 코드 생성 로직은 상위 컴포넌트에서 처리
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Text(text = "새 코드 생성하기")
                     }
                 }
             }
