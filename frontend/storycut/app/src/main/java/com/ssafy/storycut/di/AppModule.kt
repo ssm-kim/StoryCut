@@ -7,6 +7,7 @@ import com.ssafy.storycut.data.api.service.ChatApiService
 import com.ssafy.storycut.data.api.service.EditService
 import com.ssafy.storycut.data.api.service.RoomApiService
 import com.ssafy.storycut.data.api.service.VideoApiService
+import com.ssafy.storycut.data.local.datastore.FCMTokenManager
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.EditRepository
@@ -46,6 +47,12 @@ object AppModule {
     @Singleton
     fun provideTokenManager(@ApplicationContext context: Context): TokenManager {
         return TokenManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFCMTokenManager(@ApplicationContext context: Context): FCMTokenManager {
+        return FCMTokenManager(context)
     }
 
     @Provides
@@ -159,8 +166,9 @@ object AppModule {
     fun provideEditRepository(
         editService: EditService,
         @ApplicationContext context: Context,
-        tokenManager: TokenManager
+        tokenManager: TokenManager,
+        fcmTokenManager: FCMTokenManager
     ): EditRepository {
-        return EditRepository(editService, context, tokenManager)
+        return EditRepository(editService, context, tokenManager, fcmTokenManager)
     }
 }

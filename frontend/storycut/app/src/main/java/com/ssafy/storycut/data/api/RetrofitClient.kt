@@ -31,6 +31,15 @@ object RetrofitClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    // 파일 업로드를 위한 긴 타임아웃을 가진 OkHttpClient 설정
+    private val fileUploadOkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(3, TimeUnit.MINUTES)     // 3분으로 증가
+        .readTimeout(5, TimeUnit.MINUTES)        // 5분으로 증가
+        .writeTimeout(10, TimeUnit.MINUTES)      // 10분으로 증가 (업로드에 가장 중요)
+        .build()
+
+
     private val gson = GsonBuilder()
         .setLenient()
         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
@@ -40,7 +49,7 @@ object RetrofitClient {
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient)
+            .client(fileUploadOkHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }

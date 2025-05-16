@@ -45,7 +45,7 @@ fun NavGraphBuilder.mainGraph(
         EditScreen(
             viewModel = editViewModel,
             onEditSuccess = { videoId ->
-                // 편집 성공 시 비디오 상세 화면으로 이동
+                // 편집 성공 시 비디오 상세 페이지로 이동
                 navController.navigate("video_detail/$videoId")
             }
         )

@@ -100,6 +100,19 @@ class RoomRepository @Inject constructor(
     }
 
     /**
+     * 공유방 비디오 상세 조회
+     * @param chatId 채팅 메시지 ID
+     * @param token 사용자 인증 토큰
+     * @return API 응답
+     */
+    suspend fun getChatDetail(
+        chatId: String,
+        token: String
+    ): Response<BaseResponse<ChatDto>> {
+        return chatApiService.getChatDetail(chatId, "Bearer $token")
+    }
+
+    /**
      * 공유방 채팅(비디오) 삭제
      * @param chatId 채팅 ID
      * @param token 사용자 인증 토큰
@@ -111,4 +124,6 @@ class RoomRepository @Inject constructor(
     ): Response<BaseResponse<Boolean>> {
         return chatApiService.deleteChat(chatId, "Bearer $token")
     }
+
+
 }

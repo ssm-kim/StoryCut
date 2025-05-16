@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.room
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -42,15 +43,16 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.ssafy.storycut.R
+import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.chat.ChatDto
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+
+private const val TAG = "RoomSingleVideoPlayer"
 
 @UnstableApi
 @Composable
 fun RoomSingleVideoPlayer(
     video: ChatDto,
+    uploaderInfo: UserInfo? = null,
     isCurrentlyVisible: Boolean,
     onPlayerCreated: (ExoPlayer) -> Unit = {},
     modifier: Modifier = Modifier
@@ -58,56 +60,55 @@ fun RoomSingleVideoPlayer(
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(isCurrentlyVisible) }
 
-    // 포맷된 날짜 상태
-    val formattedDate = remember(video.createdAt) {
-        try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("yyyy.MM.dd", Locale.getDefault())
-            val date = inputFormat.parse(video.createdAt) ?: Date()
-            outputFormat.format(date)
-        } catch (e: Exception) {
-            video.createdAt
-        }
+    // 로깅
+    LaunchedEffect(video.id, uploaderInfo, isCurrentlyVisible) {
+        Log.d(TAG, "RoomSingleVideoPlayer: videoId=${video.id}, isVisible=$isCurrentlyVisible")
+        Log.d(TAG, "업로더 정보: ${uploaderInfo?.name ?: "없음"}")
     }
 
-    // 플레이어 상태 관리
-    val exoPlayer = remember {
+    // 플레이어 생성
+    val exoPlayer = remember(video.id) {
         ExoPlayer.Builder(context).build().apply {
             playWhenReady = isCurrentlyVisible
-            repeatMode = Player.REPEAT_MODE_ONE  // 비디오 반복 재생
+            repeatMode = Player.REPEAT_MODE_ONE
 
-            // 비디오 URL 설정
-            val mediaItem = MediaItem.fromUri(video.mediaUrl)
-            setMediaItem(mediaItem)
-            prepare()
+            try {
+                val mediaItem = MediaItem.fromUri(video.mediaUrl)
+                setMediaItem(mediaItem)
+                prepare()
 
-            // 플레이어 콜백 호출
-            onPlayerCreated(this)
+                onPlayerCreated(this)
+                Log.d(TAG, "ExoPlayer 생성 성공: videoId=${video.id}, url=${video.mediaUrl}")
+            } catch (e: Exception) {
+                Log.e(TAG, "ExoPlayer 생성 실패: ${e.message}")
+            }
         }
     }
 
-    // 화면이 종료되면 ExoPlayer 해제
-    DisposableEffect(Unit) {
+    // 플레이어 해제
+    DisposableEffect(video.id) {
         onDispose {
+            Log.d(TAG, "ExoPlayer 해제: videoId=${video.id}")
             exoPlayer.release()
         }
     }
 
-    // 현재 보이는 상태 변경 감지
-    LaunchedEffect(isCurrentlyVisible) {
+    // 재생 상태 관리
+    LaunchedEffect(isCurrentlyVisible, video.id) {
         if (isCurrentlyVisible) {
             exoPlayer.play()
             isPlaying = true
+            Log.d(TAG, "비디오 재생 시작: ${video.id}")
         } else {
             exoPlayer.pause()
             isPlaying = false
+            Log.d(TAG, "비디오 일시정지: ${video.id}")
         }
     }
 
     Box(
         modifier = modifier
             .clickable {
-                // 화면 클릭 시 재생/일시정지 토글
                 if (exoPlayer.isPlaying) {
                     exoPlayer.pause()
                     isPlaying = false
@@ -122,14 +123,17 @@ fun RoomSingleVideoPlayer(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
-                    useController = false  // 기본 컨트롤러 숨기기
+                    useController = false
                     setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
                 }
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            update = { playerView ->
+                playerView.player = exoPlayer
+            }
         )
 
-        // 재생/정지 아이콘 (정지 상태일 때만 표시)
+        // 일시정지 상태일 때 재생 아이콘 표시
         if (!isPlaying) {
             Box(
                 modifier = Modifier
@@ -147,7 +151,7 @@ fun RoomSingleVideoPlayer(
             }
         }
 
-        // 비디오 정보 (하단에 표시)
+        // 비디오 정보 (하단)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -166,25 +170,34 @@ fun RoomSingleVideoPlayer(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 작성자 정보 (프로필 이미지와 함께 표시)
+                // 작성자 정보
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 프로필 이미지 추가
-                    AsyncImage(
-                        model = R.drawable.ic_launcher_foreground,
-                        contentDescription = "작성자 프로필",
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape),
-                        error = painterResource(id = R.drawable.ic_launcher_foreground)
-                    )
+                    // 프로필 이미지
+                    if (uploaderInfo != null) {
+                        AsyncImage(
+                            model = uploaderInfo.profileImg,
+                            contentDescription = "작성자 프로필",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape),
+                            error = painterResource(id = R.drawable.ic_launcher_foreground)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.Gray)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.padding(start = 10.dp))
 
                     // 작성자 이름
                     Text(
-                        text = "사용자",
+                        text = uploaderInfo?.nickname ?: uploaderInfo?.name ?: "사용자",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -202,15 +215,6 @@ fun RoomSingleVideoPlayer(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     )
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // 날짜 정보
-                Text(
-                    text = formattedDate,
-                    color = Color.LightGray,
-                    fontSize = 12.sp
                 )
             }
         }

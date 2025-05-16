@@ -31,6 +31,13 @@ interface ChatApiService {
         @Header("Authorization") token: String
     ): Response<BaseResponse<List<ChatDto>>>
 
+    // 공유방 비디오 상세 조회 (추가)
+    @GET("chat/detail/{chatId}")
+    suspend fun getChatDetail(
+        @Path("chatId") chatId: String,
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<ChatDto>>
+
     // 공유방 비디오 삭제
     @DELETE("chat/{chatId}")
     suspend fun deleteChat(

@@ -13,18 +13,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -35,20 +29,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.VideoDto
-import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
-import com.ssafy.storycut.ui.home.HomeViewModel
 import com.ssafy.storycut.ui.mypage.VideoViewModel
 import com.ssafy.storycut.ui.room.dialog.UploadShortDialog
-import com.ssafy.storycut.ui.room.upload.VideoSelectionItem
 import com.ssafy.storycut.ui.room.upload.VideoSelectorFullScreenDialog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -117,6 +106,8 @@ fun RoomDetailScreen(
             println("데이터 로드 실패: ${e.message}")
         }
     }
+
+
 
     // 업로드 성공 시 처리
     LaunchedEffect(uploadSuccess) {

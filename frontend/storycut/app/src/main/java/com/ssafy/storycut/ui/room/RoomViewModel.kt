@@ -1,15 +1,17 @@
 package com.ssafy.storycut.ui.room
 
-import android.net.Uri
+import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.RoomRepository
+import com.ssafy.storycut.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class RoomViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
+    private val userRepository: UserRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
@@ -59,6 +62,111 @@ class RoomViewModel @Inject constructor(
     // 비디오 목록 로딩 상태
     private val _isVideosLoading = MutableStateFlow(false)
     val isVideosLoading: StateFlow<Boolean> = _isVideosLoading
+
+    // 단일 비디오 상세 정보를 위한 상태
+    private val _currentVideoDetail = MutableStateFlow<ChatDto?>(null)
+    val currentVideoDetail: StateFlow<ChatDto?> = _currentVideoDetail
+
+    // 비디오 상세 정보 로드 중 상태
+    private val _isVideoDetailLoading = MutableStateFlow(false)
+    val isVideoDetailLoading: StateFlow<Boolean> = _isVideoDetailLoading
+
+    // 비디오 상세 정보 로드 에러
+    private val _videoDetailError = MutableStateFlow<String?>(null)
+    val videoDetailError: StateFlow<String?> = _videoDetailError
+
+    // 비디오 업로더 정보를 위한 상태
+    private val _videoUploaderInfo = MutableStateFlow<UserInfo?>(null)
+    val videoUploaderInfo: StateFlow<UserInfo?> = _videoUploaderInfo
+
+    // 비디오 업로더 정보 로딩 상태
+    private val _isUploaderInfoLoading = MutableStateFlow(false)
+    val isUploaderInfoLoading: StateFlow<Boolean> = _isUploaderInfoLoading
+
+    // 업로더 정보 로드 에러
+    private val _uploaderInfoError = MutableStateFlow<String?>(null)
+    val uploaderInfoError: StateFlow<String?> = _uploaderInfoError
+
+
+    /**
+     * 비디오 상세 정보 조회
+     * @param chatId 채팅 메시지 ID
+     */
+    fun getVideoDetail(chatId: String) {
+        viewModelScope.launch {
+            _isVideoDetailLoading.value = true
+            _videoDetailError.value = null
+            _isUploaderInfoLoading.value = true
+            _uploaderInfoError.value = null
+
+            try {
+                val token = tokenManager.accessToken.first()
+                if (token.isNullOrEmpty()) {
+                    _videoDetailError.value = "인증 정보가 없습니다. 다시 로그인해주세요."
+                    return@launch
+                }
+
+                Log.d(TAG, "비디오 상세 정보 조회 시작: chatId=$chatId")
+                val response = roomRepository.getChatDetail(chatId, token)
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    val videoDetail = response.body()?.result
+                    _currentVideoDetail.value = videoDetail
+                    Log.d(TAG, "비디오 상세 정보 조회 성공: ${videoDetail?.title}")
+
+                    // 비디오 업로더 정보 조회 (memberId가 있는 경우)
+                    videoDetail?.senderId?.let { senderId ->
+                        fetchUploaderInfo(senderId, token)
+                    } ?: run {
+                        _uploaderInfoError.value = "업로더 정보가 없습니다."
+                        _isUploaderInfoLoading.value = false
+                    }
+                } else {
+                    val errorMsg = response.body()?.message ?: "비디오 정보를 불러오는데 실패했습니다."
+                    _videoDetailError.value = errorMsg
+                    Log.e(TAG, "비디오 상세 정보 조회 실패: $errorMsg, 코드: ${response.code()}")
+                    _isUploaderInfoLoading.value = false
+                }
+            } catch (e: Exception) {
+                _videoDetailError.value = "네트워크 오류: ${e.message}"
+                Log.e(TAG, "비디오 상세 정보 조회 중 예외 발생", e)
+                _isUploaderInfoLoading.value = false
+            } finally {
+                _isVideoDetailLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 업로더 정보 조회
+     * @param memberId 멤버 ID
+     * @param token 인증 토큰
+     */
+    private suspend fun fetchUploaderInfo(memberId: Long, token: String) {
+        try {
+            val result = userRepository.getMemberById(token, memberId)
+            result.onSuccess { userInfo ->
+                _videoUploaderInfo.value = userInfo
+                Log.d(TAG, "업로더 정보 조회 성공: ${userInfo.nickname}")
+            }.onFailure { exception ->
+                _uploaderInfoError.value = "업로더 정보 조회 실패: ${exception.message}"
+                Log.e(TAG, "업로더 정보 조회 실패", exception)
+            }
+        } catch (e: Exception) {
+            _uploaderInfoError.value = "업로더 정보 조회 중 오류 발생: ${e.message}"
+            Log.e(TAG, "업로더 정보 조회 중 예외 발생", e)
+        } finally {
+            _isUploaderInfoLoading.value = false
+        }
+    }
+
+    // 비디오 및 업로더 상세 상태 초기화
+    fun clearVideoDetail() {
+        _currentVideoDetail.value = null
+        _videoDetailError.value = null
+        _videoUploaderInfo.value = null
+        _uploaderInfoError.value = null
+    }
 
     // 공유방 상세 정보 가져오기
     fun getRoomDetail(roomId: String) {

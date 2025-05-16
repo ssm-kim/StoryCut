@@ -1,5 +1,6 @@
 package com.ssafy.storycut.ui.mypage
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,16 +32,14 @@ fun VideoDetailScreen(
     videoId: String,
     navController: NavController,
     videoViewModel: VideoViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel(),  // AuthViewModel 추가
+    authViewModel: AuthViewModel = hiltViewModel(),
     tokenManager: TokenManager
 ) {
     val context = LocalContext.current
     val videoList by videoViewModel.myVideos.collectAsState()
-    val userInfo by authViewModel.userState.collectAsState()  // 사용자 정보 가져오기
-    var isLoading by remember { mutableStateOf(true) }
+    val userInfo by authViewModel.userState.collectAsState()
+    val isLoading by videoViewModel.isLoading.collectAsState()
     var error by remember { mutableStateOf<String?>(null) }
-
-    // 화면 종료 여부를 추적하는 변수
     var isExiting by remember { mutableStateOf(false) }
 
     // 플레이어 맵을 관리하기 위한 변수
@@ -51,13 +50,35 @@ fun VideoDetailScreen(
 
     // 현재 선택된 비디오의 위치 찾기
     val initialPage = remember(videoId, videoList) {
-        videoList.indexOfFirst { it.videoId.toString() == videoId }.takeIf { it >= 0 } ?: 0
+        val index = videoList.indexOfFirst { it.videoId.toString() == videoId }
+        if (index >= 0) {
+            Log.d("VideoDetailScreen", "초기 비디오 인덱스 찾음: $index, ID=$videoId")
+            index
+        } else {
+            Log.d("VideoDetailScreen", "비디오를 찾지 못함: ID=$videoId, 목록 크기=${videoList.size}")
+            0
+        }
     }
 
     // VerticalPager 상태 설정
     val pagerState = rememberPagerState(initialPage = initialPage) { videoList.size }
 
-    // 뒤로가기 처리 함수 정의 - 먼저 선언
+    // 페이저 상태가 변경될 때 현재 페이지를 업데이트하도록 LaunchedEffect 추가
+    LaunchedEffect(initialPage) {
+        if (pagerState.currentPage != initialPage) {
+            pagerState.scrollToPage(initialPage)
+        }
+    }
+
+    // 페이지 변경 시 현재 비디오 ID 로깅
+    LaunchedEffect(pagerState.currentPage) {
+        if (videoList.isNotEmpty() && pagerState.currentPage < videoList.size) {
+            val currentVideoId = videoList[pagerState.currentPage].videoId
+            Log.d("VideoDetailScreen", "페이지 변경됨: ${pagerState.currentPage}, 비디오 ID: $currentVideoId")
+        }
+    }
+
+    // 뒤로가기 처리 함수 정의
     val handleBackPress = {
         // 종료 상태로 변경하고 모든 플레이어 즉시 해제
         isExiting = true
@@ -117,26 +138,27 @@ fun VideoDetailScreen(
 
     // 비디오 로드 및 토큰 가져오기
     LaunchedEffect(Unit) {
-        isLoading = true
         try {
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
                 // 사용자 정보 새로고침
                 authViewModel.refreshUserInfoFromRoom()
-                
-                // 만약 비디오 리스트가 비어있다면 불러오기
+
+                // 비디오 목록이 비어있다면 불러오기
                 if (videoList.isEmpty()) {
                     videoViewModel.fetchMyVideos(token)
                 }
+
                 // 현재 비디오 상세정보 불러오기
                 videoViewModel.getVideoDetail(videoId, token)
+
+                Log.d("VideoDetailScreen", "비디오 목록 로드 완료 후 인덱스: ${videoList.indexOfFirst { it.videoId.toString() == videoId }}, ID=$videoId, 목록 크기=${videoList.size}")
             } else {
                 error = "인증 정보가 없습니다. 다시 로그인해주세요."
             }
         } catch (e: Exception) {
             error = "비디오를 로드할 수 없습니다: ${e.message}"
-        } finally {
-            isLoading = false
+            Log.e("VideoDetailScreen", "비디오 로드 오류", e)
         }
     }
 
@@ -156,7 +178,8 @@ fun VideoDetailScreen(
             .background(Color.Black)
     ) {
         when {
-            isLoading -> {
+            isLoading && videoList.isEmpty() -> {
+                // 로딩 중이고 비디오 목록이 비어있을 때만 로딩 표시
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.White
