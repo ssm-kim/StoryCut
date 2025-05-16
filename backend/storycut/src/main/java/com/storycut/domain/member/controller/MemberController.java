@@ -39,4 +39,11 @@ public class MemberController implements MemberAPI {
         memberService.deleteMember(memberId);
         return ResponseEntity.ok(new BaseResponse<>());
     }
+
+    @Override
+    public ResponseEntity<BaseResponse<MemberDto.Response>> getMemberById(Long memberId) {
+        log.info("특정 사용자 정보 요청 - 사용자 ID: {}", memberId);
+        MemberDto.Response response = memberService.getMemberInfo(memberId);
+        return ResponseEntity.ok(new BaseResponse<>(response));
+    }
 }

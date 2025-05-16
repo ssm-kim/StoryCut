@@ -28,4 +28,9 @@ public interface MemberAPI {
     @DeleteMapping
     ResponseEntity<BaseResponse<Void>> deleteMyAccount(
         @AuthenticationPrincipal CustomUserDetails userDetails);
+
+    @Operation(summary = "특정 회원 정보 조회", description = "ID로 특정 회원 정보를 조회합니다.")
+    @GetMapping("/{memberId}")
+    ResponseEntity<BaseResponse<MemberDto.Response>> getMemberById(
+            @PathVariable Long memberId);
 }
