@@ -79,7 +79,7 @@ async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, thresh
 
         output_path = fast_cut_and_merge_ffmpeg(video_path, time_ranges)
         logger.info("[행동분석] 최종 병합 완료 → %s", output_path)
-        return output_path
+        return output_path ,raw_data
 
     except Exception:
         logger.exception("[Gemini] Gemini 처리 실패")

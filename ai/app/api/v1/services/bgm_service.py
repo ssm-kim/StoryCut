@@ -15,11 +15,30 @@ import requests
 import re
 import asyncio
 from app.core.logger import logger
-
+from collections import defaultdict
+from typing import List, Tuple, Union
 UPLOAD_DIR = "app/videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 loop = asyncio.get_event_loop()
+
+
+def extract_top5_labels(
+    actions_data: List[Tuple[Tuple[float, float], List[Tuple[str, float]]]]
+) -> List[str]:
+    label_scores = defaultdict(list)
+
+    for _, actions in actions_data:
+        for label, score in actions:
+            label_scores[label].append(score)
+
+    # 평균 신뢰도 기준 Top 5 추출
+    top5 = sorted(
+        ((label, sum(scores) / len(scores)) for label, scores in label_scores.items()),
+        key=lambda x: x[1], reverse=True
+    )[:5]
+
+    return [label for label, _ in top5]
 
 def blend_audio_segments(seg1, seg2, overlap_len):
     min_overlap = min(overlap_len, len(seg1), len(seg2))
@@ -201,40 +220,49 @@ async def has_audio_stream(video_path: str) -> bool:
     result = await loop.run_in_executor(None, functools.partial(subprocess.run, cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
     return bool(result.stdout.strip())
 
-async def process_bgm_service(video_path: str, prompt: str):
-    def gemini_translate_ko_to_en(prompt_ko):
+async def process_bgm_service(video_path: str,  prompt: Union[str, List[Tuple[Tuple[float, float], List[Tuple[str, float]]]]]):
+    def gemini_translate_ko_to_en(prompt):
         api_key = os.getenv("GEMINI_API_KEY")
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={api_key}"
         headers = {"Content-Type": "application/json"}
 
+        if isinstance(prompt, str):
+            prompt=f"""Generate a one-sentence English prompt for MusicGen based on the following description:
+                - The music is background music (BGM) for a video.
+                - Describe the mood, genre, instruments (avoid electronic instruments), tempo, and energy in detail.
+                - Use acoustic instruments like drums, guitar, piano, bass, or orchestral elements.
+                Input description: "{prompt}"
+                """
+        else:
+            top5 = extract_top5_labels(prompt)
+
+            prompt = f"""Based on the following actions, please answer the questions in English:
+
+            These are the top {len(top5)} most frequently detected human actions in the video: {', '.join(top5)}
+
+            1. What is the most likely topic or theme of this video? (Answer in one clear English sentence.)
+
+            2. Then, using the prompt template below, generate a one-sentence English prompt for MusicGen that matches the topic of the video:
+
+            Generate a one-sentence English prompt for MusicGen based on the following description:
+            - The music is background music (BGM) for a video.
+            - Describe the mood, genre, instruments (avoid electronic instruments), tempo, and energy in detail.
+            - Use acoustic instruments like drums, guitar, piano, bass, or orchestral elements.
+            Input description: "<Insert the sentence from question 1 here>"
+            """
         data = {
             "contents": [
                 {
                     "role": "user",
                     "parts": [
                         {
-                            "text": (
-                            #     f"""다음 문장을 기반으로 MusicGen에 사용할 프롬프트를 영어로 1문장 생성해줘.
-                            # - 이 음악은 영상의 배경음악(BGM)으로 사용돼.
-                            # - 분위기, 장르, 사용하는 악기, 속도(tempo), 에너지 수준 등을 최대한 구체적으로 묘사해줘.
-                            # - 전자음악 스타일은 피하고, 드럼, 기타, 베이스 ,피아노 등 다양한 악기를 이용해해
-                            # 문장: "{prompt_ko}"
-                            # """
-                                f"""Generate a one-sentence English prompt for MusicGen based on the following description:
-                                - The music is background music (BGM) for a video.
-                                - Describe the mood, genre, instruments (avoid electronic instruments), tempo, and energy in detail.
-                                - Use acoustic instruments like drums, guitar, piano, bass, or orchestral elements.
-
-                                Input description: "{prompt_ko}"
-                                """
-                            )
-
+                            "text": prompt
                         }
                     ]
                 }
             ]
         }
-
+    
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 200:
             try:

@@ -68,6 +68,7 @@ async def process_video_pipeline(request: VideoProcessRequest, token: str, devic
             images=request.images,
             subtitle=request.subtitle,
             music_prompt=request.music_prompt,
+            auto_music=request.auto_music,
             token=token
         )
 

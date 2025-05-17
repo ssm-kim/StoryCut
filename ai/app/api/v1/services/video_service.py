@@ -25,6 +25,7 @@ async def process_video_job(
     images: list,
     subtitle: bool,
     music_prompt: str,
+    auto_music: bool,
     token: str,
 ) -> str:
     logger.info(f"[VideoJob] 영상 처리 시작 | video_id={video_id}")
@@ -33,6 +34,7 @@ async def process_video_job(
     video_name = os.path.basename(video_info.result.video_url)
     video_path = os.path.join("app/videos", video_name)
     new_video_path = None
+    raw_data=None
     is_blur = False
 
     if not os.path.isfile(video_path):
@@ -43,7 +45,7 @@ async def process_video_job(
 
     if prompt:
         logger.info("[CutEdit] 프롬프트 기반 분석 및 컷 편집 시작")
-        new_video_path = await select_time_ranges_by_prompt(video_path=video_path, user_prompt=prompt)
+        new_video_path, raw_data = await select_time_ranges_by_prompt(video_path=video_path, user_prompt=prompt)
         os.remove(video_path)
         logger.info("[CutEdit] 컷 편집 완료 → 기존 영상 제거")
         video_path = new_video_path
@@ -61,6 +63,15 @@ async def process_video_job(
         os.remove(video_path)
         logger.info("[BGM] BGM 삽입 완료 → 기존 영상 제거")
         video_path = new_video_path
+
+    if auto_music:
+        if not raw_data :
+            raw_data=await run_analysis_pipeline(video_path)
+        new_video_path = await process_bgm_service(video_path, raw_data)
+        os.remove(video_path)
+        logger.info("[BGM] BGM 삽입 완료 → 기존 영상 제거")
+        video_path = new_video_path
+
 
     if images:
         logger.info("[Mosaic] 모자이크 처리 시작")
