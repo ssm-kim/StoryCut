@@ -296,51 +296,80 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
-    
-    // 로그아웃 - 개선된 오류 처리 및 토큰 삭제 확인
+
     fun logout() {
         viewModelScope.launch {
             try {
-                // TokenManager에서 먼저 토큰 삭제
-                tokenManager.clearTokens()
-                Log.d(TAG, "로그아웃: TokenManager에서 토큰 삭제 성공")
+                Log.d(TAG, "로그아웃 시작")
 
-                // Room DB에서 사용자 정보 삭제
-                userRepository.logout()
-                Log.d(TAG, "로그아웃: Room DB에서 사용자 정보 삭제 성공")
+                // 1. 액세스 토큰 가져오기 (삭제하기 전에!)
+                val accessToken = tokenManager.accessToken.first()
+                Log.d(TAG, "토큰 상태 확인: ${if (accessToken.isNullOrEmpty()) "토큰 없음" else "토큰 있음"}")
 
-                // 상태 초기화
-                _userState.value = null
-                _tokenState.value = null
-                _uiState.value = AuthUiState.Initial
-
-                // 로그인 화면으로 이동하는 이벤트 발생
-                _navigationEvent.emit(NavigationEvent.NavigateToLogin)
-
-                Log.d(TAG, "로그아웃 완료: 모든 상태 갱신 및 네비게이션 이벤트 발생")
-            } catch (e: Exception) {
-                Log.e(TAG, "로그아웃 중 오류 발생", e)
-
-                // 오류가 발생해도 사용자 상태는 null로 강제 설정
-                _userState.value = null
-                _tokenState.value = null
-                _uiState.value = AuthUiState.Initial
-
-                // 개별 실패 시도
-                try {
-                    tokenManager.clearTokens()
-                } catch (tokenEx: Exception) {
-                    Log.e(TAG, "토큰 삭제 중 오류", tokenEx)
+                // 2. 액세스 토큰이 있으면 서버에 로그아웃 요청
+                if (!accessToken.isNullOrEmpty()) {
+                    try {
+                        userRepository.logout(accessToken)
+                        Log.d(TAG, "서버 로그아웃 성공")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "서버 로그아웃 실패, 로컬만 삭제 진행", e)
+                    }
                 }
 
+                // 3. 토큰 삭제는 서버 로그아웃 이후에 진행
+                tokenManager.clearTokens()
+                Log.d(TAG, "로컬 토큰 삭제 완료")
+
+                // 4. 로컬 사용자 정보 삭제 (서버 로그아웃 성공 여부와 관계없이)
                 try {
                     userRepository.logout()
-                } catch (userEx: Exception) {
-                    Log.e(TAG, "사용자 정보 삭제 중 오류", userEx)
+                    Log.d(TAG, "로컬 사용자 정보 삭제 완료")
+                } catch (e: Exception) {
+                    Log.e(TAG, "로컬 사용자 정보 삭제 실패", e)
                 }
 
-                // 오류가 발생해도 로그인 화면으로 이동하는 이벤트 발생
+                // 5. 상태 초기화
+                _userState.value = null
+                _tokenState.value = null
+                _uiState.value = AuthUiState.Initial
+                Log.d(TAG, "상태 초기화 완료")
+
+                // 6. 네비게이션 이벤트 발생
+                Log.d(TAG, "로그인 화면으로 이동 이벤트 발생 시도")
                 _navigationEvent.emit(NavigationEvent.NavigateToLogin)
+                Log.d(TAG, "로그인 화면으로 이동 이벤트 발생 완료")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "로그아웃 과정 중 오류 발생", e)
+
+                // 실패해도 상태 초기화
+                _userState.value = null
+                _tokenState.value = null
+                _uiState.value = AuthUiState.Initial
+
+                // 토큰 및 로컬 데이터 정리 시도
+                try {
+                    tokenManager.clearTokens()
+                    Log.d(TAG, "실패 복구: 토큰 삭제 완료")
+                } catch (ex: Exception) {
+                    Log.e(TAG, "실패 복구: 토큰 삭제 실패", ex)
+                }
+
+                try {
+                    userRepository.logout() // 파라미터 없는 메서드 호출
+                    Log.d(TAG, "실패 복구: 로컬 사용자 정보 삭제 완료")
+                } catch (ex: Exception) {
+                    Log.e(TAG, "실패 복구: 로컬 사용자 정보 삭제 실패", ex)
+                }
+
+                // 어떤 상황에서도 로그인 화면으로 이동
+                try {
+                    Log.d(TAG, "실패 복구: 로그인 화면으로 이동 이벤트 발생 시도")
+                    _navigationEvent.emit(NavigationEvent.NavigateToLogin)
+                    Log.d(TAG, "실패 복구: 로그인 화면으로 이동 이벤트 발생 완료")
+                } catch (ex: Exception) {
+                    Log.e(TAG, "실패 복구: 네비게이션 이벤트 발생 실패", ex)
+                }
             }
         }
     }

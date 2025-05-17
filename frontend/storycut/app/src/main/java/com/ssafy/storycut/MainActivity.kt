@@ -32,7 +32,6 @@ class MainActivity : ComponentActivity() {
     lateinit var tokenManager: TokenManager
 
     // 딥링크 정보를 저장할 변수
-    private val deepLinkTokenState = mutableStateOf<String?>(null)
     private val isDeepLinkState = mutableStateOf(false)
 
     // 알림 권한 요청 런처

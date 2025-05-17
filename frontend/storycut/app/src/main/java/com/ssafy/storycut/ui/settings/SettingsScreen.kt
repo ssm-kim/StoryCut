@@ -31,13 +31,13 @@ fun SettingsScreen(
     onNavigateToLogin: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-
+    
+    // 로그인 화면 이동 이벤트 수신
     LaunchedEffect(authViewModel) {
         authViewModel.navigationEvent.collect { event ->
             when (event) {
                 is AuthViewModel.NavigationEvent.NavigateToLogin -> {
-                    Log.d("SettingsScreen", "로그인 화면으로 이동 이벤트 수신")
-                    onNavigateToLogin() // 콜백 호출
+                    onNavigateToLogin()
                 }
             }
         }

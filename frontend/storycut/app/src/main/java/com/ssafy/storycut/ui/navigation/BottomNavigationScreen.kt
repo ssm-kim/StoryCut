@@ -169,6 +169,17 @@ fun MainScreen(
         wasVideoDetailScreen.value = isVideoDetailScreen
     }
 
+    LaunchedEffect(authViewModel) {
+        authViewModel.navigationEvent.collect { event ->
+            when (event) {
+                is AuthViewModel.NavigationEvent.NavigateToLogin -> {
+                    onNavigateToLogin() // 콜백 호출
+                }
+            }
+        }
+    }
+
+
     LaunchedEffect(navigateToShorts) {
         if (navigateToShorts) {
             // 아주 짧은 딜레이 후 이동 (이는 메인 화면이 완전히 로드된 후 이동하도록 함)

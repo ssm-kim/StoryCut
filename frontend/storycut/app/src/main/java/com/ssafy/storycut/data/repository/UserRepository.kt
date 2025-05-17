@@ -15,7 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class UserRepository @Inject constructor(
     private val userDao: UserDao,
-    private val authApiService: AuthApiService  // AuthApiService 의존성 추가
+    private val authApiService: AuthApiService
 ) {
     /**
      * 사용자 정보를 Room 데이터베이스에 저장
@@ -69,8 +69,28 @@ class UserRepository @Inject constructor(
     }
     
     /**
-     * 로그아웃 - 모든 사용자 정보 삭제
+     * 로그아웃 - 모든 사용자 정보 삭제 , 서버/로컬 모두
      */
+    suspend fun logout(authToken: String) {
+        try {
+            val token = if (authToken.startsWith("Bearer ")) authToken else "Bearer $authToken"
+
+            val response = authApiService.logout(token)
+            if (response.isSuccessful) {
+                // 서버 로그아웃 성공, 로컬 데이터 삭제
+                userDao.deleteAllUsers()
+            } else {
+                // 서버 로그아웃 실패, 하지만 로컬 데이터는 삭제
+                userDao.deleteAllUsers()
+                throw Exception("서버 로그아웃 실패: ${response.code()} - ${response.message()}")
+            }
+        } catch (e: Exception) {
+            // 실패시 로컬 데이터 삭제
+            userDao.deleteAllUsers()
+            throw e
+        }
+    }
+    // 로컬 삭제
     suspend fun logout() {
         userDao.deleteAllUsers()
     }

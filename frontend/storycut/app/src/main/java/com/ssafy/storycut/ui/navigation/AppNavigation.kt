@@ -26,7 +26,7 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
 
-    val startDestination = Navigation.MAIN
+    val startDestination = if (isDeepLink) Navigation.MAIN else Navigation.SPLASH
     val shouldNavigateToShorts = remember { mutableStateOf(isDeepLink) }
 
     val context = LocalContext.current
@@ -60,7 +60,12 @@ fun AppNavigation(
             MainScreen(
                 authViewModel = authViewModel,
                 tokenManager = tokenManager,
-                onNavigateToLogin = { /* ... */ },
+                onNavigateToLogin = {
+                    navController.navigate(Navigation.LOGIN) {
+                    // Main 화면 포함 이전 화면들을 모두 백스택에서 제거하여 뒤로가기로 돌아갈 수 없게 함
+                    popUpTo(Navigation.MAIN) { inclusive = true }
+                    }
+                },
                 navigateToShorts = shouldNavigateToShorts.value,
                 onShortsNavigationConsumed = { shouldNavigateToShorts.value = false }
             )
