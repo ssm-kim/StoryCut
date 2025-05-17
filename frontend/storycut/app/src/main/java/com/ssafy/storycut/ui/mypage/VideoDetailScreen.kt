@@ -33,7 +33,6 @@ fun VideoDetailScreen(
     navController: NavController,
     videoViewModel: VideoViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
-    tokenManager: TokenManager
 ) {
     val context = LocalContext.current
     val videoList by videoViewModel.myVideos.collectAsState()
@@ -139,23 +138,18 @@ fun VideoDetailScreen(
     // 비디오 로드 및 토큰 가져오기
     LaunchedEffect(Unit) {
         try {
-            val token = tokenManager.accessToken.first()
-            if (!token.isNullOrEmpty()) {
-                // 사용자 정보 새로고침
-                authViewModel.refreshUserInfoFromRoom()
+            // 사용자 정보 새로고침
+            authViewModel.refreshUserInfoFromRoom()
 
-                // 비디오 목록이 비어있다면 불러오기
-                if (videoList.isEmpty()) {
-                    videoViewModel.fetchMyVideos(token)
-                }
-
-                // 현재 비디오 상세정보 불러오기
-                videoViewModel.getVideoDetail(videoId, token)
-
-                Log.d("VideoDetailScreen", "비디오 목록 로드 완료 후 인덱스: ${videoList.indexOfFirst { it.videoId.toString() == videoId }}, ID=$videoId, 목록 크기=${videoList.size}")
-            } else {
-                error = "인증 정보가 없습니다. 다시 로그인해주세요."
+            // 비디오 목록이 비어있다면 불러오기
+            if (videoList.isEmpty()) {
+                videoViewModel.fetchMyVideos()
             }
+
+            // 현재 비디오 상세정보 불러오기
+            videoViewModel.getVideoDetail(videoId)
+
+            Log.d("VideoDetailScreen", "비디오 목록 로드 완료 후 인덱스: ${videoList.indexOfFirst { it.videoId.toString() == videoId }}, ID=$videoId, 목록 크기=${videoList.size}")
         } catch (e: Exception) {
             error = "비디오를 로드할 수 없습니다: ${e.message}"
             Log.e("VideoDetailScreen", "비디오 로드 오류", e)

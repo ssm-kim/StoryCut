@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.VideoDto
+import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.VideoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VideoViewModel @Inject constructor(
-    private val videoRepository: VideoRepository
+    private val videoRepository: VideoRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _myVideos = MutableStateFlow<List<VideoDto>>(emptyList())
@@ -28,11 +30,13 @@ class VideoViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading
 
     // 비디오 목록 가져오기 (최신순 정렬 추가)
-    fun fetchMyVideos(token: String) {
+    fun fetchMyVideos() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = videoRepository.getMyVideos(token)
+                val response = videoRepository.getMyVideos()
+                Log.d("VideoViewModel", "응답 코드: ${response.code()}")
+
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     response.body()?.result?.let { videos ->
                         // 최신순 정렬 (videoId 기준 내림차순)
@@ -54,9 +58,9 @@ class VideoViewModel @Inject constructor(
     }
 
     // 매개변수로 token을 받도록 수정
-    suspend fun getVideoDetail(videoId: String, token: String): VideoDto? {
+    suspend fun getVideoDetail(videoId: String): VideoDto? {
         try {
-            val response = videoRepository.getVideoDetail(videoId, token)
+            val response = videoRepository.getVideoDetail(videoId)
 
             if (response.isSuccessful && response.body()?.isSuccess == true) {
                 val videoDto = response.body()?.result
@@ -73,10 +77,10 @@ class VideoViewModel @Inject constructor(
     }
 
     // 비동기적으로 비디오 상세 정보를 가져오는 래퍼 함수 (ViewModelScope 사용)
-    fun fetchVideoDetail(videoId: String, token: String) {
+    fun fetchVideoDetail(videoId: String) {
         viewModelScope.launch {
             try {
-                getVideoDetail(videoId, token)
+                getVideoDetail(videoId)
             } catch (e: Exception) {
                 Log.d("VideoViewModel", "비디오 상세 정보 로드 에러: ${e.message}")
             }
@@ -141,7 +145,7 @@ class VideoViewModel @Inject constructor(
     fun fetchRoomVideos(roomId: String, token: String) {
         viewModelScope.launch {
             try {
-                val response = videoRepository.getRoomVideos(roomId, token)
+                val response = videoRepository.getRoomVideos(roomId)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     response.body()?.result?.let {
                         _roomVideos.value = it

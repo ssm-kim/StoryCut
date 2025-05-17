@@ -99,7 +99,7 @@ fun MyPageScreen(
             val token = tokenManager.accessToken.first()
             if (!token.isNullOrEmpty()) {
                 Log.d("VideoViewModel","${token}")
-                myVideoViewModel.fetchMyVideos(token)
+                myVideoViewModel.fetchMyVideos()
             }
         } catch (e: Exception) {
             println("토큰 가져오기 실패: ${e.message}")

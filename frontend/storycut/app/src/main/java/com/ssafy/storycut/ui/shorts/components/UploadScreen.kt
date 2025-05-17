@@ -235,43 +235,6 @@ fun UploadScreen(
 }
 
 @Composable
-fun TagChip(
-    tag: String,
-    onRemove: () -> Unit,
-    enabled: Boolean
-) {
-    Surface(
-        modifier = Modifier.padding(end = 8.dp, bottom = 8.dp),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = if (enabled) 1f else 0.6f)
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = tag,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-
-            IconButton(
-                onClick = onRemove,
-                enabled = enabled,
-                modifier = Modifier.size(18.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "태그 삭제",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun FlowRow(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,

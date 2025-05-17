@@ -1,4 +1,4 @@
-package com.ssafy.storycut.ui.room.upload
+package com.ssafy.storycut.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

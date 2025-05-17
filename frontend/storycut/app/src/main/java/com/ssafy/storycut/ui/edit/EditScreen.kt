@@ -35,13 +35,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
+import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.ui.edit.dialog.OptionDialog
 import com.ssafy.storycut.ui.common.VideoUploadDialog
+import com.ssafy.storycut.ui.common.VideoSelectorFullScreenDialog
+import com.ssafy.storycut.ui.mypage.VideoViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun EditScreen(
     viewModel: EditViewModel,
+    videoViewModel: VideoViewModel,
     onEditSuccess: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -49,6 +53,14 @@ fun EditScreen(
 
     var showVideoDialog by remember { mutableStateOf(false) }
     var showOptionDialog by remember { mutableStateOf(false) }
+    var showVideoSelectorDialog by remember { mutableStateOf(false) }
+
+    // 선택된 VideoDto 저장을 위한 상태 추가
+    var selectedVideoDto by remember { mutableStateOf<VideoDto?>(null) }
+
+    // VideoViewModel에서 내 비디오 목록 가져오기
+    val myVideos by videoViewModel.myVideos.collectAsState()
+    val isVideosLoading by videoViewModel.isLoading.collectAsState()
 
     // 오류 메시지 표시를 위한 효과
     LaunchedEffect(viewModel.error) {
@@ -85,11 +97,21 @@ fun EditScreen(
         }
     }
 
+    // 로딩 상태일 때 로딩 인디케이터 표시 효과 추가
+    LaunchedEffect(isVideosLoading) {
+        if (isVideosLoading) {
+            Toast.makeText(context, "비디오 목록을 불러오는 중...", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // 갤러리에서 비디오 선택을 위한 런처
     val galleryVideoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.setSelectedVideo(it) }
+        uri?.let {
+            viewModel.setSelectedVideo(it)
+            selectedVideoDto = null // 갤러리에서 선택한 경우 선택된 VideoDto 초기화
+        }
     }
 
     // 갤러리에서 이미지 선택을 위한 런처
@@ -106,7 +128,8 @@ fun EditScreen(
     }
 
     fun openMyShorts() {
-        galleryVideoLauncher.launch("video/*")
+        videoViewModel.fetchMyVideos()  // 다이얼로그가 표시될 때 데이터 로드
+        showVideoSelectorDialog = true
         showVideoDialog = false
     }
 
@@ -150,8 +173,19 @@ fun EditScreen(
                     .clickable { showVideoDialog = true },
                 contentAlignment = Alignment.Center
             ) {
-                if (viewModel.videoSelected && viewModel.videoThumbnail != null) {
-                    // 비디오 썸네일 표시
+                if (selectedVideoDto != null) {
+                    // VideoDto에서 썸네일 URL이 있는 경우 해당 썸네일 표시
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(selectedVideoDto?.thumbnail)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "선택된 비디오",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (viewModel.videoSelected && viewModel.videoThumbnail != null) {
+                    // viewModel에 썸네일이 있는 경우 (갤러리에서 선택한 경우)
                     Image(
                         bitmap = viewModel.videoThumbnail!!.asImageBitmap(),
                         contentDescription = "선택된 비디오",
@@ -370,7 +404,21 @@ fun EditScreen(
 
             // 편집하기 버튼
             Button(
-                onClick = { viewModel.processEditing() },
+                onClick = {
+                    // 선택된 비디오가 VideoDto에서 온 경우, 해당 URL을 viewModel에 설정
+                    if (selectedVideoDto != null && !viewModel.videoSelected) {
+                        try {
+                            val videoUrl = selectedVideoDto?.videoUrl
+                            if (videoUrl != null && (videoUrl.startsWith("content://") || videoUrl.startsWith("file://") || videoUrl.startsWith("http"))) {
+                                val videoUri = Uri.parse(videoUrl)
+                                viewModel.setSelectedVideo(videoUri)
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "비디오 로드 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    viewModel.processEditing()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -379,7 +427,7 @@ fun EditScreen(
                     disabledContainerColor = Color.Gray
                 ),
                 shape = RoundedCornerShape(8.dp),
-                enabled = !viewModel.isLoading && viewModel.videoSelected // 로딩 중이 아니고 비디오가 선택된 경우만 활성화
+                enabled = (!viewModel.isLoading && (viewModel.videoSelected || selectedVideoDto != null)) // 선택된 비디오가 있거나 VideoDto가 있는 경우 활성화
             ) {
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(
@@ -413,6 +461,31 @@ fun EditScreen(
             hasMosaic = viewModel.hasMosaic,
             hasKoreanSubtitle = viewModel.applySubtitle,
             hasBackgroundMusic = viewModel.hasBackgroundMusic
+        )
+    }
+
+    // 비디오 선택기 다이얼로그 추가
+    if (showVideoSelectorDialog) {
+        VideoSelectorFullScreenDialog(
+            myVideos = myVideos,
+            onDismiss = {
+                showVideoSelectorDialog = false
+            },
+            onVideoSelected = { video ->
+                try {
+                    // VideoDto 객체 자체를 저장
+                    selectedVideoDto = video
+
+                    // 비디오 제목도 설정
+                    viewModel.updateVideoTitle(video.videoTitle)
+
+                    // 토스트 메시지로 선택 성공 알림
+                    Toast.makeText(context, "비디오 '${video.videoTitle}' 선택됨", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "비디오 로드 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+                showVideoSelectorDialog = false
+            }
         )
     }
 

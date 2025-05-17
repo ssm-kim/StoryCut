@@ -32,13 +32,28 @@ class AuthInterceptor @Inject constructor(
     private val context: Context // 컨텍스트 주입 추가
 ) : Interceptor {
 
+    private val noAuthPaths = listOf(
+        "/api/v1/spring/auth/login",
+    )
+
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         // 원본 요청 가져오기
         val originalRequest: Request = chain.request()
 
-        // 토큰을 추가한 요청 생성
-        val requestWithToken = addTokenToRequest(originalRequest)
+        // 현재 요청 URL 경로 가져오기
+        val url = originalRequest.url.toString()
+
+        // 인증이 필요없는 경로인지 확인
+        val isAuthExempt = noAuthPaths.any { path -> url.contains(path) }
+
+        // 인증 면제 경로면 원본 요청 그대로 진행, 아니면 토큰 추가
+        val requestWithToken = if (isAuthExempt) {
+            Log.d(TAG, "인증 면제 경로: $url - 토큰 추가하지 않음")
+            originalRequest
+        } else {
+            addTokenToRequest(originalRequest)
+        }
 
         // 수정된 요청으로 서버 응답 받기
         var response = chain.proceed(requestWithToken)

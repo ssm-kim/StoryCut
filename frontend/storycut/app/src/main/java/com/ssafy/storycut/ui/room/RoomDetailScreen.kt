@@ -1,14 +1,8 @@
 package com.ssafy.storycut.ui.room
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,7 +32,7 @@ import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.mypage.VideoViewModel
 import com.ssafy.storycut.ui.room.dialog.UploadShortDialog
-import com.ssafy.storycut.ui.room.upload.VideoSelectorFullScreenDialog
+import com.ssafy.storycut.ui.common.VideoSelectorFullScreenDialog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -88,26 +82,18 @@ fun RoomDetailScreen(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    // 로딩 시 데이터 가져오기
     LaunchedEffect(roomId) {
         try {
-            val token = tokenManager.accessToken.first()
-            if (token == null) {
-                showToast("로그인이 필요합니다.")
-                return@LaunchedEffect
-            }
             roomViewModel.getRoomDetail(roomId)
             roomViewModel.getRoomMembers(roomId)
             roomViewModel.getRoomVideos(roomId) // 비디오 목록 로드 추가
 
             // 내 비디오 목록도 미리 로드
-            videoViewModel.fetchMyVideos(token)
+            videoViewModel.fetchMyVideos()  // 토큰 파라미터 제거
         } catch (e: Exception) {
             println("데이터 로드 실패: ${e.message}")
         }
     }
-
-
 
     // 업로드 성공 시 처리
     LaunchedEffect(uploadSuccess) {

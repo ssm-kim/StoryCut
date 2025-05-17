@@ -11,7 +11,6 @@ import com.ssafy.storycut.ui.home.HomeScreen
 import com.ssafy.storycut.ui.mypage.MyPageScreen
 import com.ssafy.storycut.ui.mypage.VideoViewModel
 import com.ssafy.storycut.ui.settings.SettingsScreen
-import ShortsScreen
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavType
@@ -20,6 +19,7 @@ import com.ssafy.storycut.ui.edit.EditViewModel
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
 import com.ssafy.storycut.ui.room.RoomDetailScreen // 추가된 import
 import com.ssafy.storycut.ui.room.RoomVideoDetailScreen
+import com.ssafy.storycut.ui.shorts.ShortsScreen
 
 /**
  * 메인 화면의 네비게이션 그래프를 확장 함수로 정의
@@ -42,8 +42,10 @@ fun NavGraphBuilder.mainGraph(
     composable(Navigation.Main.EDIT) {
         // hiltViewModel()을 사용하여 EditViewModel 인스턴스 생성
         val editViewModel = hiltViewModel<EditViewModel>()
+        val VideoViewModel = hiltViewModel<VideoViewModel>()
         EditScreen(
             viewModel = editViewModel,
+            videoViewModel = VideoViewModel,
             onEditSuccess = { videoId ->
                 // 편집 성공 시 비디오 상세 페이지로 이동
                 navController.navigate("video_detail/$videoId")
@@ -95,7 +97,6 @@ fun NavGraphBuilder.mainGraph(
         VideoDetailScreen(
             videoId = videoId,
             navController = navController,
-            tokenManager = tokenManager
         )
     }
 

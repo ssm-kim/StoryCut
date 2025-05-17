@@ -12,12 +12,12 @@ interface VideoApiService {
 
     @GET("video")
     suspend fun getMyVideos(
-        @Header("Authorization") token: String,
         @Query("isOriginal") isOriginal: Boolean = false): Response<BaseResponse<List<VideoDto>>>
+
     @GET("video/{videoId}")
-    suspend fun getMyVideo(@Path("videoId") videoId: String, @Header("Authorization") token: String
+    suspend fun getMyVideo(@Path("videoId") videoId: String
     ): Response<BaseResponse<VideoDto>>
 
     @GET("video/room/{roomId}")
-    suspend fun getRoomVideos(@Path("roomId") roomId: String, @Header("Authorization") token: String): Response<BaseResponse<List<VideoDto>>>
+    suspend fun getRoomVideos(@Path("roomId") roomId: String): Response<BaseResponse<List<VideoDto>>>
 }
