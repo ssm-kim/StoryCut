@@ -1,8 +1,10 @@
 package com.ssafy.storycut.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,15 +18,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.ssafy.storycut.R
+import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.ui.home.dialog.CreateRoomDialog
 import com.ssafy.storycut.ui.home.dialog.EnterRoomDialog
+import com.ssafy.storycut.ui.home.dialog.LeaveRoomDialog
 import com.ssafy.storycut.ui.home.dialog.RoomOptionsDialog
 import com.ssafy.storycut.ui.navigation.Navigation
 import com.ssafy.storycut.ui.navigation.navigateToMainTab
@@ -50,6 +60,8 @@ fun HomeScreen(
     var showRoomOptionsDialog by remember { mutableStateOf(false) }
     var showCreateRoomDialog by remember { mutableStateOf(false) }
     var showEnterRoomDialog by remember { mutableStateOf(false) }
+    var showLeaveRoomDialog by remember { mutableStateOf(false) }
+    var selectedRoom by remember { mutableStateOf<RoomDto?>(null) }
 
     // 생성 또는 입장 진행 상태
     var isProcessingRoom by remember { mutableStateOf(false) }
@@ -350,9 +362,13 @@ fun HomeScreen(
                                 .padding(horizontal = 16.dp)
                                 .padding(bottom = 16.dp)
                         ) {
-                            RoomItem(
+                            RoomItemWithLongPress(
                                 room = room,
-                                onClick = { onRoomClick(room.roomId.toString()) }
+                                onClick = { onRoomClick(room.roomId.toString()) },
+                                onLongClick = {
+                                    selectedRoom = room
+                                    showLeaveRoomDialog = true
+                                }
                             )
                         }
                     }
@@ -396,6 +412,19 @@ fun HomeScreen(
                 }
             )
         }
+
+        // 방 나가기 다이얼로그
+        if (showLeaveRoomDialog) {
+            LeaveRoomDialog(
+                room = selectedRoom,
+                onDismiss = { showLeaveRoomDialog = false },
+                onLeaveRoom = { roomId ->
+                    homeViewModel.leaveRoom(roomId)
+                    showLeaveRoomDialog = false
+                }
+            )
+        }
+
         if (isProcessingRoom) {
             Box(
                 modifier = Modifier

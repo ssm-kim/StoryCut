@@ -3,6 +3,7 @@ package com.ssafy.storycut.ui.home
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,15 +34,21 @@ import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.room.RoomDto
 
 @Composable
-fun RoomItem(
+fun RoomItemWithLongPress(
     room: RoomDto,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .clickable(onClick = onClick),
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = { onLongClick() },
+                    onTap = { onClick() }
+                )
+            },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -48,7 +56,7 @@ fun RoomItem(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
         ),
-        border = BorderStroke(1.dp, Color(0xFFE0E0E0))  // 연한 회색 테두리 추가
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -92,7 +100,7 @@ fun RoomItem(
             ) {
                 Column {
                     Text(
-                        text = room.roomTitle ?: "EPL 명장면 쇼츠",
+                        text = room.roomTitle,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -100,7 +108,7 @@ fun RoomItem(
                     )
 
                     Text(
-                        text = "쇼츠 • 롱징",
+                        text = "쇼츠",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
