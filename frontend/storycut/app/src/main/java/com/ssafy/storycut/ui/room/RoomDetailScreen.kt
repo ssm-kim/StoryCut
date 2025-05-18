@@ -5,14 +5,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -29,10 +34,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.VideoDto
+import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.mypage.VideoViewModel
 import com.ssafy.storycut.ui.room.dialog.UploadShortDialog
 import com.ssafy.storycut.ui.common.VideoSelectorFullScreenDialog
+import com.ssafy.storycut.ui.room.video.RoomVideoItem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -59,6 +66,10 @@ fun RoomDetailScreen(
     val hasMoreVideos by roomViewModel.hasMoreVideos.collectAsState()
     val currentPage by roomViewModel.currentPage.collectAsState()
 
+    // 검색 관련 상태 추가
+    var searchQuery by remember { mutableStateOf("") }
+    var filteredVideos by remember { mutableStateOf<List<ChatDto>>(emptyList()) }
+
     var showInviteCodeDialog by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
     var showVideoSelectorDialog by remember { mutableStateOf(false) }
@@ -70,6 +81,25 @@ fun RoomDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    // 검색어 변경 시 비디오 목록 필터링
+    LaunchedEffect(searchQuery, roomVideos) {
+        filteredVideos = if (searchQuery.isBlank()) {
+            roomVideos
+        } else {
+            roomVideos.filter { video ->
+                video.title?.contains(searchQuery, ignoreCase = true) ?: false
+            }
+        }
+    }
+
+    // 스크롤 위치 감지하여 필요시 추가 데이터 로드
+    LaunchedEffect(scrollState.value) {
+        // 스크롤이 끝에 도달했고, 더 로드할 데이터가 있으며, 현재 로딩 중이 아니라면
+        if (scrollState.value >= scrollState.maxValue - 200 && hasMoreVideos && !isVideosLoading && searchQuery.isBlank()) {
+            roomViewModel.loadMoreVideos(roomId)
+        }
+    }
 
     // 다이얼로그 상태 초기화 함수
     fun resetDialogStates() {
@@ -108,18 +138,31 @@ fun RoomDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("공유방") },
+                title = { /* 타이틀 없음 */ },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    // 왼쪽에 로고 이미지 배치 - 크기 증가
+                    Icon(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "로고",
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .size(72.dp)  // 크기를 64dp로 설정
+                    )
+                },
+                actions = {
+                    // 오른쪽에 설정 아이콘 배치 - 크기 증가
+                    IconButton(onClick = { /* 설정 클릭 시 동작 */ }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "뒤로 가기"
+                            imageVector = Icons.Default.Settings,  // Material Icons의 설정 아이콘 사용
+                            contentDescription = "설정",
+                            modifier = Modifier.size(30.dp)  // 아이콘 크기를 30dp로 증가
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = Color(0xFFFCF7F0),  // FCF7F0 색상으로 변경
+                    navigationIconContentColor = Color.Black,  // 아이콘 색상을 검정으로 변경
+                    actionIconContentColor = Color.Black       // 아이콘 색상을 검정으로 변경
                 )
             )
         }
@@ -149,181 +192,263 @@ fun RoomDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
-                    // 썸네일 이미지
+                    // 상단 영역 (FCF7F0 색상, 하단에 50dp 둥근 모서리)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp)
+                            .clip(RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp))
+                            .background(Color(0xFFFCF7F0))
                     ) {
-                        // 썸네일 이미지 로드
-                        if (roomDetail?.roomThumbnail != null && roomDetail?.roomThumbnail != "default_thumbnail") {
-                            // 서버 URL에서 이미지 로드
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(roomDetail?.roomThumbnail)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "방 썸네일",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            // 기본 이미지 표시
-                            Box(
+                        Column {
+                            // 썸네일 이미지 부분
+                            Card(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.logo),
-                                    contentDescription = "기본 썸네일",
-                                    tint = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(64.dp)
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 4.dp
                                 )
-                            }
-                        }
-                    }
-
-                    // 방 정보 카드 (디자인을 이미지처럼 수정)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // 방 제목과 정보 (좌우 배열)
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top,
-                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(
-                                    modifier = Modifier.weight(1f)
+                                Box(
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    // 방 제목
-                                    Text(
-                                        text = roomDetail?.roomTitle ?: "방 제목",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    // 방 설명
-                                    Text(
-                                        text = roomDetail?.roomContext ?: "방 설명",
-                                        fontSize = 12.sp,
-                                        color = Color.Gray,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                                    // 멤버 수
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "멤버 : ",
-                                            fontSize = 12.sp,
-                                            color = Color.Gray
+                                    // 썸네일 이미지 로드
+                                    if (roomDetail?.roomThumbnail != null && roomDetail?.roomThumbnail != "default_thumbnail") {
+                                        // 서버 URL에서 이미지 로드
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(roomDetail?.roomThumbnail)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = "방 썸네일",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                        Text(
-                                            text = "${roomMembers.size}명",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-
-
-                                Column(
-                                    horizontalAlignment = Alignment.End,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // 쇼츠 업로드 버튼
-                                    FilledTonalButton(
-                                        onClick = {
-                                            showUploadDialog = true
-                                        },
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = Color(0xFFE0E0E0),
-                                            contentColor = Color.Black
-                                        ),
-                                        shape = RoundedCornerShape(4.dp),
-                                        contentPadding = PaddingValues(
-                                            horizontal = 12.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        modifier = Modifier.width(120.dp)  // 버튼 가로 길이 120dp로 늘림
-                                    ) {
-                                        Text(
-                                            text = "쇼츠 업로드",
-                                            fontSize = 12.sp
-                                        )
-                                    }
-
-                                    // 초대코드 버튼
-                                    FilledTonalButton(
-                                        onClick = {
-                                            if (inviteCode.isNotEmpty()) {
-                                                showInviteCodeDialog = true
-                                            } else {
-                                                scope.launch {
-                                                    try {
-                                                        isGeneratingCode = true
-                                                        roomViewModel.createInviteCode(roomId)
-                                                        showInviteCodeDialog = true
-                                                    } catch (e: Exception) {
-                                                        showToast("초대코드 생성 실패")
-                                                    } finally {
-                                                        isGeneratingCode = false
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = Color(0xFFE0E0E0),
-                                            contentColor = Color.Black
-                                        ),
-                                        shape = RoundedCornerShape(4.dp),
-                                        contentPadding = PaddingValues(
-                                            horizontal = 12.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        border = null,
-                                        enabled = !isLoading && !isGeneratingCode,
-                                        modifier = Modifier.width(120.dp)  // 버튼 가로 길이 120dp로 늘림
-                                    ) {
-                                        if (isGeneratingCode) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(16.dp),
-                                                strokeWidth = 2.dp,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        } else {
-                                            Text(
-                                                text = "초대 코드",
-                                                fontSize = 12.sp
+                                    } else {
+                                        // 기본 이미지 표시
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.logo),
+                                                contentDescription = "기본 썸네일",
+                                                tint = Color.White.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(64.dp)
                                             )
                                         }
                                     }
                                 }
                             }
+
+                            // 방 정보 섹션
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    // 방 제목과 정보 (좌우 배열)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.Top,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            // 방 제목
+                                            Text(
+                                                text = roomDetail?.roomTitle ?: "방 제목",
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            // 방 설명
+                                            Text(
+                                                text = roomDetail?.roomContext ?: "방 설명",
+                                                fontSize = 16.sp,
+                                                color = Color.Gray,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+
+                                            Spacer(modifier = Modifier.height(20.dp))
+
+                                            // 멤버 수
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "멤버 : ",
+                                                    fontSize = 16.sp,
+                                                    color = Color.Gray
+                                                )
+                                                Text(
+                                                    text = "${roomMembers.size}명",
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+
+                                        Column(
+                                            horizontalAlignment = Alignment.End,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            // 쇼츠 업로드 버튼
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    showUploadDialog = true
+                                                },
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    containerColor = Color(0xFFD0B699),  // 색상을 D0B699로 변경
+                                                    contentColor = Color.White  // 글자 색상을 흰색으로 변경
+                                                ),
+                                                shape = RoundedCornerShape(4.dp),
+                                                contentPadding = PaddingValues(
+                                                    horizontal = 12.dp,
+                                                    vertical = 8.dp
+                                                ),
+                                                modifier = Modifier.width(120.dp)
+                                            ) {
+                                                Text(
+                                                    text = "쇼츠 업로드",
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+
+                                            // 초대코드 버튼
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    if (inviteCode.isNotEmpty()) {
+                                                        showInviteCodeDialog = true
+                                                    } else {
+                                                        scope.launch {
+                                                            try {
+                                                                isGeneratingCode = true
+                                                                roomViewModel.createInviteCode(roomId)
+                                                                showInviteCodeDialog = true
+                                                            } catch (e: Exception) {
+                                                                showToast("초대코드 생성 실패")
+                                                            } finally {
+                                                                isGeneratingCode = false
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    containerColor = Color(0xFFD0B699),  // 색상을 D0B699로 변경
+                                                    contentColor = Color.White  // 글자 색상을 흰색으로 변경
+                                                ),
+                                                shape = RoundedCornerShape(4.dp),
+                                                contentPadding = PaddingValues(
+                                                    horizontal = 12.dp,
+                                                    vertical = 8.dp
+                                                ),
+                                                border = null,
+                                                enabled = !isLoading && !isGeneratingCode,
+                                                modifier = Modifier.width(120.dp)
+                                            ) {
+                                                if (isGeneratingCode) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        strokeWidth = 2.dp,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = "초대 코드",
+                                                        fontSize = 12.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp)
+                                    .padding(bottom = 24.dp, top = 8.dp)
+                            ) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color.White,
+                                    tonalElevation = 2.dp
+                                ) {
+                                    BasicTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp),
+                                        textStyle = LocalTextStyle.current.copy(
+                                            fontSize = 14.sp,
+                                            color = Color.Black
+                                        ),
+                                        singleLine = true,
+                                        cursorBrush = SolidColor(Color(0xFFFCF7F0)),
+                                        decorationBox = { innerTextField ->
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Search,
+                                                    contentDescription = "검색",
+                                                    tint = Color.Gray,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .padding(horizontal = 8.dp)
+                                                ) {
+                                                    if (searchQuery.isEmpty()) {
+                                                        Text(
+                                                            "쇼츠 검색",
+                                                            color = Color.Gray.copy(alpha = 0.7f),
+                                                            fontSize = 14.sp
+                                                        )
+                                                    }
+                                                    innerTextField()
+                                                }
+
+                                                if (searchQuery.isNotEmpty()) {
+                                                    IconButton(
+                                                        onClick = { searchQuery = "" },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Clear,
+                                                            contentDescription = "지우기",
+                                                            tint = Color.Gray,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
-
-                    HorizontalDivider(
-                        color = Color.LightGray,
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
 
                     // 비디오 목록 제목
                     Text(
@@ -333,8 +458,8 @@ fun RoomDetailScreen(
                         modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
                     )
 
-                    // 비디오 목록 표시 방식 변경 - LazyVerticalGrid 대신 일반 Column으로 대체
-                    if (roomVideos.isEmpty()) {
+                    // 비디오 목록 표시 방식 변경 - filteredVideos를 사용하도록 수정
+                    if (filteredVideos.isEmpty()) {
                         // 비디오가 없는 경우 메시지 표시
                         Box(
                             modifier = Modifier
@@ -347,7 +472,7 @@ fun RoomDetailScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "업로드된 쇼츠가 없습니다",
+                                    text = if (searchQuery.isBlank()) "업로드된 쇼츠가 없습니다" else "검색 결과가 없습니다",
                                     color = Color.Gray,
                                     textAlign = TextAlign.Center
                                 )
@@ -361,7 +486,7 @@ fun RoomDetailScreen(
                                 .padding(horizontal = 16.dp)
                         ) {
                             // 항목을 2개씩 묶어서 행으로 표시
-                            val videoChunks = roomVideos.chunked(2)
+                            val videoChunks = filteredVideos.chunked(2)
 
                             videoChunks.forEach { rowVideos ->
                                 Row(
@@ -390,34 +515,25 @@ fun RoomDetailScreen(
                                 }
                             }
 
-                            // 더 불러오기 버튼
-                            if (hasMoreVideos) {
+                            // 로딩 표시기 추가 (더 보기 버튼 대신)
+                            if (isVideosLoading && currentPage > 0 && searchQuery.isBlank()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (isVideosLoading && currentPage > 0) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    } else {
-                                        Button(
-                                            onClick = { roomViewModel.loadMoreVideos(roomId) },
-                                            modifier = Modifier.fillMaxWidth(0.7f)
-                                        ) {
-                                            Text("더 보기")
-                                        }
-                                    }
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(32.dp),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             }
                         }
                     }
 
                     // 초기 로딩 중인 경우 로딩 표시
-                    if (isVideosLoading && currentPage == 0) {
+                    if (isVideosLoading && currentPage == 0 && searchQuery.isBlank()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()

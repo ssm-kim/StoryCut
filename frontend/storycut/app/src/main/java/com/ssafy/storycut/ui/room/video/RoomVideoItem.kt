@@ -1,4 +1,4 @@
-package com.ssafy.storycut.ui.room
+package com.ssafy.storycut.ui.room.video
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -18,7 +18,7 @@ import androidx.navigation.navArgument
 import com.ssafy.storycut.ui.edit.EditViewModel
 import com.ssafy.storycut.ui.mypage.VideoDetailScreen
 import com.ssafy.storycut.ui.room.RoomDetailScreen // 추가된 import
-import com.ssafy.storycut.ui.room.RoomVideoDetailScreen
+import com.ssafy.storycut.ui.room.video.RoomVideoDetailScreen
 import com.ssafy.storycut.ui.shorts.ShortsScreen
 
 /**

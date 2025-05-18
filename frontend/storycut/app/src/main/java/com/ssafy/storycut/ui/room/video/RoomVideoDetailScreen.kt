@@ -1,4 +1,4 @@
-package com.ssafy.storycut.ui.room
+package com.ssafy.storycut.ui.room.video
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -26,6 +26,9 @@ import androidx.navigation.NavController
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import kotlinx.coroutines.flow.first
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import com.ssafy.storycut.ui.room.RoomViewModel
 import kotlinx.coroutines.delay
 
 private const val TAG = "RoomVideoDetailScreen"
@@ -192,8 +195,8 @@ fun RoomVideoDetailScreen(
 
     // 생명주기 관리
     DisposableEffect(lifecycleOwner) {
-        val activity = context as? androidx.activity.ComponentActivity
-        val callback = object : androidx.activity.OnBackPressedCallback(true) {
+        val activity = context as? ComponentActivity
+        val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 handleBackPress()
             }
