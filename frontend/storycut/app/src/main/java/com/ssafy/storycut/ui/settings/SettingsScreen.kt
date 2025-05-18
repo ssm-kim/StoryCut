@@ -1,6 +1,7 @@
 package com.ssafy.storycut.ui.settings
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -22,7 +24,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.auth.AuthViewModel
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -31,7 +32,7 @@ fun SettingsScreen(
     onNavigateToLogin: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    
+
     // 로그인 화면 이동 이벤트 수신
     LaunchedEffect(authViewModel) {
         authViewModel.navigationEvent.collect { event ->
@@ -44,6 +45,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        containerColor = Color.White, // 명시적으로 배경색 흰색으로 설정
         topBar = {
             TopAppBar(
                 title = { Text("설정") },
@@ -54,13 +56,17 @@ fun SettingsScreen(
                             contentDescription = "뒤로가기"
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White // TopAppBar 배경색도 흰색으로 설정
+                )
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White) // 컬럼 배경색도 흰색으로 설정
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {

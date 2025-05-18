@@ -110,4 +110,21 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun deleteAccount(): Result<Unit> {
+        return try {
+            val response = authApiService.deleteId()
+            if (response.isSuccessful && response.body()?.isSuccess == true) {
+                // 서버에서 회원 정보 삭제 성공, 로컬 데이터도 삭제
+                userDao.deleteAllUsers()
+                Result.success(Unit)
+            } else {
+                // 서버에서 삭제 실패, 에러 반환
+                Result.failure(Exception(response.body()?.message ?: "회원 탈퇴 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            // 네트워크 오류 등이 발생했을 때 에러 반환
+            Result.failure(Exception("회원 탈퇴 요청 중 오류 발생: ${e.message}", e))
+        }
+    }
+
 }

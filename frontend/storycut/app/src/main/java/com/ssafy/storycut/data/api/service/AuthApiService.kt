@@ -7,6 +7,7 @@ import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -24,6 +25,9 @@ interface AuthApiService {
     suspend fun getMemberById(
         @Path("memberId") memberId: Long
     ): Response<BaseResponse<UserInfo>>
+
+    @DELETE("members")
+    suspend fun deleteId(): Response<BaseResponse<Unit>>
 
     // 토큰 갱신 API 추가
     @POST("auth/refresh")
