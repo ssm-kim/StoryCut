@@ -14,7 +14,7 @@ import com.google.api.services.youtube.model.VideoSnippet
 import com.google.api.services.youtube.model.VideoStatus
 import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.GoogleLoginRequest
-import com.ssafy.storycut.data.api.model.TokenResult
+import com.ssafy.storycut.data.api.model.TokenDto
 import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import com.ssafy.storycut.data.local.datastore.TokenManager
@@ -163,8 +163,12 @@ class AuthRepository @Inject constructor(
                 }
 
                 // 리프레시 토큰 헤더 설정
-                val authHeader = "Bearer $refreshToken"
-                val response = RetrofitClient.authService.refreshToken(authHeader)
+                val tokenDto = TokenDto(
+                    accessToken = "",
+                    refreshToken = refreshToken,
+                    googleAccessToken = ""
+                )
+                val response = RetrofitClient.authService.refreshToken(tokenDto)
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
