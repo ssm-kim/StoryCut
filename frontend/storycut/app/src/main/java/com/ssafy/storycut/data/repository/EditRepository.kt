@@ -155,7 +155,8 @@ class EditRepository @Inject constructor(
         imageUrls: List<String>,
         videoTitle: String,
         applySubtitle: Boolean,
-        musicPrompt: String?
+        musicPrompt: String?,
+        autoMusic: Boolean = false
     ): Result<Boolean> {  // VideoDto 대신 Boolean으로 변경 (성공 여부만 반환)
         return withContext(Dispatchers.IO) {
             try {
@@ -166,7 +167,8 @@ class EditRepository @Inject constructor(
                     images = imageUrls,
                     videoTitle = videoTitle,
                     subtitle = applySubtitle,
-                    musicPrompt = musicPrompt ?: ""
+                    musicPrompt = musicPrompt ?: "",
+                    autoMusic = autoMusic  // autoMusic 필드 추가
                 )
 
                 // 인증 토큰 가져오기

@@ -53,9 +53,28 @@ class EditViewModel @Inject constructor(
     var videoTitle by mutableStateOf("")
         private set
 
+    var autoMusic by mutableStateOf(false)
+        private set
+
+    // 배경 음악 자동 생성 옵션 설정 - 함수명 변경
+    fun updateAutoMusic(auto: Boolean) {
+        autoMusic = auto
+    }
+
     fun updateVideoTitle(title: String) {
         videoTitle = title
     }
+
+    // 배경 음악 설정 함수 - 옵션과 자동 설정 여부를 함께 처리
+    fun setBackgroundMusic(enable: Boolean, auto: Boolean = false) {
+        hasBackgroundMusic = enable
+        autoMusic = auto
+        // 자동 생성 모드일 경우 프롬프트 초기화
+        if (auto) {
+            musicPromptText = ""
+        }
+    }
+
 
     // 이벤트 플로우
     private val _events = MutableSharedFlow<EditEvent>()
@@ -168,7 +187,8 @@ class EditViewModel @Inject constructor(
                     imageUrls = imageUrls,
                     videoTitle = videoTitle,
                     applySubtitle = applySubtitle,
-                    musicPrompt = if (hasBackgroundMusic) musicPromptText.takeIf { it.isNotBlank() } else null
+                    musicPrompt = if (hasBackgroundMusic && !autoMusic) musicPromptText.takeIf { it.isNotBlank() } else null,
+                    autoMusic = hasBackgroundMusic && autoMusic // 자동 음악 생성 여부 전달
                 )
 
                 isLoading = false
@@ -204,13 +224,12 @@ class EditViewModel @Inject constructor(
         hasMosaic = false
         applySubtitle = false
         hasBackgroundMusic = false
+        autoMusic = false // autoMusic 초기화 추가
 
         // 모자이크 이미지 및 음악 프롬프트 초기화
         mosaicImages = emptyList()
         musicPromptText = ""
     }
-
-
 
     // 이벤트 클래스
     sealed class EditEvent {

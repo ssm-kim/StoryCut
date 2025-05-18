@@ -6,5 +6,6 @@ data class VideoProcessRequest(
     val images: List<String> = emptyList(),
     val videoTitle : String,
     val subtitle: Boolean,
-    val musicPrompt: String
+    val musicPrompt: String,
+    val autoMusic: Boolean
 )

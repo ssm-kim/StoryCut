@@ -39,6 +39,7 @@ import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.ui.edit.dialog.OptionDialog
 import com.ssafy.storycut.ui.common.VideoUploadDialog
 import com.ssafy.storycut.ui.common.VideoSelectorFullScreenDialog
+import com.ssafy.storycut.ui.edit.dialog.MusicSelectionDialog
 import com.ssafy.storycut.ui.mypage.VideoViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -61,6 +62,9 @@ fun EditScreen(
     // VideoViewModel에서 내 비디오 목록 가져오기
     val myVideos by videoViewModel.myVideos.collectAsState()
     val isVideosLoading by videoViewModel.isLoading.collectAsState()
+
+    // 배경 음악 선택 다이얼로그 상태 변수 추가
+    var showBackgroundMusicDialog by remember { mutableStateOf(false) }
 
     // 오류 메시지 표시를 위한 효과
     LaunchedEffect(viewModel.error) {
@@ -332,20 +336,31 @@ fun EditScreen(
                     title = "배경 음악",
                     onRemove = { viewModel.toggleBackgroundMusic(false) }
                 ) {
-                    // 배경 음악 설정 영역 내용 - musicPromptText 사용으로 변경
-                    OutlinedTextField(
-                        value = viewModel.musicPromptText,
-                        onValueChange = { viewModel.updateMusicPromptText(it) },
-                        placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color.LightGray,
-                            focusedBorderColor = Color.Gray
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                    // 자동 음악 생성 모드일 때와 프롬프트 모드일 때 다른 UI 표시
+                    if (viewModel.autoMusic) {
+                        // 자동 음악 생성 모드
+                        Text(
+                            "영상 내용에 맞는 배경 음악이 자동으로 생성됩니다.",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        // 프롬프트 음악 생성 모드
+                        OutlinedTextField(
+                            value = viewModel.musicPromptText,
+                            onValueChange = { viewModel.updateMusicPromptText(it) },
+                            placeholder = { Text("음악 분위기를 설명해주세요 (예: 신나는, 슬픈, 로맨틱한)") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = Color.LightGray,
+                                focusedBorderColor = Color.Gray
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    }
                 }
                 HorizontalDivider(color = Color.LightGray)
             }
@@ -457,7 +472,10 @@ fun EditScreen(
             onDismiss = { showOptionDialog = false },
             onMosaicClick = { viewModel.toggleMosaic(true) },
             onKoreanSubtitleClick = { viewModel.toggleKoreanSubtitle(true) },
-            onBackgroundMusicClick = { viewModel.toggleBackgroundMusic(true) },
+            onBackgroundMusicClick = {
+                showBackgroundMusicDialog = true  // 옵션 다이얼로그에서 배경 음악 옵션 선택 시 새 다이얼로그 표시
+                showOptionDialog = false
+            },
             hasMosaic = viewModel.hasMosaic,
             hasKoreanSubtitle = viewModel.applySubtitle,
             hasBackgroundMusic = viewModel.hasBackgroundMusic
@@ -485,6 +503,19 @@ fun EditScreen(
                     Toast.makeText(context, "비디오 로드 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
                 showVideoSelectorDialog = false
+            }
+        )
+    }
+
+    // 배경 음악 선택 다이얼로그 추가
+    if (showBackgroundMusicDialog) {
+        MusicSelectionDialog(
+            onDismiss = { showBackgroundMusicDialog = false },
+            onAutoMusicClick = {
+                viewModel.setBackgroundMusic(true, true)  // 자동 음악 생성 모드로 설정
+            },
+            onPromptMusicClick = {
+                viewModel.setBackgroundMusic(true, false)  // 프롬프트 음악 생성 모드로 설정
             }
         )
     }
