@@ -71,11 +71,10 @@ class UserRepository @Inject constructor(
     /**
      * 로그아웃 - 모든 사용자 정보 삭제 , 서버/로컬 모두
      */
-    suspend fun logout(authToken: String) {
+    suspend fun logout() {
         try {
-            val token = if (authToken.startsWith("Bearer ")) authToken else "Bearer $authToken"
 
-            val response = authApiService.logout(token)
+            val response = authApiService.logout()
             if (response.isSuccessful) {
                 // 서버 로그아웃 성공, 로컬 데이터 삭제
                 userDao.deleteAllUsers()
@@ -91,16 +90,16 @@ class UserRepository @Inject constructor(
         }
     }
     // 로컬 삭제
-    suspend fun logout() {
+    suspend fun localLogout() {
         userDao.deleteAllUsers()
     }
 
     /**
      * 특정 ID의 사용자 정보를 API로 조회하기
      */
-    suspend fun getMemberById(authToken: String, memberId: Long): Result<UserInfo> {
+    suspend fun getMemberById(memberId: Long): Result<UserInfo> {
         return try {
-            val response = authApiService.getMemberById("Bearer $authToken", memberId)
+            val response = authApiService.getMemberById(memberId)
             if (response.isSuccessful && response.body()?.isSuccess == true) {
                 Result.success(response.body()?.result!!)
             } else {

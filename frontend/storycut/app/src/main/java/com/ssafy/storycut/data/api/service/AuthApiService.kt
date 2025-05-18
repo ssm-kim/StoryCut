@@ -22,7 +22,6 @@ interface AuthApiService {
     // 특정 회원 정보 조회 API 추가
     @GET("members/{memberId}")
     suspend fun getMemberById(
-        @Header("Authorization") authorization: String,
         @Path("memberId") memberId: Long
     ): Response<BaseResponse<UserInfo>>
 
@@ -31,7 +30,7 @@ interface AuthApiService {
     suspend fun refreshToken(@Header("Authorization") refreshToken: String): Response<BaseResponse<TokenResult>>
 
     @POST("auth/logout")
-    suspend fun logout(@Header("Authorization") authorization: String): Response<BaseResponse<Unit>>
+    suspend fun logout(): Response<BaseResponse<Unit>>
 
     @GET("auth/youtube/auth")
     suspend fun getYouTubeAuthUrl(@Header("Authorization") authorization: String): Response<BaseResponse<GooglePermissionResponse>>

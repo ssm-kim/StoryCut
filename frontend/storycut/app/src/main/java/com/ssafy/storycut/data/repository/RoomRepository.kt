@@ -18,53 +18,57 @@ class RoomRepository @Inject constructor(
     private val chatApiService: ChatApiService
 ) {
     // 내 공유방 목록 조회
-    suspend fun getMyRooms(token: String): Response<BaseResponse<List<RoomDto>>> {
-        return roomApiService.getMyRooms("Bearer $token")
+    suspend fun getMyRooms(): Response<BaseResponse<List<RoomDto>>> {
+        return roomApiService.getMyRooms()
     }
 
     // 공유방 생성
-    suspend fun createRoom(request: CreateRoomRequest, token: String): Response<BaseResponse<RoomDto>> {
-        return roomApiService.createRoom(request, "Bearer $token")
+    suspend fun createRoom(request: CreateRoomRequest): Response<BaseResponse<RoomDto>> {
+        return roomApiService.createRoom(request)
     }
 
     // 공유방 삭제
-    suspend fun deleteRoom(roomId: String, token: String): Response<BaseResponse<Boolean>> {
-        return roomApiService.deleteRoom(roomId, "Bearer $token")
+    suspend fun deleteRoom(roomId: String): Response<BaseResponse<Boolean>> {
+        return roomApiService.deleteRoom(roomId)
     }
 
     // 공유방 수정
-    suspend fun updateRoom(roomDto: RoomDto, token: String): Response<BaseResponse<RoomDto>> {
-        return roomApiService.updateRoom(roomDto, "Bearer $token")
+    suspend fun updateRoom(roomDto: RoomDto): Response<BaseResponse<RoomDto>> {
+        return roomApiService.updateRoom(roomDto)
     }
 
     // 공유방 나가기
-    suspend fun leaveRoom(roomId: String, token: String): Response<BaseResponse<Boolean>> {
-        return roomApiService.leaveRoom(roomId, "Bearer $token")
+    suspend fun leaveRoom(roomId: String): Response<BaseResponse<Boolean>> {
+        return roomApiService.leaveRoom(roomId)
     }
 
     // 공유방 초대코드 생성
-    suspend fun createInviteCode(roomId: String, token: String): Response<BaseResponse<String>> {
-        return roomApiService.createInviteCode(roomId, "Bearer $token")
+    suspend fun createInviteCode(roomId: String): Response<BaseResponse<String>> {
+        return roomApiService.createInviteCode(roomId)
     }
 
     // 공유방 입장
-    suspend fun enterRoom(inviteCode: String, token: String): Response<BaseResponse<RoomDto>> {
-        return roomApiService.enterRoom(inviteCode, "Bearer $token")
+    suspend fun enterRoom(roomId: String, password: String? = null): Response<BaseResponse<RoomDto>> {
+        return if (password != null) {
+            roomApiService.enterRoom(roomId, password)
+        } else {
+            roomApiService.enterRoom(roomId)
+        }
     }
 
     // 공유방 참여자 목록 조회
-    suspend fun getRoomMembers(roomId: String, token: String): Response<BaseResponse<List<MemberDto>>> {
-        return roomApiService.getRoomMembers(roomId, "Bearer $token")
+    suspend fun getRoomMembers(roomId: String): Response<BaseResponse<List<MemberDto>>> {
+        return roomApiService.getRoomMembers(roomId)
     }
 
     // 공유방 상세 정보 조회
-    suspend fun getRoomDetail(roomId: String, token: String): Response<BaseResponse<RoomDto>> {
-        return roomApiService.getRoomDetail(roomId, "Bearer $token")
+    suspend fun getRoomDetail(roomId: String): Response<BaseResponse<RoomDto>> {
+        return roomApiService.getRoomDetail(roomId)
     }
 
     // 초대코드로 공유방 ID 조회
-    suspend fun decodeInviteCode(inviteCode: String, token: String): Response<BaseResponse<String>> {
-        return roomApiService.decodeInviteCode(inviteCode, "Bearer $token")
+    suspend fun decodeInviteCode(inviteCode: String): Response<BaseResponse<String>> {
+        return roomApiService.decodeInviteCode(inviteCode)
     }
 
     /**
@@ -76,10 +80,9 @@ class RoomRepository @Inject constructor(
      */
     suspend fun uploadRoomVideo(
         roomId: Long,
-        chatMessage: ChatMessageRequest,
-        token: String
+        chatMessage: ChatMessageRequest
     ): Response<BaseResponse<ChatDto>> {
-        return chatApiService.uploadRoomVideo(roomId, chatMessage, "Bearer $token")
+        return chatApiService.uploadRoomVideo(roomId, chatMessage)
     }
 
     /**
@@ -93,10 +96,9 @@ class RoomRepository @Inject constructor(
     suspend fun getRoomVideos(
         roomId: Long,
         page: Int = 0,
-        size: Int = 10,
-        token: String
+        size: Int = 10
     ): Response<BaseResponse<List<ChatDto>>> {
-        return chatApiService.getRoomVideos(roomId, page, size, "Bearer $token")
+        return chatApiService.getRoomVideos(roomId, page, size)
     }
 
     /**
@@ -106,10 +108,9 @@ class RoomRepository @Inject constructor(
      * @return API 응답
      */
     suspend fun getChatDetail(
-        chatId: String,
-        token: String
+        chatId: String
     ): Response<BaseResponse<ChatDto>> {
-        return chatApiService.getChatDetail(chatId, "Bearer $token")
+        return chatApiService.getChatDetail(chatId)
     }
 
     /**
@@ -119,10 +120,9 @@ class RoomRepository @Inject constructor(
      * @return API 응답
      */
     suspend fun deleteChat(
-        chatId: String,
-        token: String
+        chatId: String
     ): Response<BaseResponse<Boolean>> {
-        return chatApiService.deleteChat(chatId, "Bearer $token")
+        return chatApiService.deleteChat(chatId)
     }
 
 

@@ -22,8 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class RoomViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
-    private val userRepository: UserRepository,
-    private val tokenManager: TokenManager
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _roomDetail = MutableStateFlow<RoomDto?>(null)
@@ -100,14 +99,8 @@ class RoomViewModel @Inject constructor(
             _uploaderInfoError.value = null
 
             try {
-                val token = tokenManager.accessToken.first()
-                if (token.isNullOrEmpty()) {
-                    _videoDetailError.value = "인증 정보가 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
                 Log.d(TAG, "비디오 상세 정보 조회 시작: chatId=$chatId")
-                val response = roomRepository.getChatDetail(chatId, token)
+                val response = roomRepository.getChatDetail(chatId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     val videoDetail = response.body()?.result
@@ -116,7 +109,7 @@ class RoomViewModel @Inject constructor(
 
                     // 비디오 업로더 정보 조회 (memberId가 있는 경우)
                     videoDetail?.senderId?.let { senderId ->
-                        fetchUploaderInfo(senderId, token)
+                        fetchUploaderInfo(senderId)
                     } ?: run {
                         _uploaderInfoError.value = "업로더 정보가 없습니다."
                         _isUploaderInfoLoading.value = false
@@ -142,9 +135,9 @@ class RoomViewModel @Inject constructor(
      * @param memberId 멤버 ID
      * @param token 인증 토큰
      */
-    private suspend fun fetchUploaderInfo(memberId: Long, token: String) {
+    private suspend fun fetchUploaderInfo(memberId: Long) {
         try {
-            val result = userRepository.getMemberById(token, memberId)
+            val result = userRepository.getMemberById(memberId)
             result.onSuccess { userInfo ->
                 _videoUploaderInfo.value = userInfo
                 Log.d(TAG, "업로더 정보 조회 성공: ${userInfo.nickname}")
@@ -176,15 +169,7 @@ class RoomViewModel @Inject constructor(
 
             try {
                 Log.d("RoomViewModel", "Loading room details for roomId: $roomId")
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    Log.e("RoomViewModel", "Token is null")
-                    return@launch
-                }
-
-                Log.d("RoomViewModel", "Calling API with token: ${token.take(10)}...")
-                val response = roomRepository.getRoomDetail(roomId, token)
+                val response = roomRepository.getRoomDetail(roomId)
 
                 Log.d("RoomViewModel", "Response code: ${response.code()}")
                 if (response.isSuccessful) {
@@ -216,12 +201,7 @@ class RoomViewModel @Inject constructor(
             _error.value = ""
 
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-                val response = roomRepository.getRoomMembers(roomId, token)
+                val response = roomRepository.getRoomMembers(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     _roomMembers.value = response.body()?.result ?: emptyList()
@@ -235,6 +215,7 @@ class RoomViewModel @Inject constructor(
             }
         }
     }
+
     // createInviteCode 함수 수정
     fun createInviteCode(roomId: String) {
         viewModelScope.launch {
@@ -242,12 +223,7 @@ class RoomViewModel @Inject constructor(
             _error.value = ""
 
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-                val response = roomRepository.createInviteCode(roomId, token)
+                val response = roomRepository.createInviteCode(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     _inviteCode.value = response.body()?.result ?: ""
@@ -277,12 +253,6 @@ class RoomViewModel @Inject constructor(
 
             try {
                 Log.d("RoomViewModel", "Uploading short for roomId: $roomId with title: $title")
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    Log.e("RoomViewModel", "Token is null")
-                    return@launch
-                }
 
                 // 업로드할 메시지 요청 객체 생성
                 val chatMessage = ChatMessageRequest(
@@ -302,7 +272,7 @@ class RoomViewModel @Inject constructor(
                 }
 
                 // 리포지토리를 통해 API 호출
-                val response = roomRepository.uploadRoomVideo(roomIdLong, chatMessage, token)
+                val response = roomRepository.uploadRoomVideo(roomIdLong, chatMessage)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     Log.d("RoomViewModel", "Short upload successful: ${response.body()}")
@@ -340,13 +310,6 @@ class RoomViewModel @Inject constructor(
             }
 
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    Log.e("RoomViewModel", "Token is null")
-                    return@launch
-                }
-
                 // 방 ID를 Long으로 변환
                 val roomIdLong = try {
                     roomId.toLong()
@@ -360,8 +323,7 @@ class RoomViewModel @Inject constructor(
                 val response = roomRepository.getRoomVideos(
                     roomId = roomIdLong,
                     page = _currentPage.value,
-                    size = 10,
-                    token = token
+                    size = 10
                 )
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {

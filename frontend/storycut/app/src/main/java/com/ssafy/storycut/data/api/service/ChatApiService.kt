@@ -19,7 +19,6 @@ interface ChatApiService {
     suspend fun uploadRoomVideo(
         @Query("roomId") roomId: Long,
         @Body chatMessage: ChatMessageRequest,
-        @Header("Authorization") token: String
     ): Response<BaseResponse<ChatDto>>
 
     // 공유방 비디오 목록 조회
@@ -27,21 +26,16 @@ interface ChatApiService {
     suspend fun getRoomVideos(
         @Path("roomId") roomId: Long,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 10,
-        @Header("Authorization") token: String
+        @Query("size") size: Int = 10
     ): Response<BaseResponse<List<ChatDto>>>
 
     // 공유방 비디오 상세 조회 (추가)
     @GET("chat/detail/{chatId}")
     suspend fun getChatDetail(
-        @Path("chatId") chatId: String,
-        @Header("Authorization") token: String
-    ): Response<BaseResponse<ChatDto>>
+        @Path("chatId") chatId: String): Response<BaseResponse<ChatDto>>
 
     // 공유방 비디오 삭제
     @DELETE("chat/{chatId}")
     suspend fun deleteChat(
-        @Path("chatId") chatId: String,
-        @Header("Authorization") token: String
-    ): Response<BaseResponse<Boolean>>
+        @Path("chatId") chatId: String): Response<BaseResponse<Boolean>>
 }

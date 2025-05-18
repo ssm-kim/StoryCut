@@ -301,19 +301,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 Log.d(TAG, "로그아웃 시작")
-
-                // 1. 액세스 토큰 가져오기 (삭제하기 전에!)
-                val accessToken = tokenManager.accessToken.first()
-                Log.d(TAG, "토큰 상태 확인: ${if (accessToken.isNullOrEmpty()) "토큰 없음" else "토큰 있음"}")
-
-                // 2. 액세스 토큰이 있으면 서버에 로그아웃 요청
-                if (!accessToken.isNullOrEmpty()) {
-                    try {
-                        userRepository.logout(accessToken)
-                        Log.d(TAG, "서버 로그아웃 성공")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "서버 로그아웃 실패, 로컬만 삭제 진행", e)
-                    }
+                try {
+                    userRepository.logout()
+                    Log.d(TAG, "서버 로그아웃 성공")
+                } catch (e: Exception) {
+                    Log.e(TAG, "서버 로그아웃 실패, 로컬만 삭제 진행", e)
                 }
 
                 // 3. 토큰 삭제는 서버 로그아웃 이후에 진행

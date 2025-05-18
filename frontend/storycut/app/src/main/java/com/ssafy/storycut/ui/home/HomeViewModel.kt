@@ -74,7 +74,7 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                val response = roomRepository.getMyRooms(token)
+                val response = roomRepository.getMyRooms()
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     val rooms = response.body()?.result ?: emptyList()
@@ -200,7 +200,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 Log.d(TAG, "createRoom: API 호출 시작")
-                val response = roomRepository.createRoom(finalRequest, token)
+                val response = roomRepository.createRoom(finalRequest)
                 Log.d(TAG, "createRoom: API 응답 받음, 코드: ${response.code()}")
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
@@ -221,7 +221,7 @@ class HomeViewModel @Inject constructor(
                         Log.d(TAG, "createRoom: 백그라운드에서 목록 업데이트 시작")
                         viewModelScope.launch {
                             try {
-                                val updateResponse = roomRepository.getMyRooms(token)
+                                val updateResponse = roomRepository.getMyRooms()
                                 if (updateResponse.isSuccessful) {
                                     Log.d(TAG, "createRoom: 백그라운드 목록 업데이트 성공")
                                 } else {
@@ -265,13 +265,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
-                val response = roomRepository.getRoomDetail(roomId, token)
+                val response = roomRepository.getRoomDetail(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     response.body()?.result?.let {
@@ -293,13 +287,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
-                val response = roomRepository.getRoomMembers(roomId, token)
+                val response = roomRepository.getRoomMembers(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     _roomMembers.value = response.body()?.result ?: emptyList()
@@ -314,56 +302,41 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 초대 코드 생성
-    fun createInviteCode(roomId: String) {
+    // 공유방 입장 (초대코드와 비밀번호로 2단계 프로세스 구현)
+    fun enterRoom(inviteCode: String, password: String? = null) {
         viewModelScope.launch {
             _isLoading.value = true
+            _error.value = ""
+
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
+                // 1단계: 초대코드로 공유방 ID 조회
+                val decodeResponse = roomRepository.decodeInviteCode(inviteCode)
 
-                val response = roomRepository.createInviteCode(roomId, token)
+                if (decodeResponse.isSuccessful && decodeResponse.body()?.isSuccess == true) {
+                    val roomId = decodeResponse.body()?.result
 
-                if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    response.body()?.result?.let {
-                        _inviteCode.value = it
+                    if (roomId != null) {
+                        // 2단계: 조회한 공유방 ID로 입장 (비밀번호 포함)
+                        val enterResponse = roomRepository.enterRoom(roomId.toString(), password)
+
+                        if (enterResponse.isSuccessful && enterResponse.body()?.isSuccess == true) {
+                            // 공유방 입장 후 목록 다시 불러오기
+                            getMyRooms()
+                            // 입장한 방의 ID 설정
+                            val enteredRoom = enterResponse.body()?.result
+                            if (enteredRoom != null) {
+                                _enteredRoomId.value = enteredRoom.roomId.toString()
+                            } else {
+                                _error.value = "방 정보를 불러올 수 없습니다."
+                            }
+                        } else {
+                            _error.value = enterResponse.body()?.message ?: "공유방 입장에 실패했습니다."
+                        }
+                    } else {
+                        _error.value = "유효하지 않은 초대코드입니다."
                     }
                 } else {
-                    _error.value = response.body()?.message ?: "초대 코드 생성에 실패했습니다."
-                }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "네트워크 오류가 발생했습니다."
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    // 공유방 입장
-    fun enterRoom(inviteCode: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
-                val response = roomRepository.enterRoom(inviteCode, token)
-
-                if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    // 공유방 입장 후 목록 다시 불러오기
-                    getMyRooms()
-                    // 입장한 방의 ID 설정
-                    response.body()?.result?.let {
-                        _enteredRoomId.value = it.roomId.toString()
-                    }
-                } else {
-                    _error.value = response.body()?.message ?: "공유방 입장에 실패했습니다."
+                    _error.value = decodeResponse.body()?.message ?: "초대코드 확인에 실패했습니다."
                 }
             } catch (e: Exception) {
                 _error.value = e.message ?: "네트워크 오류가 발생했습니다."
@@ -378,13 +351,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
-                val response = roomRepository.leaveRoom(roomId, token)
+                val response = roomRepository.leaveRoom(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     // 공유방 나간 후 목록 다시 불러오기
@@ -405,14 +372,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = tokenManager.accessToken.first()
-                if (token == null) {
-                    _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
-                    return@launch
-                }
-
-                val response = roomRepository.deleteRoom(roomId, token)
-
+                val response = roomRepository.deleteRoom(roomId)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     // 공유방 삭제 후 목록 다시 불러오기
                     getMyRooms()

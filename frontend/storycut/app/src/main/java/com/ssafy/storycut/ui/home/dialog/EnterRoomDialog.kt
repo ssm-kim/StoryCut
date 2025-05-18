@@ -7,16 +7,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-
 @Composable
 fun EnterRoomDialog(
     onDismiss: () -> Unit,
-    onEnterRoom: (String) -> Unit
+    onEnterRoom: (String, String?) -> Unit  // 초대코드와 비밀번호를 전달
 ) {
     var inviteCode by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }  // 비밀번호 추가
     var showErrorMessage by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -54,6 +55,19 @@ fun EnterRoomDialog(
                     isError = showErrorMessage && inviteCode.isBlank()
                 )
 
+                // 비밀번호 입력 (선택 사항)
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("비밀번호 (선택사항)") },
+                    placeholder = { Text("비밀번호가 있는 경우 입력하세요") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()  // 비밀번호 마스킹
+                )
+
                 // 에러 메시지
                 if (showErrorMessage && inviteCode.isBlank()) {
                     Text(
@@ -83,7 +97,9 @@ fun EnterRoomDialog(
                             if (inviteCode.isBlank()) {
                                 showErrorMessage = true
                             } else {
-                                onEnterRoom(inviteCode)
+                                // 비밀번호가 비어있으면 null로 전달
+                                val passwordToSend = if (password.isBlank()) null else password
+                                onEnterRoom(inviteCode, passwordToSend)
                                 onDismiss()
                             }
                         },

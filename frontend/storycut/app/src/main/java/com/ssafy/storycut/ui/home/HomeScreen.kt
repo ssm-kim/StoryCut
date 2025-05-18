@@ -1,10 +1,8 @@
 package com.ssafy.storycut.ui.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,19 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.ssafy.storycut.R
-import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.ui.home.dialog.CreateRoomDialog
 import com.ssafy.storycut.ui.home.dialog.EnterRoomDialog
 import com.ssafy.storycut.ui.home.dialog.RoomOptionsDialog
@@ -39,20 +31,20 @@ import com.ssafy.storycut.ui.navigation.navigateToMainTab
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
     onRoomClick: (String) -> Unit = {},
     onCreateRoomClick: () -> Unit = {},
     onEnterRoomClick: () -> Unit = {},
     navController: NavHostController? = null
 ) {
     // ViewModel에서 방 목록 데이터 가져오기
-    val myRooms by viewModel.myRooms.observeAsState(emptyList())
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState("")
+    val myRooms by homeViewModel.myRooms.observeAsState(emptyList())
+    val isLoading by homeViewModel.isLoading.observeAsState(false)
+    val error by homeViewModel.error.observeAsState("")
 
     // 새로 생성된 방 ID 관찰
-    val createdRoomId by viewModel.createdRoomId.observeAsState("")
-    val enteredRoomId by viewModel.enteredRoomId.observeAsState("")
+    val createdRoomId by homeViewModel.createdRoomId.observeAsState("")
+    val enteredRoomId by homeViewModel.enteredRoomId.observeAsState("")
 
     // 다이얼로그 표시 상태
     var showRoomOptionsDialog by remember { mutableStateOf(false) }
@@ -67,7 +59,7 @@ fun HomeScreen(
         if (createdRoomId.isNotEmpty()) {
             isProcessingRoom = false
             onRoomClick(createdRoomId)
-            viewModel.clearCreatedRoomId()
+            homeViewModel.clearCreatedRoomId()
         }
     }
 
@@ -76,13 +68,13 @@ fun HomeScreen(
         if (enteredRoomId.isNotEmpty()) {
             isProcessingRoom = false
             onRoomClick(enteredRoomId)
-            viewModel.clearEnteredRoomId()
+            homeViewModel.clearEnteredRoomId()
         }
     }
 
     // 컴포넌트가 처음 표시될 때 데이터 로드
     LaunchedEffect(key1 = true) {
-        viewModel.getMyRooms()
+        homeViewModel.getMyRooms()
     }
 
     Box(
@@ -389,7 +381,7 @@ fun HomeScreen(
                 onCreateRoom = { request, imageUri ->
                     showCreateRoomDialog = false
                     isProcessingRoom = true
-                    viewModel.createRoom(request, imageUri)
+                    homeViewModel.createRoom(request, imageUri)
                 }
             )
         }
@@ -397,14 +389,13 @@ fun HomeScreen(
         if (showEnterRoomDialog) {
             EnterRoomDialog(
                 onDismiss = { showEnterRoomDialog = false },
-                onEnterRoom = { inviteCode ->
+                onEnterRoom = { inviteCode, password ->
                     showEnterRoomDialog = false
                     isProcessingRoom = true
-                    viewModel.enterRoom(inviteCode)
+                    homeViewModel.enterRoom(inviteCode, password)
                 }
             )
         }
-
         if (isProcessingRoom) {
             Box(
                 modifier = Modifier
@@ -428,90 +419,6 @@ fun HomeScreen(
                         Text(text = "방으로 이동 중...", fontSize = 14.sp)
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun RoomItem(
-    room: RoomDto,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        ),
-        border = BorderStroke(1.dp, Color(0xFFE0E0E0))  // 연한 회색 테두리 추가
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 썸네일 이미지
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-            ) {
-                // 썸네일 이미지 로드
-                if (room.roomThumbnail != null && room.roomThumbnail != "default_thumbnail") {
-                    // FastAPI에서 제공한 URL로 이미지 로드
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(room.roomThumbnail)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "방 썸네일",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    // 기본 이미지 표시
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "기본 썸네일",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-
-            // 방 정보 표시
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = room.roomTitle ?: "EPL 명장면 쇼츠",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = "쇼츠 • 롱징",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Text(
-                    text = "${room.memberCount ?: 0}명",
-                    fontSize = 14.sp
-                )
             }
         }
     }
