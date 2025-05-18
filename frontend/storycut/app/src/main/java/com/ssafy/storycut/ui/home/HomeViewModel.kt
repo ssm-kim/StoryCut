@@ -24,7 +24,7 @@ private const val TAG = "HomeViewModel"
 class HomeViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
     private val tokenManager: TokenManager,
-    private val s3Repository: S3Repository
+    private val s3Repository: S3Repository,
 ) : ViewModel() {
 
     // 내 공유방 목록 LiveData

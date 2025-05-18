@@ -35,7 +35,8 @@ fun NavGraphBuilder.mainGraph(
         HomeScreen(
             onRoomClick = { roomId ->
                 navController.navigate("room_detail/$roomId")
-            }
+            },
+            navController = navController // NavController 전달
         )
     }
 

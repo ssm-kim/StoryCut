@@ -1,7 +1,7 @@
 package com.ssafy.storycut.ui.home
 
-
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +17,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ssafy.storycut.R
@@ -32,13 +34,16 @@ import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.ui.home.dialog.CreateRoomDialog
 import com.ssafy.storycut.ui.home.dialog.EnterRoomDialog
 import com.ssafy.storycut.ui.home.dialog.RoomOptionsDialog
+import com.ssafy.storycut.ui.navigation.Navigation
+import com.ssafy.storycut.ui.navigation.navigateToMainTab
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onRoomClick: (String) -> Unit = {},
     onCreateRoomClick: () -> Unit = {},
-    onEnterRoomClick: () -> Unit = {}
+    onEnterRoomClick: () -> Unit = {},
+    navController: NavHostController? = null
 ) {
     // ViewModel에서 방 목록 데이터 가져오기
     val myRooms by viewModel.myRooms.observeAsState(emptyList())
@@ -60,10 +65,8 @@ fun HomeScreen(
     // 새로 생성된 방으로 자동 이동
     LaunchedEffect(createdRoomId) {
         if (createdRoomId.isNotEmpty()) {
-            isProcessingRoom = false // 처리 완료
-            // 방으로 이동
+            isProcessingRoom = false
             onRoomClick(createdRoomId)
-            // ID 초기화
             viewModel.clearCreatedRoomId()
         }
     }
@@ -71,10 +74,8 @@ fun HomeScreen(
     // 입장한 방으로 자동 이동
     LaunchedEffect(enteredRoomId) {
         if (enteredRoomId.isNotEmpty()) {
-            isProcessingRoom = false // 처리 완료
-            // 방으로 이동
+            isProcessingRoom = false
             onRoomClick(enteredRoomId)
-            // ID 초기화
             viewModel.clearEnteredRoomId()
         }
     }
@@ -85,93 +86,278 @@ fun HomeScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-        ) {
-            // 상단 헤더
+        // 로딩 상태 또는 에러 표시
+        if (isLoading && !isProcessingRoom) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (error.isNotEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Room",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.CenterStart)
+                    text = error,
+                    color = MaterialTheme.colorScheme.error
                 )
-
-                // 방 추가 버튼
-                IconButton(
-                    onClick = { showRoomOptionsDialog = true },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "방 추가",
-                        tint = Color.Gray
-                    )
-                }
             }
-
-            // 로딩 상태 표시
-            if (isLoading && !isProcessingRoom) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (error.isNotEmpty()) {
-                // 에러 메시지 표시
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = error,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            } else {
-                // 방 목록 표시
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    if (myRooms.isEmpty()) {
-                        item {
-                            Box(
+        } else {
+            // 전체 콘텐츠를 하나의 LazyColumn으로 구성
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                // 상단 영역 (FCF7F0 + 곡선)
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        // FCF7F0 색상 배경 (로고와 버튼들)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFFCF7F0))
+                        ) {
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp),
-                                contentAlignment = Alignment.Center
+                                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp) // 요소 간 간격 감소 (16.dp -> 12.dp)
                             ) {
-                                Text(
-                                    text = "참가중인 공유방이 없습니다",
-                                    color = Color.Gray
+                                // 로고 이미지
+                                Image(
+                                    painter = painterResource(id = R.drawable.logo),
+                                    contentDescription = "StoryCut",
+                                    modifier = Modifier
+                                        .padding(vertical = 8.dp) // 패딩 감소 (16.dp -> 8.dp)
+                                        .height(80.dp)
                                 )
+
+                                // 버튼 1: YouTube 업로드
+                                Button(
+                                    onClick = {
+                                        navController?.navigateToMainTab(Navigation.Main.SHORTS_UPLOAD)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFD0B699)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = 4.dp
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "YouTube 업로드",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.icon_tube),
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+
+                                // 버튼 2: 영상 편집
+                                Button(
+                                    onClick = {
+                                        // 영상 편집 기능
+                                        navController?.navigateToMainTab(Navigation.Main.EDIT)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFD0B699)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = 4.dp
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "영상 편집",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.icon_edit),
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    }
+                                }
+
+                                // 버튼 3: 마이페이지
+                                Button(
+                                    onClick = {
+                                        navController?.navigateToMainTab(Navigation.Main.MYPAGE)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFD0B699)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = 4.dp
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "마이페이지",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.icon_me),
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
-                    } else {
-                        // 참가중인 방 목록
-                        item {
-                            Text(
-                                text = "참가중인방",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                    }
+                }
+
+                // 헤더 (Room 타이틀과 Add 버튼 + 곡선)
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)  // 헤더 영역 높이 지정
+                    ) {
+                        // 배경에 곡선 그리기
+                        Canvas(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            // 배경을 FCF7F0로 채우기
+                            drawRect(color = Color(0xFFFCF7F0))
+
+                            // 흰색 곡선 그리기 (이전 버전처럼 부드럽게)
+                            val path = Path().apply {
+                                // 시작점 (왼쪽 상단)
+                                moveTo(0f, 0f)
+                                // 우측 방향으로 직선
+                                lineTo(size.width * 0.7f, 0f)
+                                // 부드러운 곡선으로 우측 하단으로 이동
+                                cubicTo(
+                                    size.width * 0.85f, 0f, // 첫 번째 제어점
+                                    size.width, size.height * 0.3f, // 두 번째 제어점
+                                    size.width, size.height // 끝점 (우측 하단)
+                                )
+                                // 좌측 하단까지 직선
+                                lineTo(0f, size.height)
+                                // 시작점으로 돌아가기
+                                close()
+                            }
+                            drawPath(
+                                path = path,
+                                color = Color.White // 흰색 배경
                             )
                         }
 
-                        items(myRooms) { room ->
+                        // 참가중인 방 텍스트와 추가 버튼을 함께 배치
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .padding(start = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 텍스트와 버튼 사이 간격
+                        ) {
+                            // 참가중인 방 텍스트
+                            Text(
+                                text = "참가중인 방",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            // 추가 버튼
+                            Button(
+                                onClick = { showRoomOptionsDialog = true },
+                                modifier = Modifier.size(28.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFE8C999)
+                                ),
+                                contentPadding = PaddingValues(0.dp),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "추가",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 방 목록 표시 (방이 없는 경우)
+                if (myRooms.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "참가중인 공유방이 없습니다",
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                } else {
+                    // 방 목록 표시 (방이 있는 경우)
+                    items(myRooms) { room ->
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 16.dp)
+                        ) {
                             RoomItem(
                                 room = room,
                                 onClick = { onRoomClick(room.roomId.toString()) }
@@ -182,7 +368,43 @@ fun HomeScreen(
             }
         }
 
-        // 방 생성/입장 진행 중 오버레이 (추가된 부분)
+        // 다이얼로그들과 진행 중 오버레이 표시
+        if (showRoomOptionsDialog) {
+            RoomOptionsDialog(
+                onDismiss = { showRoomOptionsDialog = false },
+                onCreateRoom = {
+                    showRoomOptionsDialog = false
+                    showCreateRoomDialog = true
+                },
+                onEnterRoom = {
+                    showRoomOptionsDialog = false
+                    showEnterRoomDialog = true
+                }
+            )
+        }
+
+        if (showCreateRoomDialog) {
+            CreateRoomDialog(
+                onDismiss = { showCreateRoomDialog = false },
+                onCreateRoom = { request, imageUri ->
+                    showCreateRoomDialog = false
+                    isProcessingRoom = true
+                    viewModel.createRoom(request, imageUri)
+                }
+            )
+        }
+
+        if (showEnterRoomDialog) {
+            EnterRoomDialog(
+                onDismiss = { showEnterRoomDialog = false },
+                onEnterRoom = { inviteCode ->
+                    showEnterRoomDialog = false
+                    isProcessingRoom = true
+                    viewModel.enterRoom(inviteCode)
+                }
+            )
+        }
+
         if (isProcessingRoom) {
             Box(
                 modifier = Modifier
@@ -208,45 +430,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
-
-    // 방 옵션 다이얼로그
-    if (showRoomOptionsDialog) {
-        RoomOptionsDialog(
-            onDismiss = { showRoomOptionsDialog = false },
-            onCreateRoom = {
-                showRoomOptionsDialog = false
-                showCreateRoomDialog = true
-            },
-            onEnterRoom = {
-                showRoomOptionsDialog = false
-                showEnterRoomDialog = true
-            }
-        )
-    }
-
-    // 방 생성 다이얼로그
-    if (showCreateRoomDialog) {
-        CreateRoomDialog(
-            onDismiss = { showCreateRoomDialog = false },
-            onCreateRoom = { request, imageUri ->
-                showCreateRoomDialog = false // 다이얼로그 닫기
-                isProcessingRoom = true // 방 생성/이동 처리 중 플래그 설정
-                viewModel.createRoom(request, imageUri)
-            }
-        )
-    }
-
-    // 방 입장 다이얼로그
-    if (showEnterRoomDialog) {
-        EnterRoomDialog(
-            onDismiss = { showEnterRoomDialog = false },
-            onEnterRoom = { inviteCode ->
-                showEnterRoomDialog = false // 다이얼로그 닫기
-                isProcessingRoom = true // 방 입장/이동 처리 중 플래그 설정
-                viewModel.enterRoom(inviteCode)
-            }
-        )
     }
 }
 
