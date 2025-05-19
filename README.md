@@ -62,10 +62,8 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 | **AI 기반 배경음악** | 프롬프트에 맞는 배경음악 자동 삽입 |
 | **자동 자막 생성** | 편집된 영상에 자동으로 자막 삽입 |
 
-## 4. 시스템 아키텍처
 
-### 핵심 기술
-
+####  핵심 기술
 1. **영상 분석 및 장면 인식**
    - mmaction2: 실시간 객체 탐지 및 스켈레톤 행동 분석
    - 프롬프트와 영상 내용 매칭 (70% 이상 일치도)
@@ -78,6 +76,9 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
    - 선택적 모자이크 처리
    - 자동 자막 생성
    - AI 기반 배경음악 삽입
+
+## 4. 시스템 아키텍처
+
 
 <br>
 <div id="서비스-화면"></div>
@@ -181,7 +182,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 | <img src="https://avatars.githubusercontent.com/black4758" width="200"> | <img src="https://avatars.githubusercontent.com/HuiSeopKwak" width="200"> | <img src="https://avatars.githubusercontent.com/ssm-kim" width="200"> | <img src="https://avatars.githubusercontent.com/YDaewon" width="200">  | <img src="https://avatars.githubusercontent.com/chjw956" width="200">  | <img src="https://avatars.githubusercontent.com/pickup3415" width="200">
 |---------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | 우성윤 ([@black4758](https://github.com/black4758)) | 곽희섭 ([@HuiSeopKwak](https://github.com/HuiSeopKwak)) | 김성민 ([@ssm-kim](https://github.com/ssm-kim)) | 양대원 ([@YDaewon](https://github.com/YDaewon)) | 최지원 ([@chjw956](https://github.com/chjw956)) | 박준현 ([@pickup3415](https://github.com/pickup3415)) | 
-| Leader / AI | Back End | Back End | Back End |  Infra | Front End |
+| Leader / Back End(AI) | Back End(AI) | Back End | Back End |  Infra | Front End |
 
 <br />
 <div id="산출물"></div>
