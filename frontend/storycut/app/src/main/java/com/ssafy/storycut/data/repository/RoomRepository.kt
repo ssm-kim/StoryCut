@@ -1,6 +1,7 @@
 package com.ssafy.storycut.data.repository
 
 import com.ssafy.storycut.data.api.model.BaseResponse
+import com.ssafy.storycut.data.api.model.EditRoomDto
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.api.model.MemberDto
 import com.ssafy.storycut.data.api.model.ThumbnailDto
@@ -9,8 +10,6 @@ import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.service.ChatApiService
 import com.ssafy.storycut.data.api.service.RoomApiService
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,10 +35,9 @@ class RoomRepository @Inject constructor(
     }
 
     // 공유방 수정
-    suspend fun updateRoom(roomDto: RoomDto): Response<BaseResponse<RoomDto>> {
-        return roomApiService.updateRoom(roomDto)
+    suspend fun updateRoom(roomId: Long, editRoomDto: EditRoomDto): Response<BaseResponse<RoomDto>> {
+        return roomApiService.updateRoom(roomId, editRoomDto)
     }
-
     // 공유방 나가기
     suspend fun leaveRoom(roomId: String): Response<BaseResponse<Boolean>> {
         return roomApiService.leaveRoom(roomId)

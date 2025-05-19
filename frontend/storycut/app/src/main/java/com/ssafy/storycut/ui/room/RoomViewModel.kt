@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.storycut.data.api.model.EditRoomDto
 import com.ssafy.storycut.data.api.model.MemberDto
 import com.ssafy.storycut.data.api.model.ThumbnailDto
 import com.ssafy.storycut.data.api.model.UserInfo
@@ -451,6 +452,66 @@ class RoomViewModel @Inject constructor(
             }
         }
     }
+
+
+    // 방 나가기 함수 추가
+    fun leaveRoom(roomId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = ""
+
+            try {
+
+                val response = roomRepository.leaveRoom(roomId)
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    // 방 나가기 성공 처리
+                    // 여기서는 별도의 성공 상태를 추가하지 않고, 오류가 없는 것으로 처리
+                } else {
+                    _error.value = response.body()?.message ?: "방 나가기에 실패했습니다."
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "네트워크 오류가 발생했습니다."
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun updateRoom(roomDto: RoomDto, password: String? = null) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = ""
+
+            try {
+                // EditRoomDto 객체 생성 - 수정된 형태에 맞춤
+                val editRoomDto = EditRoomDto(
+                    roomTitle = roomDto.roomTitle,
+                    roomContext = roomDto.roomContext,
+                    roomPassword = if (roomDto.hasPassword) password else null
+                )
+
+                val response = roomRepository.updateRoom(roomDto.roomId, editRoomDto)
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    // 성공한 경우 응답으로 받은 방 정보로 업데이트
+                    response.body()?.result?.let { updatedRoom ->
+                        _roomDetail.value = updatedRoom
+                    }
+                    Log.d(TAG, "방 정보 업데이트 성공")
+                } else {
+                    _error.value = response.body()?.message ?: "방 정보 수정에 실패했습니다."
+                    Log.e(TAG, "방 정보 업데이트 실패: ${_error.value}")
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "네트워크 오류가 발생했습니다."
+                Log.e(TAG, "방 정보 업데이트 중 예외 발생", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 
     // 비디오 목록 새로고침
     fun refreshRoomVideos(roomId: String) {

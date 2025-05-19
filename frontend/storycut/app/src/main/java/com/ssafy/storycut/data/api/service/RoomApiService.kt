@@ -1,17 +1,16 @@
 package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.BaseResponse
+import com.ssafy.storycut.data.api.model.EditRoomDto
 import com.ssafy.storycut.data.api.model.MemberDto
 import com.ssafy.storycut.data.api.model.ThumbnailDto
 import com.ssafy.storycut.data.api.model.VideoShareDto
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
-import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -33,7 +32,10 @@ interface RoomApiService {
 
     // 공유방 수정
     @PATCH("room")
-    suspend fun updateRoom(@Body roomDto: RoomDto): Response<BaseResponse<RoomDto>>
+    suspend fun updateRoom(
+        @Query("roomId") roomId: Long,
+        @Body editRoomDto: EditRoomDto
+    ): Response<BaseResponse<RoomDto>>
 
     // 공유방 나가기
     @POST("room/leave")
