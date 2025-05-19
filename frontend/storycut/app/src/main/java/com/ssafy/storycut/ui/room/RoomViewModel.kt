@@ -1,16 +1,19 @@
 package com.ssafy.storycut.ui.room
 
 import android.content.ContentValues.TAG
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.ThumbnailDto
 import com.ssafy.storycut.data.api.model.UserInfo
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.RoomRepository
+import com.ssafy.storycut.data.repository.S3Repository
 import com.ssafy.storycut.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,9 +25,11 @@ import javax.inject.Inject
 @HiltViewModel
 class RoomViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val s3Repository: S3Repository, // S3Repository 주입 추가
+    private val tokenManager: TokenManager // TokenManager 주입 추가
 ) : ViewModel() {
-
+    private val TAG = "Room"
     private val _roomDetail = MutableStateFlow<RoomDto?>(null)
     val roomDetail: StateFlow<RoomDto?> = _roomDetail
 
@@ -46,6 +51,10 @@ class RoomViewModel @Inject constructor(
     // 비디오 업로드 성공 여부
     private val _uploadSuccess = MutableStateFlow(false)
     val uploadSuccess: StateFlow<Boolean> = _uploadSuccess
+
+    // 썸네일 업데이트 성공 여부
+    private val _thumbnailUpdateSuccess = MutableStateFlow(false)
+    val thumbnailUpdateSuccess: StateFlow<Boolean> = _thumbnailUpdateSuccess
 
     // 비디오 목록 상태
     private val _roomVideos = MutableStateFlow<List<ChatDto>>(emptyList())
@@ -133,7 +142,6 @@ class RoomViewModel @Inject constructor(
     /**
      * 업로더 정보 조회
      * @param memberId 멤버 ID
-     * @param token 인증 토큰
      */
     private suspend fun fetchUploaderInfo(memberId: Long) {
         try {
@@ -194,6 +202,91 @@ class RoomViewModel @Inject constructor(
         }
     }
 
+    // 썸네일 업데이트 함수
+    fun updateRoomThumbnail(roomId: String, imageUri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = ""
+            _thumbnailUpdateSuccess.value = false
+
+            try {
+                Log.d("RoomViewModel", "Updating room thumbnail for roomId: $roomId")
+
+                // 이미지 업로드 먼저 진행
+                val imageUrl = uploadRoomThumbnail(imageUri)
+                Log.d(TAG,"url : ${imageUrl}")
+                if (_error.value.isNotEmpty()) {
+                    // 이미지 업로드 실패 시 중단
+                    return@launch
+                }
+
+                val thumbnailDto = ThumbnailDto(thumbnail = imageUrl)
+
+                // 방 정보 업데이트 API 호출 (수정된 부분)
+                val response = roomRepository.updateRoomThumbnail(roomId.toLong(), thumbnailDto)
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    // 성공한 경우 응답으로 받은 방 정보로 바로 업데이트
+                    response.body()?.result?.let { updatedRoom ->
+                        _roomDetail.value = updatedRoom
+                    }
+
+                    _thumbnailUpdateSuccess.value = true
+                    Log.d("RoomViewModel", "Room thumbnail updated successfully")
+                } else {
+                    _error.value = response.body()?.message ?: "썸네일 업데이트에 실패했습니다."
+                    Log.e("RoomViewModel", "Failed to update thumbnail: ${_error.value}")
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "네트워크 오류가 발생했습니다."
+                Log.e("RoomViewModel", "Exception updating thumbnail", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // S3 썸네일 이미지 업로드 함수
+    private suspend fun uploadRoomThumbnail(uri: Uri): String {
+        Log.d("RoomViewModel", "Uploading thumbnail image: $uri")
+
+        try {
+            // 토큰 가져오기
+            val token = tokenManager.accessToken.first()
+            if (token == null) {
+                Log.e("RoomViewModel", "No token available")
+                _error.value = "인증 토큰이 없습니다. 다시 로그인해주세요."
+                return "default_thumbnail"
+            }
+
+            // S3 업로드 API 호출
+            val response = s3Repository.uploadRoomThumbNailImage(uri)
+
+            if (response.isSuccessful && response.body()?.isSuccess == true) {
+                val result = response.body()?.result
+                val imageUrl = result?.url
+
+                if (imageUrl != null && imageUrl.isNotEmpty()) {
+                    Log.d("RoomViewModel", "Thumbnail uploaded successfully: $imageUrl")
+                    return imageUrl
+                } else {
+                    Log.e("RoomViewModel", "Image URL is empty or null")
+                    _error.value = "서버에서 이미지 URL이 반환되지 않았습니다."
+                    return "default_thumbnail"
+                }
+            } else {
+                val errorMsg = response.body()?.message ?: "이미지 업로드에 실패했습니다."
+                Log.e("RoomViewModel", "Failed to upload image: $errorMsg")
+                _error.value = errorMsg
+                return "default_thumbnail"
+            }
+        } catch (e: Exception) {
+            Log.e("RoomViewModel", "Exception uploading image", e)
+            _error.value = e.message ?: "네트워크 오류가 발생했습니다."
+            return "default_thumbnail"
+        }
+    }
+
     // 공유방 멤버 목록 가져오기
     fun getRoomMembers(roomId: String) {
         viewModelScope.launch {
@@ -216,7 +309,7 @@ class RoomViewModel @Inject constructor(
         }
     }
 
-    // createInviteCode 함수 수정
+    // createInviteCode 함수
     fun createInviteCode(roomId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -371,7 +464,6 @@ class RoomViewModel @Inject constructor(
         }
     }
 
-
     // 에러 메시지 초기화
     fun clearError() {
         _error.value = ""
@@ -380,5 +472,10 @@ class RoomViewModel @Inject constructor(
     // 업로드 상태 초기화
     fun resetUploadState() {
         _uploadSuccess.value = false
+    }
+
+    // 썸네일 업데이트 상태 초기화
+    fun resetThumbnailUpdateState() {
+        _thumbnailUpdateSuccess.value = false
     }
 }

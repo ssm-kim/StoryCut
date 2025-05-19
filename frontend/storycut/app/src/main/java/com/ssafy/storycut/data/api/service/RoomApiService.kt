@@ -2,9 +2,11 @@ package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.BaseResponse
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.ThumbnailDto
 import com.ssafy.storycut.data.api.model.VideoShareDto
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -83,5 +85,18 @@ interface RoomApiService {
         @Path("chatId") chatId: String,
         
     ): Response<BaseResponse<Boolean>>
+
+    // 공유방 썸네일 변경
+//    @PATCH("room/thumbnail")
+//    suspend fun updateRoomThumbnail(
+//        @Query("roomId") roomId: Long,
+//        @Body thumbnail: String
+//    ): Response<BaseResponse<RoomDto>>
+
+    @PATCH("room/thumbnail")
+    suspend fun updateRoomThumbnail(
+        @Query("roomId") roomId: Long,
+        @Body thumbnailDto: ThumbnailDto
+    ): Response<BaseResponse<RoomDto>>
 
 }

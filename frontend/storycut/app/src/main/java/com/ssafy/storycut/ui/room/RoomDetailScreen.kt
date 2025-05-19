@@ -1,14 +1,21 @@
 package com.ssafy.storycut.ui.room
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -16,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -37,6 +45,7 @@ import com.ssafy.storycut.data.api.model.VideoDto
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.ui.mypage.VideoViewModel
+import com.ssafy.storycut.ui.room.dialog.ThumbnailEditDialog
 import com.ssafy.storycut.ui.room.dialog.UploadShortDialog
 import com.ssafy.storycut.ui.common.VideoSelectorFullScreenDialog
 import com.ssafy.storycut.ui.room.video.RoomVideoItem
@@ -58,6 +67,7 @@ fun RoomDetailScreen(
     val isLoading by roomViewModel.isLoading.collectAsState()
     val error by roomViewModel.error.collectAsState()
     val uploadSuccess by roomViewModel.uploadSuccess.collectAsState()
+    val thumbnailUpdateSuccess by roomViewModel.thumbnailUpdateSuccess.collectAsState()
     val myVideos by videoViewModel.myVideos.collectAsState()
 
     // 비디오 관련 상태 가져오기
@@ -70,17 +80,32 @@ fun RoomDetailScreen(
     var searchQuery by remember { mutableStateOf("") }
     var filteredVideos by remember { mutableStateOf<List<ChatDto>>(emptyList()) }
 
+    // 다이얼로그 상태들
     var showInviteCodeDialog by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
     var showVideoSelectorDialog by remember { mutableStateOf(false) }
+    var showThumbnailEditDialog by remember { mutableStateOf(false) }
+
     var selectedVideo by remember { mutableStateOf<VideoDto?>(null) }
     var title by remember { mutableStateOf("") }
     var isGeneratingCode by remember { mutableStateOf(false) }
+
+    // 썸네일 편집용 이미지 URI
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    // 이미지 선택기를 위한 런처
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUri = uri
+        }
+    }
 
     // 검색어 변경 시 비디오 목록 필터링
     LaunchedEffect(searchQuery, roomVideos) {
@@ -105,6 +130,7 @@ fun RoomDetailScreen(
     fun resetDialogStates() {
         selectedVideo = null
         title = ""
+        selectedImageUri = null
     }
 
     // 토스트 메시지를 위한 함수
@@ -119,7 +145,7 @@ fun RoomDetailScreen(
             roomViewModel.getRoomVideos(roomId) // 비디오 목록 로드 추가
 
             // 내 비디오 목록도 미리 로드
-            videoViewModel.fetchMyVideos()  // 토큰 파라미터 제거
+            videoViewModel.fetchMyVideos()
         } catch (e: Exception) {
             println("데이터 로드 실패: ${e.message}")
         }
@@ -132,6 +158,16 @@ fun RoomDetailScreen(
             roomViewModel.resetUploadState()
             // 업로드 성공 후 비디오 목록 새로고침
             roomViewModel.refreshRoomVideos(roomId)
+        }
+    }
+
+    // 썸네일 업데이트 성공 시 처리
+    LaunchedEffect(thumbnailUpdateSuccess) {
+        if (thumbnailUpdateSuccess) {
+            showToast("썸네일이 성공적으로 업데이트되었습니다")
+            roomViewModel.resetThumbnailUpdateState()
+            showThumbnailEditDialog = false
+            selectedImageUri = null
         }
     }
 
@@ -240,6 +276,35 @@ fun RoomDetailScreen(
                                                 tint = Color.White.copy(alpha = 0.7f),
                                                 modifier = Modifier.size(64.dp)
                                             )
+                                        }
+                                    }
+
+
+                                    // 방장일 경우 썸네일 우측 상단에 편집 아이콘 표시
+                                    if (roomDetail?.host == true) {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(12.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(30.dp)  // 원하는 크기로 설정
+                                                    .background(
+                                                        color = Color(0xFFD0B699),
+                                                        shape = CircleShape
+                                                    )
+                                                    .clickable { showThumbnailEditDialog = true }  // IconButton 대신 clickable 사용
+                                                    .padding(2.dp),  // 내부 패딩 추가
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Edit,
+                                                    contentDescription = "썸네일 편집",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)  // 원 크기에 맞게 더 작게 설정
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -551,7 +616,7 @@ fun RoomDetailScreen(
         }
     }
 
-    // 초대코드 다이얼로그 코드는 그대로 유지
+    // 초대코드 다이얼로그
     if (showInviteCodeDialog && inviteCode.isNotEmpty()) {
         val creationTime by roomViewModel.inviteCodeCreationTime.collectAsState()
         val currentTime = System.currentTimeMillis()
@@ -570,7 +635,7 @@ fun RoomDetailScreen(
         )
     }
 
-    // 업로드 다이얼로그 코드는 그대로 유지
+    // 업로드 다이얼로그
     if (showUploadDialog) {
         UploadShortDialog(
             roomId = roomId,
@@ -617,7 +682,7 @@ fun RoomDetailScreen(
         )
     }
 
-    // 비디오 선택 전체 화면 다이얼로그 코드는 그대로 유지
+    // 비디오 선택 전체 화면 다이얼로그
     if (showVideoSelectorDialog) {
         VideoSelectorFullScreenDialog(
             myVideos = myVideos,
@@ -628,6 +693,25 @@ fun RoomDetailScreen(
                 selectedVideo = video
                 showVideoSelectorDialog = false
             }
+        )
+    }
+
+    // 썸네일 편집 다이얼로그 (분리된 컴포넌트 사용)
+    if (showThumbnailEditDialog) {
+        ThumbnailEditDialog(
+            roomDetail = roomDetail,
+            selectedImageUri = selectedImageUri,
+            onSelectImage = {
+                imagePickerLauncher.launch("image/*")
+            },
+            onUpdateThumbnail = { uri ->
+                roomViewModel.updateRoomThumbnail(roomId, uri)
+            },
+            onDismiss = {
+                showThumbnailEditDialog = false
+                selectedImageUri = null
+            },
+            scope = scope
         )
     }
 }

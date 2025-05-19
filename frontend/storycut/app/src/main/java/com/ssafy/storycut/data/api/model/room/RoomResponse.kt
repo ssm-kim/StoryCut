@@ -9,5 +9,6 @@ data class RoomDto(
     val roomThumbnail: String?,
     val createdAt: String,
     val updatedAt: String,
-    val memberCount: Int
+    val memberCount: Int,
+    val host: Boolean,
 )

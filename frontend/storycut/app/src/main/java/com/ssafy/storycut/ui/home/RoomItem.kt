@@ -76,7 +76,7 @@ fun RoomItemWithLongPress(
                             .crossfade(true)
                             .build(),
                         contentDescription = "방 썸네일",
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.FillBounds,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
@@ -84,7 +84,7 @@ fun RoomItemWithLongPress(
                     Image(
                         painter = painterResource(id = R.drawable.logo),
                         contentDescription = "기본 썸네일",
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Inside,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

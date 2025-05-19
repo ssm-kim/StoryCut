@@ -3,11 +3,14 @@ package com.ssafy.storycut.data.repository
 import com.ssafy.storycut.data.api.model.BaseResponse
 import com.ssafy.storycut.data.api.model.room.RoomDto
 import com.ssafy.storycut.data.api.model.MemberDto
+import com.ssafy.storycut.data.api.model.ThumbnailDto
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.service.ChatApiService
 import com.ssafy.storycut.data.api.service.RoomApiService
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -69,6 +72,11 @@ class RoomRepository @Inject constructor(
     // 초대코드로 공유방 ID 조회
     suspend fun decodeInviteCode(inviteCode: String): Response<BaseResponse<String>> {
         return roomApiService.decodeInviteCode(inviteCode)
+    }
+
+    // 공유방 썸네일 수정
+    suspend fun updateRoomThumbnail(roomId: Long, thumbnailDto: ThumbnailDto): Response<BaseResponse<RoomDto>> {
+        return roomApiService.updateRoomThumbnail(roomId, thumbnailDto)
     }
 
     /**
