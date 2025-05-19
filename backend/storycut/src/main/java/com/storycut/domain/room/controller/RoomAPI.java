@@ -220,6 +220,7 @@ public interface RoomAPI {
     })
     @GetMapping("/detail/{roomId}")
     ResponseEntity<BaseResponse<RoomResponse>> getRoomDetail(
+        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails authUser,
         @Parameter(description = "조회할 공유방 ID", required = true) @PathVariable Long roomId);
 
     /**

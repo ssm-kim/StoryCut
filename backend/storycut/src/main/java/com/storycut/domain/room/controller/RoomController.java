@@ -93,9 +93,9 @@ public class RoomController implements RoomAPI {
 
     @Override
     public ResponseEntity<BaseResponse<RoomResponse>> getRoomDetail(
-            Long roomId) {
+        CustomUserDetails authUser, Long roomId) {
         
-        RoomResponse response = roomService.getRoomDetail(roomId);
+        RoomResponse response = roomService.getRoomDetail(authUser.getMemberId(), roomId);
         return ResponseEntity.ok(new BaseResponse<> (response));
     }
 
