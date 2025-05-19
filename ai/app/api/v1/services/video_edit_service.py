@@ -41,7 +41,7 @@ def get_video_bitrate(video_path: str) -> Tuple[str, str]:
     return video_bps, audio_bps
 
 # 주 함수: 분석 결과와 프롬프트를 이용해 특정 구간을 추출하여 비디오를 자르고 병합함
-async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, threshold: float = 0.7)
+async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, threshold: float = 0.7):
     logger.info("[행동분석] 분석 시작: %s, threshold=%.2f", video_path, threshold)
     filtered_data = []
     raw_data = await run_analysis_pipeline(video_path)
@@ -65,7 +65,7 @@ async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, thresh
         ]
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         logger.info("[행동분석] 복사 완료 → %s", output_path)
-        return output_path
+        return output_path, raw_data
 
     try:
         logger.info("[Gemini] Gemini에 프롬프트 전송 중")
@@ -79,7 +79,7 @@ async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, thresh
 
         output_path = fast_cut_and_merge_ffmpeg(video_path, time_ranges)
         logger.info("[행동분석] 최종 병합 완료 → %s", output_path)
-        return output_path
+        return output_path, raw_data
 
     except Exception:
         logger.exception("[Gemini] Gemini 처리 실패")
