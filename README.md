@@ -181,7 +181,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 | <img src="https://avatars.githubusercontent.com/black4758" width="200"> | <img src="https://avatars.githubusercontent.com/HuiSeopKwak" width="200"> | <img src="https://avatars.githubusercontent.com/ssm-kim" width="200"> | <img src="https://avatars.githubusercontent.com/YDaewon" width="200">  | <img src="https://avatars.githubusercontent.com/chjw956" width="200">  | <img src="https://avatars.githubusercontent.com/pickup3415" width="200">
 |---------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | 우성윤 ([@black4758](https://github.com/black4758)) | 곽희섭 ([@HuiSeopKwak](https://github.com/HuiSeopKwak)) | 김성민 ([@ssm-kim](https://github.com/ssm-kim)) | 양대원 ([@YDaewon](https://github.com/YDaewon)) | 최지원 ([@chjw956](https://github.com/chjw956)) | 박준현 ([@pickup3415](https://github.com/pickup3415)) | 
-| Leader / AI | Back End | Back End | Back End |  Infra | Front End |
+| Leader / AI | AI | Back End | Back End |  Infra | Front End |
 
 <br />
 <div id="산출물"></div>
