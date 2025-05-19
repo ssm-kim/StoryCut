@@ -75,7 +75,9 @@ fun SingleVideoPlayer(
     onPlayerCreated: (ExoPlayer) -> Unit = {},
     userProfileImg: String? = null,
     userName: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPlayOriginal: (Long) -> Unit = {},
+    isOriginalMode: Boolean = false // 원본 모드 여부 추가
 ) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(isCurrentlyVisible) }
@@ -101,7 +103,7 @@ fun SingleVideoPlayer(
             repeatMode = Player.REPEAT_MODE_ONE  // 비디오 반복 재생
 
             // 비디오 URL 설정
-            val mediaItem = MediaItem.fromUri(video.videoUrl)
+            val mediaItem = MediaItem.Builder().setUri(video.videoUrl).build()
             Log.d("SingleVideoPlayer","원본 id : ${video.videoId} ,오리지널 ID ${video.originalVideoId}")
             setMediaItem(mediaItem)
             prepare()
@@ -156,6 +158,19 @@ fun SingleVideoPlayer(
                     requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }
+        }
+    }
+
+    // 원본 영상 보기 기능
+    fun viewOriginalVideo() {
+        showMoreOptions = false
+        // 원본 비디오 ID가 있는 경우에만 처리
+        video.originalVideoId?.let { originalId ->
+            Log.d("SingleVideoPlayer", "원본 영상 재생 요청: $originalId")
+            onPlayOriginal(originalId)
+        } ?: run {
+            // 원본 영상이 없는 경우 메시지 표시
+            Toast.makeText(context, "원본 영상을 찾을 수 없습니다", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -224,7 +239,6 @@ fun SingleVideoPlayer(
             )
         }
 
-        // 더보기 메뉴 (선택 시 표시)
         if (showMoreOptions) {
             Card(
                 modifier = Modifier
@@ -235,7 +249,31 @@ fun SingleVideoPlayer(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                // 다운로드 옵션
+                // 원본 영상 보기 옵션 (원본이 있는 경우만 표시 + 원본 모드가 아닐 때만 표시)
+                if (video.originalVideoId != null && !isOriginalMode) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewOriginalVideo() }
+                            .padding(vertical = 12.dp, horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),  // 적절한 아이콘으로 변경 필요
+                            contentDescription = "원본 영상 보기",
+                            tint = Color.DarkGray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "원본 영상 보기",
+                            color = Color.DarkGray,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                // 다운로드 옵션 (항상 표시)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -244,7 +282,7 @@ fun SingleVideoPlayer(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Edit,  // Edit에서 Download로 변경
+                        imageVector = Icons.Default.Edit,  // 적절한 다운로드 아이콘으로 변경 필요
                         contentDescription = "다운로드",
                         tint = Color.DarkGray,
                         modifier = Modifier.size(20.dp)
@@ -307,9 +345,9 @@ fun SingleVideoPlayer(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 비디오 제목
+                // 비디오 제목 (원본 모드일 경우 "(원본)" 표시)
                 Text(
-                    text = video.videoTitle,
+                    text = if (isOriginalMode) "${video.videoTitle} (원본)" else video.videoTitle,
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold

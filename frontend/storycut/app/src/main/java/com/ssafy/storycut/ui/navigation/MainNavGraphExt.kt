@@ -118,4 +118,16 @@ fun NavGraphBuilder.mainGraph(
             tokenManager = tokenManager
         )
     }
+
+    composable(
+        route = "video_detail/{videoId}/original",
+        arguments = listOf(navArgument("videoId") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val videoId = backStackEntry.arguments?.getString("videoId") ?: ""
+        VideoDetailScreen(
+            videoId = videoId,
+            navController = navController,
+            isOriginalMode = true // 원본 모드 플래그 추가
+        )
+    }
 }

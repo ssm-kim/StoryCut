@@ -57,20 +57,25 @@ class VideoViewModel @Inject constructor(
         }
     }
 
-    // 매개변수로 token을 받도록 수정
+    // VideoViewModel.kt
     suspend fun getVideoDetail(videoId: String): VideoDto? {
+        _isLoading.value = true
         try {
+            Log.d("VideoViewModel", "비디오 상세 정보 요청: $videoId")
             val response = videoRepository.getVideoDetail(videoId)
             if (response.isSuccessful && response.body()?.isSuccess == true) {
                 val videoDto = response.body()?.result
                 _videoDetail.value = videoDto
+                Log.d("VideoViewModel", "비디오 상세 정보 로드 성공: $videoId, 제목: ${videoDto?.videoTitle}")
                 return videoDto
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                Log.d("VideoViewModel", "비디오 상세 정보 가져오기 실패 : ${errorMsg}")
+                Log.d("VideoViewModel", "비디오 상세 정보 가져오기 실패: $errorMsg")
             }
         } catch (e: Exception) {
-            Log.d("VideoViewModel", "비디오 상세 정보 가져오기 에러 : ${e.message}")
+            Log.d("VideoViewModel", "비디오 상세 정보 가져오기 에러: ${e.message}")
+        } finally {
+            _isLoading.value = false
         }
         return null
     }
