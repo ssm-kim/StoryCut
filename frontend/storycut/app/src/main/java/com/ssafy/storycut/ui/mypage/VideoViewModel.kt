@@ -61,7 +61,6 @@ class VideoViewModel @Inject constructor(
     suspend fun getVideoDetail(videoId: String): VideoDto? {
         try {
             val response = videoRepository.getVideoDetail(videoId)
-
             if (response.isSuccessful && response.body()?.isSuccess == true) {
                 val videoDto = response.body()?.result
                 _videoDetail.value = videoDto
@@ -99,66 +98,8 @@ class VideoViewModel @Inject constructor(
         }
     }
 
-    fun getNextVideo(currentVideoId: String): VideoDto? {
-        val currentList = myVideos.value
-        val currentIndex = currentList.indexOfFirst { it.videoId.toString() == currentVideoId }
 
-        // 현재 비디오가 마지막이 아니면 다음 비디오 반환
-        return if (currentIndex >= 0 && currentIndex < currentList.size - 1) {
-            currentList[currentIndex + 1]
-        } else {
-            // 마지막 비디오인 경우 처음으로 돌아가거나 null 반환 가능
-            null  // 또는 currentList.firstOrNull()
-        }
-    }
-
-    // 이전 비디오 가져오기
-    fun getPreviousVideo(currentVideoId: String): VideoDto? {
-        val currentList = myVideos.value
-        val currentIndex = currentList.indexOfFirst { it.videoId.toString() == currentVideoId }
-
-        // 현재 비디오가 첫 번째가 아니면 이전 비디오 반환
-        return if (currentIndex > 0) {
-            currentList[currentIndex - 1]
-        } else {
-            // 첫 번째 비디오인 경우 마지막으로 이동하거나 null 반환 가능
-            null  // 또는 currentList.lastOrNull()
-        }
-    }
-
-    // 비디오 리스트에서 특정 인덱스부터 원하는 개수만큼 가져오기 (페이징 구현 시 유용)
-    fun getVideosFromIndex(startIndex: Int, count: Int = 5): List<VideoDto> {
-        val currentList = myVideos.value
-        val endIndex = minOf(startIndex + count, currentList.size)
-
-        return if (startIndex < currentList.size) {
-            currentList.subList(startIndex, endIndex)
-        } else {
-            emptyList()
-        }
-    }
 
     private val _roomVideos = MutableStateFlow<List<VideoDto>>(emptyList())
-    val roomVideos: StateFlow<List<VideoDto>> = _roomVideos
 
-    // 공유방의 비디오 목록 가져오기
-    fun fetchRoomVideos(roomId: String, token: String) {
-        viewModelScope.launch {
-            try {
-                val response = videoRepository.getRoomVideos(roomId)
-                if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    response.body()?.result?.let {
-                        _roomVideos.value = it
-                    }
-                } else {
-                    // 에러 처리
-                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                    Log.d("VideoViewModel", "공유방 비디오 목록 가져오기 실패 : ${errorMsg}")
-                }
-            } catch (e: Exception) {
-                // 예외 처리
-                Log.d("VideoViewModel", "공유방 비디오 목록 가져오기 에러 : ${e.message}")
-            }
-        }
-    }
 }

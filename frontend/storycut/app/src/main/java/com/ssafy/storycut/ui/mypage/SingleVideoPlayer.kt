@@ -43,6 +43,29 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.ssafy.storycut.R
 import com.ssafy.storycut.data.api.model.VideoDto
+import android.widget.Toast
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.compose.material.icons.filled.Edit
+import androidx.core.content.ContextCompat
+import androidx.media3.common.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @UnstableApi
 @Composable
@@ -50,12 +73,26 @@ fun SingleVideoPlayer(
     video: VideoDto,
     isCurrentlyVisible: Boolean,
     onPlayerCreated: (ExoPlayer) -> Unit = {},
-    userProfileImg: String? = null,  // 사용자 프로필 이미지 URL 추가
-    userName: String? = null,        // 사용자 이름 추가
+    userProfileImg: String? = null,
+    userName: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(isCurrentlyVisible) }
+    var showMoreOptions by remember { mutableStateOf(false) } // 더보기 메뉴 표시 상태
+
+    // 권한 요청 결과 처리
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // 권한이 허용되면 다운로드 진행
+            performDownload(context, video)
+        } else {
+            // 권한이 거부되면 메시지 표시
+            Toast.makeText(context, "저장소 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // 플레이어 상태 관리
     val exoPlayer = remember {
@@ -65,6 +102,7 @@ fun SingleVideoPlayer(
 
             // 비디오 URL 설정
             val mediaItem = MediaItem.fromUri(video.videoUrl)
+            Log.d("SingleVideoPlayer","원본 id : ${video.videoId} ,오리지널 ID ${video.originalVideoId}")
             setMediaItem(mediaItem)
             prepare()
 
@@ -91,6 +129,36 @@ fun SingleVideoPlayer(
         }
     }
 
+    // 다운로드 기능 구현
+    fun downloadVideo() {
+        showMoreOptions = false
+
+        // Android 13(API 33) 이상에서는 특정 권한 체크 없이 다운로드 가능
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            performDownload(context, video)
+        }
+        // Android 10(API 29) 이상에서는 공용 디렉토리 접근 권한 변경됨
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            performDownload(context, video)
+        }
+        // Android 9 이하에서는 저장소 권한 필요
+        else {
+            when {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // 권한이 있는 경우 다운로드 실행
+                    performDownload(context, video)
+                }
+                else -> {
+                    // 권한 요청
+                    requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .clickable {
@@ -101,6 +169,10 @@ fun SingleVideoPlayer(
                 } else {
                     exoPlayer.play()
                     isPlaying = true
+                }
+                // 옵션 메뉴가 열려있다면 닫기
+                if (showMoreOptions) {
+                    showMoreOptions = false
                 }
             }
     ) {
@@ -134,6 +206,59 @@ fun SingleVideoPlayer(
             }
         }
 
+        // 더보기 아이콘 (우측 상단)
+        IconButton(
+            onClick = {
+                showMoreOptions = !showMoreOptions
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(36.dp)
+                .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "더보기",
+                tint = Color.White
+            )
+        }
+
+        // 더보기 메뉴 (선택 시 표시)
+        if (showMoreOptions) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 60.dp, end = 16.dp)
+                    .width(150.dp),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                // 다운로드 옵션
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { downloadVideo() }
+                        .padding(vertical = 12.dp, horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,  // Edit에서 Download로 변경
+                        contentDescription = "다운로드",
+                        tint = Color.DarkGray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "다운로드",
+                        color = Color.DarkGray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
         // 비디오 정보 (하단에 표시)
         Box(
             modifier = Modifier
@@ -153,14 +278,13 @@ fun SingleVideoPlayer(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-
-                // 작성자 정보 (프로필 이미지와 함께 표시) - 더 크게 표시
+                // 작성자 정보 (프로필 이미지와 함께 표시)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 프로필 이미지 추가 - 크기 증가
+                    // 프로필 이미지 추가
                     AsyncImage(
-                        model = userProfileImg ?: R.drawable.ic_launcher_foreground,  // 기본 이미지로 대체
+                        model = userProfileImg ?: R.drawable.ic_launcher_foreground,
                         contentDescription = "작성자 프로필",
                         modifier = Modifier
                             .size(32.dp)
@@ -170,18 +294,18 @@ fun SingleVideoPlayer(
 
                     Spacer(modifier = Modifier.padding(start = 10.dp))
 
-                    // 작성자 이름 - 폰트 크기 및 굵기 증가
+                    // 작성자 이름
                     Text(
-                        text = userName ?: video.videoTitle,  // userName이 없는 경우 비디오 이름으로 대체
-                        color = Color.White,  // 투명도 제거하여 더 선명하게
-                        style = MaterialTheme.typography.bodyMedium.copy(  // bodySmall에서 bodyMedium으로 변경
-                            fontWeight = FontWeight.SemiBold,  // 글자 굵기 증가
-                            fontSize = 16.sp  // 폰트 크기 명시적으로 지정
+                        text = userName ?: video.videoTitle,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
                         )
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))  // 간격 약간 증가
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // 비디오 제목
                 Text(
@@ -191,6 +315,56 @@ fun SingleVideoPlayer(
                         fontWeight = FontWeight.Bold
                     )
                 )
+            }
+        }
+    }
+}
+
+// 실제 다운로드 기능을 분리하여 구현
+private fun performDownload(context: Context, video: VideoDto) {
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            // 파일명에 사용할 수 없는 문자 처리
+            val safeFileName = video.videoTitle.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+
+            // DownloadManager를 사용하여 다운로드 요청 생성
+            val request = DownloadManager.Request(Uri.parse(video.videoUrl))
+                .setTitle("${safeFileName} 다운로드")
+                .setDescription("비디오 다운로드 중...")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+
+            // Android 10(API 29) 이상에서는 Download 디렉토리에 저장
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                request.setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    "StoryCut/${safeFileName}.mp4"
+                )
+            } else {
+                // Android 9 이하에서는 Movies 디렉토리에 저장
+                request.setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_MOVIES,
+                    "StoryCut/${safeFileName}.mp4"
+                )
+            }
+
+            // 모바일 데이터 사용 허용
+            request.setAllowedOverMetered(true)
+
+            // 로밍 상태에서 다운로드 허용 (선택적)
+            request.setAllowedOverRoaming(true)
+
+            // DownloadManager를 통해 다운로드 시작
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val downloadId = downloadManager.enqueue(request)
+
+            // UI 스레드에서 토스트 메시지 표시
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "다운로드가 시작되었습니다", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            // 오류 발생 시 UI 스레드에서 토스트 메시지 표시
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "다운로드 오류: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }

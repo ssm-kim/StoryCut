@@ -219,7 +219,6 @@ fun VideoDetailScreen(
                                 onPlayerCreated = { player ->
                                     players[page] = player
                                 },
-                                // 사용자 정보 전달
                                 userProfileImg = userInfo?.profileImg,
                                 userName = userInfo?.name,
                                 modifier = Modifier.fillMaxSize()
