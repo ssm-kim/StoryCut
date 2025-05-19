@@ -33,26 +33,17 @@ async def save_uploaded_images(files: List[UploadFile]) -> List[str]:
             ext = file.filename.split(".")[-1]
             filename = f"{uuid4().hex}.{ext}"
             file_path = os.path.join(UPLOAD_DIR, filename)
-            logger.info("[이미지 업로드] 저장 경로: %s", file_path)
+            logger.info(f"이미지 저장 경로: {file_path}")
 
             async with aiofiles.open(file_path, "wb") as buffer:
                 content = await file.read()
                 await buffer.write(content)
 
-            mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-            blob_client = get_blob_client(settings.AZURE_CONTAINER_NAME, f"images/{filename}")
-            async with aiofiles.open(file_path, "rb") as f:
-                await blob_client.upload_blob(
-                    await f.read(),
-                    overwrite=True,
-                    content_settings=ContentSettings(content_type=mime_type)
-                )
-
-            saved_urls.append(blob_client.url)
+            saved_urls.append(f"{UPLOAD_DIR}/{filename}")
         return saved_urls
-    except Exception:
-        logger.exception("[이미지 업로드] 저장 중 예외 발생")
-        raise RuntimeError("이미지 저장 중 오류 발생")
+    except Exception as e:
+        logger.exception("이미지 저장 중 오류 발생")
+        raise RuntimeError(f"이미지 저장 중 오류 발생: {str(e)}")
 
 async def save_uploaded_video_local(file: UploadFile) -> str:
     try:
