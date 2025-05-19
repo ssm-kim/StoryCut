@@ -1,9 +1,8 @@
-# 🎬 StoryCut
+ # 🎬 StoryCut
 
-### Samsung Software Academy For Youth 12th - 특화 프로젝트
 #### AI 기반 영상 편집 및 공유 플랫폼
 
-> 2025.03.03 ~ 2025.04.11
+> 2025.04.14 ~ 2025.05.22
 
 <br>
 
@@ -179,7 +178,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 
 ---
 
-| ![우성윤](https://avatars.githubusercontent.com/black4758) | ![곽희섭](https://avatars.githubusercontent.com/HuiSeopKwak) | ![김성민](https://avatars.githubusercontent.com/ssm-kim) | ![양대원](https://avatars.githubusercontent.com/YDaewon) | ![최지원](https://avatars.githubusercontent.com/chjw956) | ![박준현](https://avatars.githubusercontent.com/pickup3415)
+| <img src="https://avatars.githubusercontent.com/black4758" width="200"> | <img src="https://avatars.githubusercontent.com/HuiSeopKwak" width="200"> | <img src="https://avatars.githubusercontent.com/ssm-kim" width="200"> | <img src="https://avatars.githubusercontent.com/YDaewon" width="200">  | <img src="https://avatars.githubusercontent.com/chjw956" width="200">  | <img src="https://avatars.githubusercontent.com/pickup3415" width="200">
 |---------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | 우성윤 ([@black4758](https://github.com/black4758)) | 곽희섭 ([@HuiSeopKwak](https://github.com/HuiSeopKwak)) | 김성민 ([@ssm-kim](https://github.com/ssm-kim)) | 양대원 ([@YDaewon](https://github.com/YDaewon)) | 최지원 ([@chjw956](https://github.com/chjw956)) | 박준현 ([@pickup3415](https://github.com/pickup3415)) | 
 | Leader / AI | Back End | Back End | Back End |  Infra | Front End |
