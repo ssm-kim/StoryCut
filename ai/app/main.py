@@ -4,10 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 
 app = FastAPI(
-    # root_path="/api/v1/fastapi",      # Nginx proxy 경로와 일치
-    # docs_url="/docs",                 # Swagger UI 경로
-    # redoc_url=None,                   # Redoc 비활성화
-    # openapi_url="/openapi.json"       # OpenAPI JSON 경로
+    root_path="/api/v1/fastapi",      # Nginx proxy 경로와 일치
+    docs_url="/docs",                 # Swagger UI 경로
+    redoc_url=None,                   # Redoc 비활성화
+    openapi_url="/openapi.json"       # OpenAPI JSON 경로
 )
 
 # ✅ Bearer 인증 + Swagger 서버 URL 경로 강제 지정
@@ -23,7 +23,7 @@ def custom_openapi():
     )
 
     # 🔥 root_path가 Swagger 서버 URL에 반영되도록 수동 삽입
-    # openapi_schema["servers"] = [{"url": "/api/v1/fastapi"}]
+    openapi_schema["servers"] = [{"url": "/api/v1/fastapi"}]
 
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
