@@ -4,7 +4,9 @@ import com.ssafy.storycut.data.api.model.*
 import com.ssafy.storycut.data.api.model.Tumbnail.ThumbNailUploadResponse
 import com.ssafy.storycut.data.api.model.edit.ImageUploadResponse
 import com.ssafy.storycut.data.api.model.edit.MosaicRequest
+import com.ssafy.storycut.data.api.model.edit.PresignedUrlResponse
 import com.ssafy.storycut.data.api.model.edit.VideoProcessRequest
+import com.ssafy.storycut.data.api.model.edit.VideoUploadRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -18,12 +20,17 @@ interface EditService {
     suspend fun uploadImages(@Part files: List<MultipartBody.Part>):
             Response<BaseResponse<ImageUploadResponse>>
 
-    // 영상 업로드 API - 단일 파일 업로드
-    @Multipart
-    @POST("upload/videos")  // 경로 확인 (서버 코드와 일치하는지)
+    // Azure Blob Presigned URL 발급 API
+    @GET("presigned/presigned-url")
+    suspend fun getPresignedUrl(
+        @Query("original_filename") originalFilename: String
+    ): Response<PresignedUrlResponse>
+
+    // Azure 업로드 후 영상 등록 API
+    @POST("upload/videos")
     suspend fun uploadVideo(
-        @Part file: MultipartBody.Part,
-        @Part("video_title") videoTitle: RequestBody
+        @Header("Authorization") authorization: String,
+        @Body request: VideoUploadRequest
     ): Response<BaseResponse<VideoDto>>
 
     // 룸 썸네일 이미지 업로드 API

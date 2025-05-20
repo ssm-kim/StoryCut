@@ -11,7 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.storycut.data.api.model.VideoDto
-import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.EditRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -163,8 +162,8 @@ class EditViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // 1. 비디오 업로드
-                val videoUploadResult = repository.uploadVideo(selectedVideoUri!!, videoTitle)
+                // 1. Presigned URL을 사용하여 비디오 업로드
+                val videoUploadResult = repository.uploadVideoWithPresignedUrl(selectedVideoUri!!, videoTitle)
                 if (videoUploadResult.isFailure) {
                     throw videoUploadResult.exceptionOrNull() ?: Exception("비디오 업로드 실패")
                 }
@@ -180,7 +179,7 @@ class EditViewModel @Inject constructor(
                     }
                 }
 
-                // 4. 비디오 처리 요청 - 배경 음악 프롬프트와 일반 프롬프트 분리
+                // 3. 비디오 처리 요청 - 배경 음악 프롬프트와 일반 프롬프트 분리
                 val processResult = repository.processVideo(
                     prompt = promptText.takeIf { it.isNotBlank() },
                     videoId = videoId,
@@ -192,7 +191,8 @@ class EditViewModel @Inject constructor(
                 )
 
                 isLoading = false
-                Log.e("test","값 : ${processResult.isSuccess}")
+                Log.d("EditViewModel", "영상 처리 결과: ${processResult.isSuccess}")
+
                 if (processResult.isSuccess) {
                     _events.emit(EditEvent.Processing(videoId.toString()))
                 } else {

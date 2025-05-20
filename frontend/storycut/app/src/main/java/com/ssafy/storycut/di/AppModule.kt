@@ -36,6 +36,10 @@ annotation class BaseRetrofit
 @Retention(AnnotationRetention.BINARY)
 annotation class AiRetrofit
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class PlainClient  // 새로운 한정자 추가
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -78,6 +82,26 @@ object AppModule {
         @ApplicationContext context: Context
     ): AuthInterceptor {
         return AuthInterceptor(tokenManager, authRepository, context)
+    }
+
+    @Provides
+    @Singleton
+    @PlainClient  // 한정자 추가
+    fun providePlainOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+        }
+
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     @Provides
@@ -167,8 +191,9 @@ object AppModule {
         editService: EditService,
         @ApplicationContext context: Context,
         tokenManager: TokenManager,
-        fcmTokenManager: FCMTokenManager
+        fcmTokenManager: FCMTokenManager,
+        @PlainClient plainOkHttpClient: OkHttpClient  // PlainClient 한정자 사용
     ): EditRepository {
-        return EditRepository(editService, context, tokenManager, fcmTokenManager)
+        return EditRepository(editService, context, tokenManager, fcmTokenManager, plainOkHttpClient)
     }
 }
