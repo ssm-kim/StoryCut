@@ -176,7 +176,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 
 ### 3. [API 명세서](https://fluorescent-backpack-f2b.notion.site/API-1f8258eb697a80d2831bc1cd9b461d13)
 
-### 4. [ERD](/docs/erd.png)
+### 4. [ERD](/docs/readme/erd.png)
 
 ### 5. [포팅매뉴얼](/exec/포팅메뉴얼/)
 
