@@ -85,7 +85,7 @@ async def upload_video(
         local_path = os.path.join(VIDEO_DIR, filename)
 
         await download_video_to_local(request.video_url, local_path)
-        thumbnail_url = await generate_and_upload_thumbnail()
+        thumbnail_url = await generate_and_upload_thumbnail(local_path)
         logger.info(f"[썸네일 생성 완료] URL: {thumbnail_url}")
 
         # 2. Spring 서버 업로드 등록
