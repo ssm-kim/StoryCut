@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.storycut.ui.room.RoomViewModel
 import com.ssafy.storycut.ui.room.setting.AnimatedRoomEditNavigation
 
-// AnimatedRoomSettingsNavigation에 추가
 @Composable
 fun AnimatedRoomSettingsNavigation(
     roomId: String,
@@ -32,36 +30,42 @@ fun AnimatedRoomSettingsNavigation(
     // 방 정보 수정 화면 표시 상태
     var showRoomEdit by remember { mutableStateOf(false) }
 
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 300)
-        ),
-        exit = slideOutHorizontally(
-            targetOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 300)
-        ),
-        modifier = Modifier.zIndex(if (isVisible) 10f else 0f)
-    ) {
+    // 설정 화면은 콘텐츠 영역을 완전히 덮는 오버레이로 표시
+    if (isVisible) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .statusBarsPadding()
-                .imePadding()
+                .zIndex(10f)
         ) {
-            // 방 설정 화면 표시
-            RoomSettingScreen(
-                roomId = roomId,
-                roomViewModel = roomViewModel,
-                onBackPressed = onDismiss,
-                onRoomEdit = {
-                    // 방 정보 수정 화면 표시
-                    showRoomEdit = true
-                },
-                onLeaveRoom = onLeaveRoom
-            )
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInHorizontally(
+                    initialOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = tween(durationMillis = 300)
+                ),
+                exit = slideOutHorizontally(
+                    targetOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = tween(durationMillis = 300)
+                )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                ) {
+                    // 방 설정 화면 표시
+                    RoomSettingScreen(
+                        roomId = roomId,
+                        roomViewModel = roomViewModel,
+                        onBackPressed = onDismiss,
+                        onRoomEdit = {
+                            // 방 정보 수정 화면 표시
+                            showRoomEdit = true
+                        },
+                        onLeaveRoom = onLeaveRoom
+                    )
+                }
+            }
 
             // 방 정보 수정 화면
             AnimatedRoomEditNavigation(

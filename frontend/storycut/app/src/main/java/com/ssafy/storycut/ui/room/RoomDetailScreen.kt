@@ -102,6 +102,7 @@ fun RoomDetailScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
+
     // 이미지 선택기를 위한 런처
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -175,6 +176,33 @@ fun RoomDetailScreen(
         }
     }
 
+
+    // 설정 화면 애니메이션 추가
+    AnimatedRoomSettingsNavigation(
+        roomId = roomId,
+        roomViewModel = roomViewModel,
+        isVisible = showRoomSettings,
+        onDismiss = { showRoomSettings = false },
+        onRoomEdit = { roomIdToEdit ->
+            // 방 정보 수정 화면으로 이동
+            navController.navigate("edit_room/$roomIdToEdit")
+        },
+        onLeaveRoom = {
+            // 방 나가기 처리
+            scope.launch {
+                roomViewModel.leaveRoom(roomId)
+
+                // 에러가 없으면 성공으로 간주하고 뒤로 이동
+                if (roomViewModel.error.value.isEmpty()) {
+                    showToast("방에서 나갔습니다")
+                    navController.popBackStack()
+                } else {
+                    showToast(roomViewModel.error.value)
+                }
+            }
+        }
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -190,15 +218,13 @@ fun RoomDetailScreen(
                     )
                 },
                 actions = {
-                    // 오른쪽에 설정 아이콘 배치 - 크기 증가
                     IconButton(onClick = {
-                        // 설정 아이콘 클릭 시 설정 화면 표시
                         showRoomSettings = true
                     }) {
                         Icon(
-                            imageVector = Icons.Default.Settings,  // Material Icons의 설정 아이콘 사용
+                            imageVector = Icons.Default.Settings,
                             contentDescription = "설정",
-                            modifier = Modifier.size(30.dp)  // 아이콘 크기를 30dp로 증가
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 },
@@ -621,31 +647,6 @@ fun RoomDetailScreen(
                 }
             }
 
-            // 설정 화면 애니메이션 추가
-            AnimatedRoomSettingsNavigation(
-                roomId = roomId,
-                roomViewModel = roomViewModel,
-                isVisible = showRoomSettings,
-                onDismiss = { showRoomSettings = false },
-                onRoomEdit = { roomIdToEdit ->
-                    // 방 정보 수정 화면으로 이동
-                    navController.navigate("edit_room/$roomIdToEdit")
-                },
-                onLeaveRoom = {
-                    // 방 나가기 처리
-                    scope.launch {
-                        roomViewModel.leaveRoom(roomId)
-
-                        // 에러가 없으면 성공으로 간주하고 뒤로 이동
-                        if (roomViewModel.error.value.isEmpty()) {
-                            showToast("방에서 나갔습니다")
-                            navController.popBackStack()
-                        } else {
-                            showToast(roomViewModel.error.value)
-                        }
-                    }
-                }
-            )
         }
     }
 
