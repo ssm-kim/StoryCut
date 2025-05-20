@@ -1,6 +1,5 @@
 package com.ssafy.storycut.ui.mypage
 
-
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -72,10 +71,19 @@ fun MyPageScreen(
     val createdAt = userInfo?.createdAt
     val postCount = videoList.size
 
+    // 프로필 새로고침을 위한 트리거
+    var refreshTrigger by remember { mutableStateOf(0) }
+
     // 포커스 관리를 위한 변수 추가
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     var isFocused by remember { mutableStateOf(false) }
+
+    // 프로필 데이터 새로고침 함수
+    fun refreshProfileData() {
+        Log.d("MyPageScreen", "프로필 데이터 새로고침 요청됨")
+        refreshTrigger++  // 트리거 증가시켜 LaunchedEffect 실행
+    }
 
     // 날짜 포맷변환
     fun formatCreatedAt(createdAt: String?): String {
@@ -95,6 +103,7 @@ fun MyPageScreen(
         }
     }
 
+    // 초기 데이터 로드
     LaunchedEffect(Unit) {
         // 사용자 정보 새로고침
         authViewModel.refreshUserInfoFromRoom()
@@ -110,6 +119,37 @@ fun MyPageScreen(
             println("토큰 가져오기 실패: ${e.message}")
         } finally {
             isLoading = false
+        }
+    }
+
+    // refreshTrigger가 변경될 때마다 데이터 새로고침
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) {  // 초기 0 값은 무시
+            Log.d("MyPageScreen", "새로고침 트리거 실행: $refreshTrigger")
+
+            // 사용자 정보 새로고침
+            authViewModel.refreshUserInfoFromRoom()
+
+            // 비디오 목록 새로고침
+            try {
+                val token = tokenManager.accessToken.first()
+                if (!token.isNullOrEmpty()) {
+                    myVideoViewModel.fetchMyVideos()
+                }
+            } catch (e: Exception) {
+                Log.e("MyPageScreen", "비디오 목록 새로고침 실패: ${e.message}")
+            }
+        }
+    }
+
+    // 설정 화면이 닫힐 때 정보 새로고침
+    LaunchedEffect(showSettings) {
+        if (!showSettings) {
+            // 설정 화면에서 돌아왔을 때만 새로고침 (처음 로드 시에는 실행 안 함)
+            if (refreshTrigger > 0) {
+                Log.d("MyPageScreen", "설정 화면 닫힘, 데이터 새로고침")
+                refreshProfileData()
+            }
         }
     }
 
@@ -344,7 +384,12 @@ fun MyPageScreen(
                         // 설정 화면을 닫을 때도 포커스 해제
                         focusManager.clearFocus()
                     },
-                    onNavigateToLogin = onNavigateToLogin
+                    onNavigateToLogin = onNavigateToLogin,
+                    onProfileUpdated = {
+                        // 프로필 업데이트 콜백 처리 - 직접 새로고침 트리거
+                        Log.d("MyPageScreen", "프로필 업데이트 콜백 실행됨")
+                        refreshProfileData()
+                    }
                 )
             }
         }

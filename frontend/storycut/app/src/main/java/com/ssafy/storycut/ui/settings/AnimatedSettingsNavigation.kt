@@ -16,10 +16,11 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 @Composable
 fun AnimatedSettingsNavigation(
     authViewModel: AuthViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel(), // SettingsViewModel 추가
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onProfileUpdated: () -> Unit = {} // 프로필 업데이트 콜백 추가
 ) {
     BackHandler(enabled = isVisible) {
         onDismiss()
@@ -37,6 +38,16 @@ fun AnimatedSettingsNavigation(
         // visible -> invisible로 변할 때 메인 화면으로 초기화
         if (!isVisible) {
             currentScreen = SettingsScreen.Main
+        }
+    }
+
+    // 닉네임 수정 결과 모니터링
+    LaunchedEffect(key1 = Unit) {
+        settingsViewModel.updateResult.collect { result ->
+            if (result is SettingsViewModel.UpdateResult.Success) {
+                // 닉네임 업데이트 성공 시 콜백 호출
+                onProfileUpdated()
+            }
         }
     }
 
