@@ -150,23 +150,33 @@ def merge_video_segments(output_path, segment_paths):
     finally:
         os.remove("segments.txt")
 
+
 def add_audio_to_video(video_no_audio_path, original_video_path, output_path):
     result = subprocess.run([
         "ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
         "stream=index", "-of", "csv=p=0", original_video_path
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
     has_audio = result.stdout.strip() != ""
+
     cmd = [
         "ffmpeg", "-y", "-i", video_no_audio_path, "-i", original_video_path,
-        "-c", "copy", "-map", "0:v:0", "-map", "1:a:0", "-shortest", output_path
+        "-c", "copy", "-map", "0:v:0", "-map", "1:a:0", "-shortest", "-strict", "-2", output_path
     ] if has_audio else [
         "ffmpeg", "-y", "-i", video_no_audio_path, "-c", "copy", output_path
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
+
     if result.returncode != 0:
-        logger.error("[오디오 추가] 실패: %s", result.stderr.strip())
-        raise RuntimeError(f"오디오 추가 실패: {result.stderr}")
+        logger.warning("[오디오 추가 실패] fallback으로 영상만 저장합니다: %s", result.stderr.strip())
+        fallback_cmd = [
+            "ffmpeg", "-y", "-i", video_no_audio_path, "-c", "copy", output_path
+        ]
+        fallback_result = subprocess.run(fallback_cmd, capture_output=True, text=True)
+        if fallback_result.returncode != 0:
+            logger.error("[fallback 실패] %s", fallback_result.stderr.strip())
+            raise RuntimeError(f"Fallback 인코딩 실패: {fallback_result.stderr}")
     else:
         logger.info("[오디오 추가] 완료: %s", output_path)
 
