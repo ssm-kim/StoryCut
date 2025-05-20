@@ -144,6 +144,47 @@ class EditRepository @Inject constructor(
         }
     }
 
+    suspend fun registerExistingVideo(
+        videoUrl: String,
+        videoTitle: String,
+        thumbnailUrl: String? = null
+    ): Result<Long> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 서버에 비디오 등록
+                val authToken = "Bearer ${tokenManager.accessToken.first() ?: ""}"
+                val videoUploadRequest = VideoUploadRequest(
+                    videoTitle = videoTitle,
+                    videoUrl = videoUrl,
+                    thumbnailUrl = thumbnailUrl
+                )
+
+                val response = editService.uploadVideo(authToken, videoUploadRequest)
+
+                if (response.isSuccessful) {
+                    val baseResponse = response.body()
+                    if (baseResponse?.isSuccess == true && baseResponse.result != null) {
+                        // VideoDto에서 videoId 추출
+                        val videoDto = baseResponse.result
+                        Log.d("EditRepository", "비디오 등록 성공: ID=${videoDto.videoId}")
+
+                        Result.success(videoDto.videoId)
+                    } else {
+                        Result.failure(Exception("비디오 등록 실패: ${baseResponse?.message ?: "알 수 없는 오류"}"))
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("EditRepository", "서버 오류 응답: ${errorBody ?: "없음"}")
+
+                    Result.failure(Exception("비디오 등록 실패: ${response.message()}"))
+                }
+            } catch (e: Exception) {
+                Log.e("EditRepository", "비디오 등록 예외", e)
+                Result.failure(e)
+            }
+        }
+    }
+
     // 썸네일 파일 업로드 함수 (presigned URL 사용)
     private suspend fun uploadThumbnailFile(thumbnailFile: File): String? {
         return try {

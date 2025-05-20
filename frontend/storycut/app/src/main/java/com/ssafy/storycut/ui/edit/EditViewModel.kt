@@ -54,6 +54,19 @@ class EditViewModel @Inject constructor(
 
     var autoMusic by mutableStateOf(false)
         private set
+    var selectedVideoUrl by mutableStateOf<String?>(null)
+        private set
+
+    // 내 쇼츠에서 선택한 경우의 썸네일 URL 저장
+    var selectedVideoThumbnailUrl by mutableStateOf<String?>(null)
+        private set
+
+    // 비디오 URL 설정 함수 수정 - 썸네일 URL도 함께 저장
+    fun setSelectedVideoUrl(url: String, thumbnailUrl: String?) {
+        selectedVideoUrl = url
+        selectedVideoThumbnailUrl = thumbnailUrl
+        videoSelected = true
+    }
 
     // 배경 음악 자동 생성 옵션 설정 - 함수명 변경
     fun updateAutoMusic(auto: Boolean) {
@@ -82,6 +95,8 @@ class EditViewModel @Inject constructor(
     // 비디오 선택
     fun setSelectedVideo(uri: Uri) {
         selectedVideoUri = uri
+        selectedVideoUrl = null // URI를 설정할 때 URL 초기화
+        selectedVideoThumbnailUrl = null // URI를 설정할 때 URL 썸네일 초기화
         videoSelected = true
         loadVideoThumbnail(uri)
     }
@@ -148,7 +163,8 @@ class EditViewModel @Inject constructor(
 
     // 편집 처리 시작
     fun processEditing() {
-        if (selectedVideoUri == null) {
+        // 비디오 URL이나 URI 둘 중 하나가 있는지 확인
+        if (selectedVideoUri == null && selectedVideoUrl == null) {
             error = "비디오를 선택해주세요"
             return
         }
@@ -162,18 +178,36 @@ class EditViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // 1. Presigned URL을 사용하여 비디오 업로드
-                val videoUploadResult = repository.uploadVideoWithPresignedUrl(
-                    selectedVideoUri!!,
-                    videoTitle,
-                    videoThumbnail // 썸네일 비트맵 전달
-                )
+                val videoId: Long
 
-                if (videoUploadResult.isFailure) {
-                    throw videoUploadResult.exceptionOrNull() ?: Exception("비디오 업로드 실패")
+                // 선택된 비디오 소스에 따라 다른 처리
+                if (selectedVideoUrl != null) {
+                    // 이미 서버에 있는 비디오 URL 처리
+                    val videoRegisterResult = repository.registerExistingVideo(
+                        videoUrl = selectedVideoUrl!!,
+                        videoTitle = videoTitle,
+                        thumbnailUrl = selectedVideoThumbnailUrl // 내 쇼츠에서 가져온 썸네일 URL 사용
+                    )
+
+                    if (videoRegisterResult.isFailure) {
+                        throw videoRegisterResult.exceptionOrNull() ?: Exception("비디오 등록 실패")
+                    }
+
+                    videoId = videoRegisterResult.getOrNull() ?: throw Exception("등록된 비디오 ID를 찾을 수 없습니다")
+                } else {
+                    // 로컬 갤러리 URI 처리 (기존 코드)
+                    val videoUploadResult = repository.uploadVideoWithPresignedUrl(
+                        selectedVideoUri!!,
+                        videoTitle,
+                        videoThumbnail
+                    )
+
+                    if (videoUploadResult.isFailure) {
+                        throw videoUploadResult.exceptionOrNull() ?: Exception("비디오 업로드 실패")
+                    }
+
+                    videoId = videoUploadResult.getOrNull() ?: throw Exception("업로드된 비디오 ID를 찾을 수 없습니다")
                 }
-
-                val videoId = videoUploadResult.getOrNull() ?: throw Exception("업로드된 비디오 ID를 찾을 수 없습니다")
 
                 // 2. 모자이크 이미지 업로드 (필요시)
                 var imageUrls = listOf<String>()
@@ -214,10 +248,12 @@ class EditViewModel @Inject constructor(
         }
     }
 
-    // 상태 초기화 함수
+    // 상태 초기화 함수 - 추가 변수도 초기화 처리
     fun resetState() {
         // 비디오 관련 상태 초기화
         selectedVideoUri = null
+        selectedVideoUrl = null
+        selectedVideoThumbnailUrl = null
         videoThumbnail = null
         videoSelected = false
 
@@ -242,5 +278,4 @@ class EditViewModel @Inject constructor(
         data class Processing(val videoId: String) : EditEvent()
         data class Error(val message: String) : EditEvent()
     }
-
 }

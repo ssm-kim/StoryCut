@@ -516,16 +516,23 @@ fun EditScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 편집하기 버튼
             Button(
                 onClick = {
-                    // 선택된 비디오가 VideoDto에서 온 경우, 해당 URL을 viewModel에 설정
+                    // 선택된 비디오가 VideoDto에서 온 경우 처리
                     if (selectedVideoDto != null && !viewModel.videoSelected) {
                         try {
                             val videoUrl = selectedVideoDto?.videoUrl
-                            if (videoUrl != null && (videoUrl.startsWith("content://") || videoUrl.startsWith("file://") || videoUrl.startsWith("http"))) {
-                                val videoUri = Uri.parse(videoUrl)
-                                viewModel.setSelectedVideo(videoUri)
+                            val thumbnailUrl = selectedVideoDto?.thumbnail
+
+                            if (videoUrl != null) {
+                                if (videoUrl.startsWith("content://") || videoUrl.startsWith("file://")) {
+                                    // 로컬 URI 처리
+                                    val videoUri = Uri.parse(videoUrl)
+                                    viewModel.setSelectedVideo(videoUri)
+                                } else if (videoUrl.startsWith("http")) {
+                                    // HTTP URL 처리 - 썸네일 URL도 함께 전달
+                                    viewModel.setSelectedVideoUrl(videoUrl, thumbnailUrl)
+                                }
                             }
                         } catch (e: Exception) {
                             Toast.makeText(context, "비디오 로드 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -596,6 +603,9 @@ fun EditScreen(
 
                     // 비디오 제목도 설정
                     viewModel.updateVideoTitle(video.videoTitle)
+
+                    // 웹 URL 처리를 위해 setSelectedVideoUrl 호출 - 썸네일 URL 함께 전달
+                    viewModel.setSelectedVideoUrl(video.videoUrl, video.thumbnail)
 
                     // 토스트 메시지로 선택 성공 알림
                     Toast.makeText(context, "비디오 '${video.videoTitle}' 선택됨", Toast.LENGTH_SHORT).show()
