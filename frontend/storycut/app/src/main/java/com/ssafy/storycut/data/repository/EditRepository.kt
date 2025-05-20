@@ -1,6 +1,7 @@
 package com.ssafy.storycut.data.repository
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
@@ -36,7 +37,7 @@ class EditRepository @Inject constructor(
     private val plainOkHttpClient: OkHttpClient  // OkHttpClient 주입 추가
 ) {
 
-    suspend fun uploadVideoWithPresignedUrl(videoUri: Uri, videoTitle: String): Result<Long> {
+    suspend fun uploadVideoWithPresignedUrl(videoUri: Uri, videoTitle: String, thumbnailBitmap: Bitmap? = null): Result<Long> {
         return withContext(Dispatchers.IO) {
             try {
                 // URI에서 파일 생성
@@ -51,6 +52,19 @@ class EditRepository @Inject constructor(
                 // 파일이 비어있는지 확인
                 if (videoFile.length() == 0L) {
                     return@withContext Result.failure(Exception("비디오 파일이 비어있습니다"))
+                }
+
+                // 썸네일 업로드 및 URL 얻기
+                var thumbnailUrl: String? = null
+                if (thumbnailBitmap != null) {
+                    // 비트맵을 파일로 변환
+                    val thumbnailFile = File.createTempFile("thumbnail", ".jpg", context.cacheDir)
+                    FileOutputStream(thumbnailFile).use { outputStream ->
+                        thumbnailBitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                    }
+
+                    // 썸네일 이미지 업로드
+                    thumbnailUrl = uploadThumbnailFile(thumbnailFile)
                 }
 
                 // 파일명에서 확장자 추출
@@ -95,11 +109,12 @@ class EditRepository @Inject constructor(
 
                 Log.d("EditRepository", "Azure Blob Storage 업로드 성공: 응답 코드 ${uploadResponse.code}")
 
-                // 3. 서버에 비디오 등록
+                // 3. 서버에 비디오 등록 (썸네일 URL 추가)
                 val authToken = "Bearer ${tokenManager.accessToken.first() ?: ""}"
                 val videoUploadRequest = VideoUploadRequest(
                     videoTitle = videoTitle,
-                    videoUrl = videoUrl
+                    videoUrl = videoUrl,
+                    thumbnailUrl = thumbnailUrl
                 )
 
                 val response = editService.uploadVideo(authToken, videoUploadRequest)
@@ -126,6 +141,51 @@ class EditRepository @Inject constructor(
                 Log.e("EditRepository", "비디오 업로드 예외", e)
                 Result.failure(e)
             }
+        }
+    }
+
+    // 썸네일 파일 업로드 함수 (presigned URL 사용)
+    private suspend fun uploadThumbnailFile(thumbnailFile: File): String? {
+        return try {
+            // 1. 썸네일용 Presigned URL 발급 받기
+            val presignedResponse = editService.getPresignedUrl(thumbnailFile.name)
+
+            if (!presignedResponse.isSuccessful || presignedResponse.body() == null) {
+                Log.e("EditRepository", "썸네일 Presigned URL 발급 실패: ${presignedResponse.message()}")
+                return null
+            }
+
+            val presignedData = presignedResponse.body()!!
+            val uploadUrl = presignedData.uploadUrl
+            val thumbnailUrl = presignedData.videoUrl // 실제로는 이미지 URL이지만 API는 동일함
+
+            Log.d("EditRepository", "썸네일 Presigned URL 발급 성공: $uploadUrl")
+
+            // 2. Azure Blob Storage에 썸네일 업로드
+            val requestBody = thumbnailFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+
+            // Azure Blob Storage에 필요한 헤더 추가
+            val request = Request.Builder()
+                .url(uploadUrl)
+                .put(requestBody)
+                .addHeader("x-ms-blob-type", "BlockBlob")
+                .addHeader("Content-Type", "image/jpeg")
+                .addHeader("Content-Length", thumbnailFile.length().toString())
+                .build()
+
+            val uploadResponse = plainOkHttpClient.newCall(request).execute()
+
+            if (!uploadResponse.isSuccessful) {
+                val errorBody = uploadResponse.body?.string() ?: "응답 없음"
+                Log.e("EditRepository", "썸네일 Azure Blob Storage 업로드 실패: ${uploadResponse.code}, ${uploadResponse.message}, 응답: $errorBody")
+                return null
+            }
+
+            Log.d("EditRepository", "썸네일 Azure Blob Storage 업로드 성공: $thumbnailUrl")
+            thumbnailUrl
+        } catch (e: Exception) {
+            Log.e("EditRepository", "썸네일 업로드 중 오류 발생", e)
+            null
         }
     }
 

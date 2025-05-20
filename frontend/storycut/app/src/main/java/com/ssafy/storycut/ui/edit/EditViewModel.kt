@@ -163,7 +163,12 @@ class EditViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // 1. Presigned URL을 사용하여 비디오 업로드
-                val videoUploadResult = repository.uploadVideoWithPresignedUrl(selectedVideoUri!!, videoTitle)
+                val videoUploadResult = repository.uploadVideoWithPresignedUrl(
+                    selectedVideoUri!!,
+                    videoTitle,
+                    videoThumbnail // 썸네일 비트맵 전달
+                )
+
                 if (videoUploadResult.isFailure) {
                     throw videoUploadResult.exceptionOrNull() ?: Exception("비디오 업로드 실패")
                 }
@@ -237,4 +242,5 @@ class EditViewModel @Inject constructor(
         data class Processing(val videoId: String) : EditEvent()
         data class Error(val message: String) : EditEvent()
     }
+
 }
