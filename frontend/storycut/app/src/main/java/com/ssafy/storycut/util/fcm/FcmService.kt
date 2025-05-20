@@ -60,9 +60,9 @@ class FcmService : FirebaseMessagingService() {
                     // JSON 파싱
                     val videoDto = parseVideoDto(resultJson)
 
-                    // 알림 표시
+                    // 알림 표시 - 제목에 비디오 타이틀 추가
                     val notificationTitle = remoteMessage.notification?.title ?: "영상 편집 완료"
-                    val notificationBody = remoteMessage.notification?.body ?: "영상 처리가 완료되었습니다."
+                    val notificationBody = "영상 '${videoDto.videoTitle}'의 편집이 완료되었습니다."
 
                     sendNotification(notificationTitle, notificationBody, videoDto)
                 } catch (e: Exception) {

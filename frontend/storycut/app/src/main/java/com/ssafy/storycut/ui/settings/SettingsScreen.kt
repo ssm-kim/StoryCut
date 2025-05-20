@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.auth.AuthViewModel
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -34,6 +35,8 @@ fun SettingsScreen(
     onNavigateToEditNickname: () -> Unit = {}, // 닉네임 수정 화면으로 이동하는 콜백 추가
 ) {
     val scrollState = rememberScrollState()
+    // 회원탈퇴 다이얼로그 표시 상태
+    val showDeleteAccountDialog = remember { mutableStateOf(false) }
 
     // 로그인 화면 이동 이벤트 수신
     LaunchedEffect(authViewModel) {
@@ -44,6 +47,32 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    // 회원탈퇴 확인 다이얼로그
+    if (showDeleteAccountDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog.value = false },
+            title = { Text("회원탈퇴") },
+            text = { Text("정말 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteAccountDialog.value = false
+                        authViewModel.deleteAccount()
+                    }
+                ) {
+                    Text("탈퇴", color = Color(0xFFD0B699))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteAccountDialog.value = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -96,11 +125,11 @@ fun SettingsScreen(
                 showDivider = true
             )
 
-            // 회원탈퇴 (ImageVector 대신 리소스 ID 사용)
+            // 회원탈퇴 - 다이얼로그 표시로 변경
             SettingItemWithResourceIcon(
                 title = "회원탈퇴",
                 iconResId = R.drawable.setting_delete,
-                onClick = { /* 회원탈퇴 확인 다이얼로그 표시 */ },
+                onClick = { showDeleteAccountDialog.value = true },
                 isWarning = true,
                 showDivider = false
             )

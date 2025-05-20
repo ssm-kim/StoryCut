@@ -365,6 +365,49 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+    //회원탈퇴
+    fun deleteAccount() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "회원탈퇴 시작")
+
+                // 서버에 회원탈퇴 요청
+                val result = userRepository.deleteAccount()
+
+                if (result.isSuccess) {
+                    Log.d(TAG, "회원탈퇴 성공")
+
+                    // 토큰 삭제
+                    tokenManager.clearTokens()
+                    Log.d(TAG, "로컬 토큰 삭제 완료")
+
+                    // 상태 초기화
+                    _userState.value = null
+                    _tokenState.value = null
+                    _uiState.value = AuthUiState.Initial
+                    Log.d(TAG, "상태 초기화 완료")
+
+                    // 로그인 화면으로 이동
+                    Log.d(TAG, "로그인 화면으로 이동 이벤트 발생")
+                    _navigationEvent.emit(NavigationEvent.NavigateToLogin)
+                } else {
+                    // 실패 처리
+                    Log.e(TAG, "회원탈퇴 실패: ${result.exceptionOrNull()?.message}")
+                    _uiState.value = AuthUiState.Error("회원탈퇴에 실패했습니다: ${result.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "회원탈퇴 중 오류 발생", e)
+                _uiState.value = AuthUiState.Error("회원탈퇴 중 오류가 발생했습니다: ${e.message}")
+
+                // 오류 발생해도 로그인 화면으로 이동 시도
+                try {
+                    _navigationEvent.emit(NavigationEvent.NavigateToLogin)
+                } catch (ex: Exception) {
+                    Log.e(TAG, "네비게이션 이벤트 발생 실패", ex)
+                }
+            }
+        }
+    }
     
     // 로그인 성공 상태로 설정
     fun setLoginSuccess() {
