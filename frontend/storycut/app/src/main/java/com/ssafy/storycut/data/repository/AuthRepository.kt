@@ -22,6 +22,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,6 +41,7 @@ class AuthRepository @Inject constructor(
     // 현재 로그인한 사용자 정보를 저장
     private var currentUser: UserInfo? = null
     private val contentResolver: ContentResolver = context.contentResolver
+    private val appContext = context
 
     /**
      * 구글 로그인 토큰을 서버로 전송하는 함수
@@ -235,6 +241,64 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    // 클라우드 스토리지 URL에서 비디오 다운로드
+    private suspend fun downloadFromCloudStorage(fileUrl: String): File = withContext(Dispatchers.IO) {
+        try {
+            // 임시 파일 생성
+            val fileName = "youtube_upload_${UUID.randomUUID()}.mp4"
+            val outputFile = File(appContext.cacheDir, fileName)
+
+            // URL 연결 설정
+            val url = URL(fileUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = 30000  // 30초 타임아웃
+            connection.readTimeout = 60000     // 60초 읽기 타임아웃
+            connection.requestMethod = "GET"
+            connection.connect()
+
+            // 연결 상태 확인
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) {
+                Log.e(TAG, "클라우드 스토리지 다운로드 실패: $responseCode - ${connection.responseMessage}")
+                throw Exception("서버 응답 오류: $responseCode")
+            }
+
+            // 파일 다운로드 - 진행률 로깅 추가
+            val contentLength = connection.contentLength.toLong()
+            var downloadedBytes = 0L
+            val startTime = System.currentTimeMillis()
+
+            connection.inputStream.use { input ->
+                FileOutputStream(outputFile).use { output ->
+                    val buffer = ByteArray(8 * 1024)  // 8KB 버퍼
+                    var bytesRead: Int
+
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        downloadedBytes += bytesRead
+
+                        // 10% 간격으로 진행률 로깅
+                        if (contentLength > 0 && downloadedBytes % (contentLength / 10) < buffer.size) {
+                            val progress = (downloadedBytes * 100 / contentLength).toInt()
+                            Log.d(TAG, "다운로드 진행률: $progress%")
+                        }
+                    }
+                    output.flush()
+                }
+            }
+
+            val elapsedTime = (System.currentTimeMillis() - startTime) / 1000
+            Log.d(TAG, "클라우드 스토리지 다운로드 완료 ($elapsedTime 초): ${outputFile.absolutePath}")
+            Log.d(TAG, "다운로드된 파일 크기: ${outputFile.length()} 바이트")
+
+            return@withContext outputFile
+
+        } catch (e: Exception) {
+            Log.e(TAG, "클라우드 스토리지 다운로드 중 오류 발생", e)
+            throw e
+        }
+    }
+
     // Repository.kt
     suspend fun uploadVideoToYouTube(
         accessToken: String,
@@ -244,8 +308,23 @@ class AuthRepository @Inject constructor(
         tags: List<String>
     ) {
         withContext(Dispatchers.IO) {
+            var tempFile: File? = null
+
             try {
                 Log.d(TAG, "유튜브 업로드 시작: $title")
+                Log.d(TAG, "비디오 URI: $videoUri")
+
+                // 입력 스트림 생성
+                val inputStream = if (videoUri.toString().startsWith("http")) {
+                    // HTTP/HTTPS URL인 경우 (Azure Blob, S3 등)
+                    Log.d(TAG, "원격 URL에서 비디오 다운로드 시작")
+                    tempFile = downloadFromCloudStorage(videoUri.toString())
+                    tempFile.inputStream()
+                } else {
+                    // 로컬 Uri인 경우
+                    Log.d(TAG, "로컬 URI에서 비디오 스트림 열기")
+                    contentResolver.openInputStream(videoUri)
+                } ?: throw Exception("비디오 파일을 열 수 없습니다")
 
                 // YouTube API 클라이언트 생성
                 val transport = NetHttpTransport()
@@ -277,11 +356,7 @@ class AuthRepository @Inject constructor(
                 val status = VideoStatus()
                 status.privacyStatus = "unlisted" // 또는 "private", "public"
                 status.selfDeclaredMadeForKids = false
-                video.status = status // 중요: 이 부분 추가
-
-                // 입력 스트림 생성
-                val inputStream = contentResolver.openInputStream(videoUri)
-                    ?: throw Exception("비디오 파일을 열 수 없습니다")
+                video.status = status
 
                 // 미디어 콘텐츠 생성
                 val mediaContent = InputStreamContent("video/mp4", inputStream)
@@ -294,6 +369,7 @@ class AuthRepository @Inject constructor(
                 )
 
                 // 업로드 실행
+                Log.d(TAG, "유튜브 API 호출 시작")
                 val uploadedVideo = videosInsertRequest.execute()
 
                 Log.d(TAG, "비디오가 성공적으로 업로드되었습니다! 비디오 ID: ${uploadedVideo.id}")
@@ -302,6 +378,14 @@ class AuthRepository @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "유튜브 업로드 중 오류 발생", e)
                 throw e
+            } finally {
+                // 임시 파일 삭제
+                tempFile?.let {
+                    if (it.exists()) {
+                        val deleted = it.delete()
+                        Log.d(TAG, "임시 파일 삭제 ${if (deleted) "성공" else "실패"}: ${it.absolutePath}")
+                    }
+                }
             }
         }
     }
