@@ -1,5 +1,6 @@
 package com.ssafy.storycut.data.repository
 
+import android.util.Log
 import com.ssafy.storycut.data.api.model.UpdateUserRequest
 import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.service.AuthApiService
@@ -74,10 +75,10 @@ class UserRepository @Inject constructor(
      */
     suspend fun logout() {
         try {
-
+            Log.d("AuthRepository", "시작")
             val response = authApiService.logout()
+            Log.d("AuthRepository", "받아옴 : ${response.isSuccessful}")
             if (response.isSuccessful) {
-                // 서버 로그아웃 성공, 로컬 데이터 삭제
                 userDao.deleteAllUsers()
             } else {
                 // 서버 로그아웃 실패, 하지만 로컬 데이터는 삭제

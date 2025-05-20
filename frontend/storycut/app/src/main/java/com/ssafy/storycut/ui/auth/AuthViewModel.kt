@@ -314,7 +314,7 @@ class AuthViewModel @Inject constructor(
 
                 // 4. 로컬 사용자 정보 삭제 (서버 로그아웃 성공 여부와 관계없이)
                 try {
-                    userRepository.logout()
+                    userRepository.localLogout()
                     Log.d(TAG, "로컬 사용자 정보 삭제 완료")
                 } catch (e: Exception) {
                     Log.e(TAG, "로컬 사용자 정보 삭제 실패", e)

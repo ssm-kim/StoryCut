@@ -39,7 +39,7 @@ interface AuthApiService {
     suspend fun refreshToken(@Body tokenDto: TokenDto): Response<BaseResponse<TokenDto>>
 
     @POST("auth/logout")
-    suspend fun logout(): Response<BaseResponse<Unit>>
+    suspend fun logout(): Response<BaseResponse<Any>>
 
     @GET("auth/youtube/auth")
     suspend fun getYouTubeAuthUrl(@Header("Authorization") authorization: String): Response<BaseResponse<GooglePermissionResponse>>
