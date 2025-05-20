@@ -49,7 +49,7 @@ def send_result_fcm(device_token: str, response: CompleteResponse):
         send_fcm_notification(
             token=device_token,
             title="📹 영상 업로드 완료",
-            body="영상 처리가 완료되었습니다.",
+            body = f"영상 {response.result.video_title}의 처리가 완료되었습니다."
             data=data
         )
     except FirebaseError as e:

@@ -12,3 +12,4 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("app")
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
