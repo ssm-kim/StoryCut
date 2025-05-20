@@ -55,6 +55,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import android.util.Log
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,6 +106,15 @@ fun RoomDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    // 초기 로딩 완료 여부를 추적하는 상태 추가
+    var initialLoadCompleted by remember { mutableStateOf(false) }
+
+    // 마지막으로 확인한 스크롤 위치를 저장
+    var lastCheckedScrollPosition by remember { mutableStateOf(0) }
+
+    // 로딩이 진행되지 않을 때만 추가 데이터 로드 가능
+    var canLoadMore by remember { mutableStateOf(true) }
 
     val customSelectionColors = TextSelectionColors(
         handleColor = Color(0xFFD0B699),
@@ -188,11 +199,36 @@ fun RoomDetailScreen(
         }
     }
 
-    // 스크롤 위치 감지하여 필요시 추가 데이터 로드
+    // 개선된 스크롤 감지 로직
     LaunchedEffect(scrollState.value) {
-        // 스크롤이 끝에 도달했고, 더 로드할 데이터가 있으며, 현재 로딩 중이 아니라면
-        if (scrollState.value >= scrollState.maxValue - 200 && hasMoreVideos && !isVideosLoading && searchQuery.isBlank()) {
-            roomViewModel.loadMoreVideos(roomId)
+        // 초기 로딩이 완료되고 로딩 중이 아닐 때만 스크롤 확인
+        if (initialLoadCompleted && !isVideosLoading && canLoadMore) {
+            // 현재 스크롤 위치가 마지막으로 확인한 위치보다 크고(아래로 스크롤된 경우)
+            // 스크롤이 끝에 가까워졌는지 확인
+            val scrollPosition = scrollState.value
+            val isNearBottom = scrollPosition >= scrollState.maxValue - 500 // 마진을 더 크게 설정
+
+            // 아래로 스크롤 중이고 하단에 가까우면 추가 데이터 로드
+            if (scrollPosition > lastCheckedScrollPosition && isNearBottom && hasMoreVideos && searchQuery.isBlank()) {
+                Log.d("RoomDetailScreen", "하단에 도달, 더 로드 시작: $scrollPosition / ${scrollState.maxValue}")
+                canLoadMore = false // 중복 로드 방지
+                roomViewModel.loadMoreVideos(roomId)
+
+                // 로딩 후 잠시 대기 후 다시 로드 가능하도록 설정
+                delay(1000) // 1초 대기
+                canLoadMore = true
+            }
+
+            // 마지막 확인 위치 업데이트
+            lastCheckedScrollPosition = scrollPosition
+        }
+    }
+
+    // 비디오 로딩 상태가 변경될 때 실행
+    LaunchedEffect(isVideosLoading) {
+        if (!isVideosLoading) {
+            // 로딩이 완료되면 스크롤 위치 초기화하지 않고 그대로 유지
+            canLoadMore = true
         }
     }
 
@@ -208,16 +244,32 @@ fun RoomDetailScreen(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
+    // 방 ID를 기준으로 최초 1회만 데이터 로드
     LaunchedEffect(roomId) {
         try {
+            Log.d("RoomDetailScreen", "방 데이터 초기 로드 시작")
+
+            // 초기 로딩 상태 설정
+            initialLoadCompleted = false
+            lastCheckedScrollPosition = 0
+
+            // 방 정보 로드
             roomViewModel.getRoomDetail(roomId)
             roomViewModel.getRoomMembers(roomId)
-            roomViewModel.getRoomVideos(roomId) // 비디오 목록 로드 추가
+
+            // 비디오 목록 로드 - 새로고침 플래그를 true로 설정하여 첫 페이지만 로드
+            roomViewModel.getRoomVideos(roomId, true)
 
             // 내 비디오 목록도 미리 로드
             videoViewModel.fetchMyVideos()
+
+            // 잠시 대기 후 초기 로딩 완료 표시
+            delay(500) // 0.5초 대기 (UI가 업데이트될 시간 확보)
+            initialLoadCompleted = true
+            Log.d("RoomDetailScreen", "방 데이터 초기 로드 완료")
         } catch (e: Exception) {
-            println("데이터 로드 실패: ${e.message}")
+            Log.e("RoomDetailScreen", "데이터 로드 실패: ${e.message}")
+            initialLoadCompleted = true // 오류가 발생해도 로딩 상태 해제
         }
     }
 
@@ -240,7 +292,6 @@ fun RoomDetailScreen(
             selectedImageUri = null
         }
     }
-
 
     // 설정 화면 애니메이션 추가
     AnimatedRoomSettingsNavigation(
@@ -713,7 +764,6 @@ fun RoomDetailScreen(
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
-
         }
     }
 

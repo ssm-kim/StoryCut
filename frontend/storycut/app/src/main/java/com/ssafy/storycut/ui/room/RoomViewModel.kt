@@ -464,8 +464,6 @@ class RoomViewModel @Inject constructor(
                 val response = roomRepository.leaveRoom(roomId)
 
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    // 방 나가기 성공 처리
-                    // 여기서는 별도의 성공 상태를 추가하지 않고, 오류가 없는 것으로 처리
                 } else {
                     _error.value = response.body()?.message ?: "방 나가기에 실패했습니다."
                 }
