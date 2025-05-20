@@ -183,7 +183,7 @@ def add_audio_to_video(video_no_audio_path, original_video_path, output_path):
 def gpu_encode_video(input_path: str, output_path: str, bitrate="10M", preset="fast"):
     cmd = [
         "ffmpeg", "-y", "-i", input_path, "-c:v", "h264_nvenc",
-        "-preset", preset, "-b:v", bitrate, output_path
+        "-preset", preset, "-b:v", bitrate, "-movflags", "faststart", output_path
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
