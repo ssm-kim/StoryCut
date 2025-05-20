@@ -61,11 +61,13 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val isDeepLink = remember { isDeepLinkState }
+                    val isFromFcm = remember { mutableStateOf(intent?.getBooleanExtra("fromFcm", false) ?: false) }
 
                     // 분리된 AppNavigation 컴포저블 사용
                     AppNavigation(
                         tokenManager = tokenManager,
-                        isDeepLink = isDeepLink.value
+                        isDeepLink = isDeepLink.value,
+                        isFromFcm = isFromFcm.value
                     )
                 }
             }
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
+
     private fun handleIntent(intent: Intent?) {
         // 딥링크 처리
         intent?.data?.let { uri ->
@@ -111,13 +114,21 @@ class MainActivity : ComponentActivity() {
                 Log.d(TAG, "딥링크 URI: $uri, 토큰: $token")
                 isDeepLinkState.value = true
 
-                // 코루틴 스코프에서 토큰 저장 (이 부분을 추가)
+                // 코루틴 스코프에서 토큰 저장
                 lifecycleScope.launch {
                     tokenManager.saveGoogleAccessTokens(token)
                     Log.d(TAG, "구글 액세스 토큰 저장 완료")
                 }
             }
         }
+
+        // FCM 알림 처리 - Intent에 fromFcm 값을 전달하여 AppNavigation에서 처리할 수 있게 함
+        if (intent?.getBooleanExtra("fromFcm", false) == true) {
+            val videoId = intent.getStringExtra("videoId")
+            Log.d(TAG, "FCM 알림에서 실행: videoId=$videoId")
+            // 여기서는 isFromFcm 상태만 설정하고, 실제 화면 이동은 AppNavigation에서 처리
+        }
+
 
         // FCM 알림 처리
         if (intent?.getBooleanExtra("fromFcm", false) == true) {

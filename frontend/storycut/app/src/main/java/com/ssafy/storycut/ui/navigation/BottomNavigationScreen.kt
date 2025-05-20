@@ -142,7 +142,9 @@ fun MainScreen(
     tokenManager: TokenManager,
     onNavigateToLogin: () -> Unit = {},
     navigateToShorts: Boolean = false,
-    onShortsNavigationConsumed: () -> Unit = {}
+    onShortsNavigationConsumed: () -> Unit = {},
+    navigateToMyPage: Boolean = false,
+    onMyPageNavigationConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -167,6 +169,17 @@ fun MainScreen(
 
     // 이전 화면 상태 추적
     val wasVideoDetailScreen = remember { mutableStateOf(false) }
+
+    // FCM 알림에서 시작된 경우 마이페이지로 이동
+    LaunchedEffect(navigateToMyPage) {
+        if (navigateToMyPage) {
+            delay(50) // 메인 화면이 완전히 로드된 후 이동하기 위한 짧은 딜레이
+            navController.navigate(Navigation.Main.MYPAGE) {
+                launchSingleTop = true
+            }
+            onMyPageNavigationConsumed()
+        }
+    }
 
     // 화면 전환 감지 및 처리
     LaunchedEffect(isVideoDetailScreen) {

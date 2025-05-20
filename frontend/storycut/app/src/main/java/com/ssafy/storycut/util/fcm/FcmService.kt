@@ -103,7 +103,7 @@ class FcmService : FirebaseMessagingService() {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             // 비디오 정보 추가
             putExtra("videoId", videoDto.videoId.toString())
-            putExtra("fromFcm", true)
+            putExtra("fromFcm", true)  // FCM에서 시작됨을 표시
         }
 
         val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -153,6 +153,7 @@ class FcmService : FirebaseMessagingService() {
         // 클릭 시 실행할 인텐트 설정
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("fromFcm", true)  // FCM에서 시작됨을 표시
         }
 
         val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

@@ -22,12 +22,14 @@ private const val TAG = "AppNavigation"
 fun AppNavigation(
     tokenManager: TokenManager,
     isDeepLink: Boolean = false,
+    isFromFcm: Boolean = false,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
 
-    val startDestination = if (isDeepLink) Navigation.MAIN else Navigation.SPLASH
+    val startDestination = if (isDeepLink || isFromFcm) Navigation.MAIN else Navigation.SPLASH
     val shouldNavigateToShorts = remember { mutableStateOf(isDeepLink) }
+    val shouldNavigateToMyPage = remember { mutableStateOf(isFromFcm) }
 
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -62,12 +64,14 @@ fun AppNavigation(
                 tokenManager = tokenManager,
                 onNavigateToLogin = {
                     navController.navigate(Navigation.LOGIN) {
-                    // Main 화면 포함 이전 화면들을 모두 백스택에서 제거하여 뒤로가기로 돌아갈 수 없게 함
-                    popUpTo(Navigation.MAIN) { inclusive = true }
+                        // Main 화면 포함 이전 화면들을 모두 백스택에서 제거하여 뒤로가기로 돌아갈 수 없게 함
+                        popUpTo(Navigation.MAIN) { inclusive = true }
                     }
                 },
                 navigateToShorts = shouldNavigateToShorts.value,
-                onShortsNavigationConsumed = { shouldNavigateToShorts.value = false }
+                onShortsNavigationConsumed = { shouldNavigateToShorts.value = false },
+                navigateToMyPage = shouldNavigateToMyPage.value,
+                onMyPageNavigationConsumed = { shouldNavigateToMyPage.value = false }
             )
         }
     }
