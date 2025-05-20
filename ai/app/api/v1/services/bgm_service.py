@@ -316,7 +316,7 @@ async def process_bgm_service(video_path: str,  prompt: Union[str, List[Tuple[Tu
         logger.info("[FFmpeg 실행] 입력: %s + %s → 출력: %s", video_path, bgm_path, output_path)
         await loop.run_in_executor(None, functools.partial(subprocess.run, [
             "ffmpeg", "-y", "-i", video_path, "-i", bgm_path,
-            "-c:v", "copy", "-c:a", "aac", "-shortest", output_path
+            "-c:v", "copy", "-c:a", "aac","-movflags","faststart", "-shortest", output_path
         ], check=True))
 
         if os.path.exists(bgm_path):

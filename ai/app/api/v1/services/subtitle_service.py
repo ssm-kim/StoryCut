@@ -114,6 +114,7 @@ async def subtitles(video_path: str) -> str:
             "-vf", f"ass={ffmpeg_ass_path}",
             "-c:v", "h264_nvenc", "-preset", "fast", "-b:v", "2M",
             "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "faststart",
             output_path
         ])
 
