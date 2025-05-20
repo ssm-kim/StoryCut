@@ -36,7 +36,7 @@ async def get_presigned_url(original_filename: str = Query(...)):
         account_key=AZURE_STORAGE_ACCOUNT_KEY,
         container_name=AZURE_CONTAINER_NAME,
         blob_name=blob_name,
-        permission=BlobSasPermissions(write=True),
+        permission=BlobSasPermissions(write=True,read=True,create=True),
         expiry=datetime.utcnow() + timedelta(minutes=5)
     )
 
