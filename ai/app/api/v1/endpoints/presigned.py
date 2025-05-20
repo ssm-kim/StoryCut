@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Query
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
-
+from app.api.v1.schemas.presigned_url_schema import PresignedUrlResponse
 from app.core.config import settings  # ✅ 환경 변수 설정 클래스 import
 
 router = APIRouter()
@@ -18,6 +18,7 @@ AZURE_BLOB_BASE_URL = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.n
 
 @router.get(
     "/presigned-url",
+    response_model=PresignedUrlResponse,
     summary="Azure Blob Presigned URL 발급",
     description="원본 파일명을 기반으로 확장자를 추출하여 UUID 기반 파일명을 만들고, Azure Blob Storage 업로드용 SAS URL을 생성합니다."
 )
@@ -44,6 +45,6 @@ async def get_presigned_url(original_filename: str = Query(...)):
     video_url = f"{AZURE_BLOB_BASE_URL}/{AZURE_CONTAINER_NAME}/{blob_name}"
 
     return {
-        "upload_url": upload_url,
-        "video_url": video_url
+        "uploadUrl": upload_url,
+        "videoUrl": video_url
     }
