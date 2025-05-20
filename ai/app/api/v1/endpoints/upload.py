@@ -81,12 +81,12 @@ async def upload_video(
 
         # 1. 썸네일 생성 (Azure 주소에서 추출)
 
-        filename = os.path.basename(request.video_url)
-        local_path = os.path.join(VIDEO_DIR, filename)
+        # filename = os.path.basename(request.video_url)
+        # local_path = os.path.join(VIDEO_DIR, filename)
 
-        await download_video_to_local(request.video_url, local_path)
-        thumbnail_url = await generate_and_upload_thumbnail(local_path)
-        logger.info(f"[썸네일 생성 완료] URL: {thumbnail_url}")
+        # await download_video_to_local(request.video_url, local_path)
+        # thumbnail_url = await generate_and_upload_thumbnail(local_path)
+        # logger.info(f"[썸네일 생성 완료] URL: {thumbnail_url}")
 
         # 2. Spring 서버 업로드 등록
         upload_payload = UploadRequest(
@@ -101,7 +101,7 @@ async def upload_video(
         # 3. 완료 전송
         complete_payload = CompleteRequest(
             video_id=spring_upload.result,
-            thumbnail=thumbnail_url,
+            thumbnail="thumbnail_url",
             video_url=request.video_url
         )
         spring_response = await post_video_to_springboot_complete(token, complete_payload)
