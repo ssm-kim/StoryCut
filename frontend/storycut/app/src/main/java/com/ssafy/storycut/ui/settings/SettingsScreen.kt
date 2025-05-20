@@ -29,7 +29,7 @@ import com.ssafy.storycut.ui.auth.AuthViewModel
 fun SettingsScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     onBackPressed: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
 
