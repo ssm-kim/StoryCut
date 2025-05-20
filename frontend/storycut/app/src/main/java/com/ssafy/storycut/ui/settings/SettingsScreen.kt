@@ -24,12 +24,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ssafy.storycut.R
 import com.ssafy.storycut.ui.auth.AuthViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     onBackPressed: () -> Unit,
     onNavigateToLogin: () -> Unit,
+    onNavigateToEditNickname: () -> Unit = {}, // 닉네임 수정 화면으로 이동하는 콜백 추가
 ) {
     val scrollState = rememberScrollState()
 
@@ -74,9 +76,9 @@ fun SettingsScreen(
 
             // 설정 항목 목록 - 일반 항목
             SettingItem(
-                title = "계정 정보 확인 및 변경",
+                title = "닉네임 수정",
                 icon = Icons.Default.Person,
-                onClick = { /* 계정 정보 화면으로 이동 */ },
+                onClick = onNavigateToEditNickname, // 콜백 함수 연결
                 showDivider = true
             )
 

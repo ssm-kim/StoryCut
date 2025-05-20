@@ -1,6 +1,7 @@
 package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.*
+import com.ssafy.storycut.data.api.model.Tumbnail.ThumbNailUploadResponse
 import com.ssafy.storycut.data.api.model.edit.ImageUploadResponse
 import com.ssafy.storycut.data.api.model.edit.MosaicRequest
 import com.ssafy.storycut.data.api.model.edit.VideoProcessRequest

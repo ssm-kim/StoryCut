@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import com.ssafy.storycut.data.repository.AuthRepository
 import com.ssafy.storycut.data.repository.GoogleAuthService

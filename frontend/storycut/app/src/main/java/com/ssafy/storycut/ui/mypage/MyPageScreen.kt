@@ -176,7 +176,7 @@ fun MyPageScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
-                    Text(text = userInfo?.name ?: "사용자", fontWeight = FontWeight.Bold)
+                    Text(text = userInfo?.nickname ?: "사용자", fontWeight = FontWeight.Bold)
                     Text(text = userInfo?.email ?: "이메일 없음", style = MaterialTheme.typography.bodySmall)
                     Text(text = "가입일: ${formatCreatedAt(createdAt)}", style = MaterialTheme.typography.bodySmall)
                     Text(text = "게시글 수: $postCount", style = MaterialTheme.typography.bodySmall)

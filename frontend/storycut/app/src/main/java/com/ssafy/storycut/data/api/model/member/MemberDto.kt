@@ -1,4 +1,4 @@
-package com.ssafy.storycut.data.api.model
+package com.ssafy.storycut.data.api.model.member
 
 data class MemberDto (
     val memberId: String,

@@ -13,9 +13,9 @@ import com.google.api.services.youtube.model.Video
 import com.google.api.services.youtube.model.VideoSnippet
 import com.google.api.services.youtube.model.VideoStatus
 import com.ssafy.storycut.data.api.RetrofitClient
-import com.ssafy.storycut.data.api.model.GoogleLoginRequest
-import com.ssafy.storycut.data.api.model.TokenDto
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.credential.GoogleLoginRequest
+import com.ssafy.storycut.data.api.model.credential.TokenDto
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import com.ssafy.storycut.data.local.datastore.TokenManager
 import dagger.hilt.android.qualifiers.ApplicationContext

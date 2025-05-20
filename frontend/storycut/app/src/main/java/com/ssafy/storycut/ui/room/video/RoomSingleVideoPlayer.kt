@@ -43,7 +43,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.ssafy.storycut.R
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 
 private const val TAG = "RoomSingleVideoPlayer"

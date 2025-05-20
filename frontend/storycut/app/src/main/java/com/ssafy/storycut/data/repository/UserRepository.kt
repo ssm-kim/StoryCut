@@ -1,6 +1,7 @@
 package com.ssafy.storycut.data.repository
 
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.UpdateUserRequest
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.service.AuthApiService
 import com.ssafy.storycut.data.local.dao.UserDao
 import com.ssafy.storycut.data.local.entity.UserEntity
@@ -124,6 +125,25 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             // 네트워크 오류 등이 발생했을 때 에러 반환
             Result.failure(Exception("회원 탈퇴 요청 중 오류 발생: ${e.message}", e))
+        }
+    }
+
+    suspend fun updateUserInfo(nickname: String): Result<UserInfo> {
+        return try {
+            val updateRequest = UpdateUserRequest(nickname = nickname)
+            val response = authApiService.updateMemberDetail(updateRequest)
+            if (response.isSuccessful && response.body()?.isSuccess == true) {
+                // 서버에서 업데이트 성공, 반환된 사용자 정보로 로컬 데이터도 업데이트
+                val updatedUserInfo = response.body()?.result!!
+                saveUser(updatedUserInfo)
+                Result.success(updatedUserInfo)
+            } else {
+                // 서버에서 업데이트 실패, 에러 반환
+                Result.failure(Exception(response.body()?.message ?: "회원 정보 수정 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            // 네트워크 오류 등이 발생했을 때 에러 반환
+            Result.failure(Exception("회원 정보 수정 요청 중 오류 발생: ${e.message}", e))
         }
     }
 

@@ -1,9 +1,9 @@
 package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.BaseResponse
-import com.ssafy.storycut.data.api.model.EditRoomDto
-import com.ssafy.storycut.data.api.model.MemberDto
-import com.ssafy.storycut.data.api.model.ThumbnailDto
+import com.ssafy.storycut.data.api.model.room.EditRoomDto
+import com.ssafy.storycut.data.api.model.member.MemberDto
+import com.ssafy.storycut.data.api.model.Tumbnail.ThumbnailDto
 import com.ssafy.storycut.data.api.model.VideoShareDto
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto

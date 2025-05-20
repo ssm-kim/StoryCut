@@ -1,13 +1,12 @@
 package com.ssafy.storycut.data.repository
 
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import com.ssafy.storycut.data.api.RetrofitClient
 import com.ssafy.storycut.data.api.model.BaseResponse
-import com.ssafy.storycut.data.api.model.ThumbNailUploadResponse
+import com.ssafy.storycut.data.api.model.Tumbnail.ThumbNailUploadResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody

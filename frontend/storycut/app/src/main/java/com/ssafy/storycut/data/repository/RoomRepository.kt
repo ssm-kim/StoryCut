@@ -1,10 +1,10 @@
 package com.ssafy.storycut.data.repository
 
 import com.ssafy.storycut.data.api.model.BaseResponse
-import com.ssafy.storycut.data.api.model.EditRoomDto
+import com.ssafy.storycut.data.api.model.room.EditRoomDto
 import com.ssafy.storycut.data.api.model.room.RoomDto
-import com.ssafy.storycut.data.api.model.MemberDto
-import com.ssafy.storycut.data.api.model.ThumbnailDto
+import com.ssafy.storycut.data.api.model.member.MemberDto
+import com.ssafy.storycut.data.api.model.Tumbnail.ThumbnailDto
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.CreateRoomRequest

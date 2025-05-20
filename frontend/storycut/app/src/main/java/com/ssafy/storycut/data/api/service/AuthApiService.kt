@@ -1,15 +1,17 @@
 package com.ssafy.storycut.data.api.service
 
 import com.ssafy.storycut.data.api.model.BaseResponse
-import com.ssafy.storycut.data.api.model.GoogleLoginRequest
-import com.ssafy.storycut.data.api.model.TokenDto
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.credential.GoogleLoginRequest
+import com.ssafy.storycut.data.api.model.credential.TokenDto
+import com.ssafy.storycut.data.api.model.UpdateUserRequest
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.model.credential.GooglePermissionResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -28,6 +30,9 @@ interface AuthApiService {
 
     @DELETE("members")
     suspend fun deleteId(): Response<BaseResponse<Unit>>
+
+    @PATCH("members/detail")
+    suspend fun updateMemberDetail(@Body updateRequest: UpdateUserRequest): Response<BaseResponse<UserInfo>>
 
     // 토큰 갱신 API 추가
     @POST("auth/refresh")

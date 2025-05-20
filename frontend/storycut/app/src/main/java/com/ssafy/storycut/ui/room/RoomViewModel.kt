@@ -1,14 +1,13 @@
 package com.ssafy.storycut.ui.room
 
-import android.content.ContentValues.TAG
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ssafy.storycut.data.api.model.EditRoomDto
-import com.ssafy.storycut.data.api.model.MemberDto
-import com.ssafy.storycut.data.api.model.ThumbnailDto
-import com.ssafy.storycut.data.api.model.UserInfo
+import com.ssafy.storycut.data.api.model.room.EditRoomDto
+import com.ssafy.storycut.data.api.model.member.MemberDto
+import com.ssafy.storycut.data.api.model.Tumbnail.ThumbnailDto
+import com.ssafy.storycut.data.api.model.credential.UserInfo
 import com.ssafy.storycut.data.api.model.chat.ChatDto
 import com.ssafy.storycut.data.api.model.chat.ChatMessageRequest
 import com.ssafy.storycut.data.api.model.room.RoomDto
