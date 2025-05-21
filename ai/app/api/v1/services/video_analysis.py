@@ -29,7 +29,7 @@ async def run_analysis_pipeline(video_path: str) -> list:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         logger.info(f"[Analysis] FPS: {fps}, 총 프레임 수: {total_frames}")
         
-        window_sec = 5
+        window_sec = 3
         window_size = int(window_sec * fps)
 
         time_results = []
