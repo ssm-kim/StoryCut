@@ -75,7 +75,7 @@ async def process_video_job(
 
     if images:
         logger.info("[Mosaic] 모자이크 처리 시작")
-        new_video_path = await run_mosaic_pipeline(video_path, images, 5, 3)
+        new_video_path = await run_mosaic_pipeline(video_path, images, 5, 1)
         os.remove(video_path)
         logger.info("[Mosaic] 모자이크 처리 완료 → 기존 영상 제거")
         video_path = new_video_path

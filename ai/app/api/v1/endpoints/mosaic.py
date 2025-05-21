@@ -89,7 +89,7 @@ async def process_video_pipeline(token: str, request: MosaicRequest, video_url: 
             input_path=video_url,
             target_paths=request.images[:2],
             detect_interval=5,
-            num_segments=3
+            num_segments=1
         )
         logger.info(f"[{id}] 모자이크 처리 완료 - 경로: {video_path}")
 
