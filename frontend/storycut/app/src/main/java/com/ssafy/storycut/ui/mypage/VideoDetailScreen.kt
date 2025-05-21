@@ -1,6 +1,7 @@
 package com.ssafy.storycut.ui.mypage
 
 import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -42,6 +43,8 @@ fun VideoDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var isExiting by remember { mutableStateOf(false) }
 
+    val window = (context as? android.app.Activity)?.window
+
     // 플레이어 맵을 관리하기 위한 변수
     val players = remember { mutableMapOf<Int, ExoPlayer>() }
 
@@ -62,6 +65,13 @@ fun VideoDetailScreen(
         } else {
             Log.d("VideoDetailScreen", "원본 모드이거나 비디오 목록이 비어 있음, 기본 인덱스 0 사용")
             0
+        }
+    }
+
+    DisposableEffect(Unit) {
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 

@@ -59,7 +59,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.view.WindowManager
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +84,16 @@ fun SingleVideoPlayer(
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(isCurrentlyVisible) }
     var showMoreOptions by remember { mutableStateOf(false) } // 더보기 메뉴 표시 상태
-
+    val view = LocalView.current
+    val window = (context as? android.app.Activity)?.window
+    // 화면 꺼지지 않도록
+    DisposableEffect(Unit) {
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+    
     // 권한 요청 결과 처리
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
