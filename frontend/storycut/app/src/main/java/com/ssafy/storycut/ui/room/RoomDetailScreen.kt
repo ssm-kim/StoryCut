@@ -56,6 +56,8 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ColorFilter
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -419,11 +421,11 @@ fun RoomDetailScreen(
                                                 .background(MaterialTheme.colorScheme.primaryContainer),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.logo),
+                                            Image(
+                                                painter = painterResource(id = R.drawable.room_default_thumbnail),
                                                 contentDescription = "기본 썸네일",
-                                                tint = Color.White.copy(alpha = 0.7f),
-                                                modifier = Modifier.size(64.dp)
+                                                contentScale = ContentScale.FillBounds,  // Crop에서 FillBounds로 변경
+                                                modifier = Modifier.fillMaxSize()
                                             )
                                         }
                                     }

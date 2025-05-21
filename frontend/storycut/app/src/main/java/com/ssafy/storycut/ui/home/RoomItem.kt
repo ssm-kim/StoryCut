@@ -82,9 +82,9 @@ fun RoomItemWithLongPress(
                 } else {
                     // 기본 이미지 표시
                     Image(
-                        painter = painterResource(id = R.drawable.logo),
+                        painter = painterResource(id = R.drawable.room_default_thumbnail),
                         contentDescription = "기본 썸네일",
-                        contentScale = ContentScale.Inside,
+                        contentScale = ContentScale.FillBounds,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
