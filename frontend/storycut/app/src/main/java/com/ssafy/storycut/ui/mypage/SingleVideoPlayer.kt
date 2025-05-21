@@ -259,7 +259,7 @@ fun SingleVideoPlayer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground),  // 적절한 아이콘으로 변경 필요
+                            painter = painterResource(id = R.drawable.video_origin),
                             contentDescription = "원본 영상 보기",
                             tint = Color.DarkGray,
                             modifier = Modifier.size(20.dp)
@@ -282,7 +282,7 @@ fun SingleVideoPlayer(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Edit,  // 적절한 다운로드 아이콘으로 변경 필요
+                        painter = painterResource(id = R.drawable.video_download),
                         contentDescription = "다운로드",
                         tint = Color.DarkGray,
                         modifier = Modifier.size(20.dp)
