@@ -196,7 +196,7 @@ def split_frames(total_frames, num_segments):
     step = total_frames // num_segments
     return [(i * step, total_frames if i == num_segments - 1 else (i + 1) * step) for i in range(num_segments)]
 
-async def run_mosaic_pipeline(input_path: str, target_paths: List[str], detect_interval: int = 5, num_segments: int = 3) -> str:
+async def run_mosaic_pipeline(input_path: str, target_paths: List[str], detect_interval: int = 5, num_segments: int = 1) -> str:
     loop = asyncio.get_event_loop()
     executor = ThreadPoolExecutor()
 
