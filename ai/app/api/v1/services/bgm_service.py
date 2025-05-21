@@ -204,7 +204,8 @@ async def fast_merge(video_path, voice_audio, bgm_audio, output_path):
         ["ffmpeg", "-y", "-i", voice_audio, "-i", bgm_audio,
          "-filter_complex", "[0][1]amix=inputs=2:duration=first:dropout_transition=2",
          "-ar", "32000", "-c:a", "aac", "-b:a", "192k", mixed_audio],
-        ["ffmpeg", "-y", "-i", no_audio, "-i", mixed_audio, "-c:v", "copy", "-c:a", "aac", "-shortest", output_path]
+        ["ffmpeg", "-y", "-i", no_audio, "-i", mixed_audio,
+        "-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart", output_path]
     ]
 
     for cmd in cmds:
