@@ -5,6 +5,8 @@ import torch
 from operator import itemgetter
 from mmaction.apis import init_recognizer, inference_recognizer
 from app.core.logger import logger
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 # 설정
 config_file = './src/mmaction2/configs/recognition/tsn/tsn_imagenet-pretrained-r50_8xb32-1x1x8-100e_kinetics400-rgb.py'
@@ -17,7 +19,10 @@ os.makedirs(tmp_dir, exist_ok=True)
 with open(label_file, 'r') as f:
     labels = [line.strip() for line in f]
 
-# 클립 분석 함수 (동기, GPU만 사용)
+# 스레드 풀 생성
+executor = ThreadPoolExecutor(max_workers=2)  # GPU 경합 방지를 위해 제한
+
+# 클립 분석 (동기 함수)
 def _analyze_clip(model, temp_video, start_frame, end_frame, fps):
     try:
         pred_result = inference_recognizer(model, temp_video)
@@ -32,7 +37,14 @@ def _analyze_clip(model, temp_video, start_frame, end_frame, fps):
         logger.error(f"[Analysis] 클립 분석 오류 ({temp_video}): {str(e)}")
         return None
 
-# 메인 파이프라인 (비동기 함수)
+# 비동기 래퍼
+async def _analyze_clip_async(model, temp_video, start_frame, end_frame, fps):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        executor, _analyze_clip, model, temp_video, start_frame, end_frame, fps
+    )
+
+# 메인 파이프라인
 async def run_analysis_pipeline(video_path: str) -> list:
     logger.info(f"[Analysis] 영상 분석 시작 → {video_path}")
 
@@ -72,11 +84,12 @@ async def run_analysis_pipeline(video_path: str) -> list:
             writer.release()
             logger.info(f"[Analysis] 임시 클립 저장 완료 → {temp_video}")
 
-            # 🔥 직렬 실행 (비동기 아님)
-            result = _analyze_clip(model, temp_video, start_frame, end_frame, fps)
+            # 🔥 분석 후 결과 바로 저장 (비동기 실행)
+            result = await _analyze_clip_async(model, temp_video, start_frame, end_frame, fps)
             if result:
                 results.append(result)
 
+            # 클립 삭제
             os.remove(temp_video)
             logger.info(f"[Analysis] 임시 클립 삭제 완료 → {temp_video}")
 
