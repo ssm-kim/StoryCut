@@ -41,7 +41,7 @@ def get_video_bitrate(video_path: str) -> Tuple[str, str]:
     return video_bps, audio_bps
 
 # 주 함수: 분석 결과와 프롬프트를 이용해 특정 구간을 추출하여 비디오를 자르고 병합함
-async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, threshold: float = 0.7):
+async def select_time_ranges_by_prompt(video_path: str, user_prompt: str, threshold: float = 0.5):
     logger.info("[행동분석] 분석 시작: %s, threshold=%.2f", video_path, threshold)
     filtered_data = []
     raw_data = await run_analysis_pipeline(video_path)
