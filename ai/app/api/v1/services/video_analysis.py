@@ -20,7 +20,7 @@ with open(label_file, 'r') as f:
     labels = [line.strip() for line in f]
 
 # 스레드 풀 생성
-executor = ThreadPoolExecutor(max_workers=4)
+executor = ThreadPoolExecutor(max_workers=2)  # GPU 경합 방지를 위해 제한
 
 # 클립 분석 (동기 함수)
 def _analyze_clip(model, temp_video, start_frame, end_frame, fps):
@@ -59,8 +59,7 @@ async def run_analysis_pipeline(video_path: str) -> list:
 
         window_sec = 3
         window_size = int(window_sec * fps)
-
-        tasks = []
+        results = []
 
         for start_frame in range(0, total_frames, window_size):
             end_frame = min(start_frame + window_size, total_frames)
@@ -85,21 +84,19 @@ async def run_analysis_pipeline(video_path: str) -> list:
             writer.release()
             logger.info(f"[Analysis] 임시 클립 저장 완료 → {temp_video}")
 
-            task = _analyze_clip_async(model, temp_video, start_frame, end_frame, fps)
-            tasks.append(task)
+            # 🔥 분석 후 결과 바로 저장 (비동기 실행)
+            result = await _analyze_clip_async(model, temp_video, start_frame, end_frame, fps)
+            if result:
+                results.append(result)
 
-        results = await asyncio.gather(*tasks)
-        results = [r for r in results if r is not None]
+            # 클립 삭제
+            os.remove(temp_video)
+            logger.info(f"[Analysis] 임시 클립 삭제 완료 → {temp_video}")
 
         cap.release()
         del model
         torch.cuda.empty_cache()
         logger.info("[Analysis] 모델 해제 및 GPU 메모리 정리 완료")
-
-        for file in os.listdir(tmp_dir):
-            if file.startswith("temp_") and file.endswith(".mp4"):
-                os.remove(os.path.join(tmp_dir, file))
-                logger.info(f"[Analysis] 임시 클립 삭제 완료 → {file}")
 
         return results
 
