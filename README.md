@@ -82,7 +82,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 ### 영상 편집 서비스
 
 ### 1. 프롬프트 기반 컷 편집집
-| <img src="docs/readme/gif/prompt.gif" width="200"> |
+| <img src="docs/readme/gif/prompt.webp" width="200"> |
 |:---:|
 | 프롬프트 기반 컷 편집 |
 
@@ -98,14 +98,14 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 - 이미지 추가로 제외할 인물 선택
 
 ### 2. 영상 자막 생성
-| <img src="docs/readme/gif/subtitle.gif" width="200"> |
+| <img src="docs/readme/gif/subtitle.webp" width="200"> |
 |:---:|
 | 한국어 자막 추가 |
 
 - AI 기반 한국어 자막 생성
 
 ### 3. 영상 배경 음악 생성
-| <img src="docs/readme/gif/bgm.gif" width="200"> | <img src="docs/readme/gif/prom_sub.gif" width="200"> |
+| <img src="docs/readme/gif/bgm.gif" width="200"> | <img src="docs/readme/gif/prom_sub.webp" width="200"> |
 |:---:|:---:|
 | 자동 생성 | 프롬프트 입력 생성 |
 
@@ -114,7 +114,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 - 프롬프트 입력으로 특정 음악 요구 가능
 
 ### 4. 영상 편집 알림
-| <img src="docs/readme/gif/push.gif" width="200"> |
+| <img src="docs/readme/gif/push.webp" width="200"> |
 |:---:|
 | 푸쉬 알림 |
 
@@ -124,7 +124,7 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 --- 
 
 ### 유튜브 쇼츠 업로드
-| <img src="docs/readme/gif/auth.gif" width="200"> | <img src="docs/readme/gif/y_upload.gif" width="200"> |
+| <img src="docs/readme/gif/auth.gif" width="200"> | <img src="docs/readme/gif/y_upload.webp" width="200"> |
 |:---:|:---:|
 | 업로드 권환 획득득 | 유튜브 쇼츠 업로드 |
 
@@ -141,13 +141,13 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 
 
 ### 공유 방 관리
-| <img src="docs/readme/gif/upload.gif" width="200"> |
+| <img src="docs/readme/gif/upload.webp" width="200"> |
 |:---:|
 | 영상 업로드 |
 
 
 ### 공유 방 관리
-| <img src="docs/readme/gif/read.gif" width="200"> | <img src="docs/readme/gif/search.gif" width="200"> |
+| <img src="docs/readme/gif/read.webp" width="200"> | <img src="docs/readme/gif/search.webp" width="200"> |
 |:---:|:---:|
 | 조회 | 검색 |
 
