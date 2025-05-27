@@ -64,8 +64,15 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 | **자동 자막 생성** | 편집된 영상에 자동으로 자막 삽입 | Whisper |
 
 
-## 4. 시스템 아키텍처
-### 이미지 넣기
+## 4. 시스템 아키텍처 & ERD
+
+### 시스템 아키텍처
+
+![시스템 아키텍처](docs/readme/Architecture.png)
+
+### ERD (Entity Relationship Diagram)
+
+![ERD](docs/readme/erd.png)
 
 ## 5. 서비스 화면
 
