@@ -37,23 +37,24 @@ StoryCut과 함께 AI 기반의 스마트한 영상 편집을 경험해보세요
 ## 2. 기술 스택
 
 ### **FrontEnd**
-<img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=Android&logoColor=white"> <img src="https://img.shields.io/badge/Kotlin 2.0.21-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white"> <img src="https://img.shields.io/badge/Jetpack Compose-4285F4?style=for-the-badge&logo=Jetpack Compose&logoColor=white"> <img src="https://img.shields.io/badge/Material3-1976D2?style=for-the-badge&logo=Material Design&logoColor=white">
+
+![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=Android&logoColor=white) ![Kotlin 2.0.21](https://img.shields.io/badge/Kotlin%202.0.21-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white) ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=Jetpack%20Compose&logoColor=white) ![Material3](https://img.shields.io/badge/Material3-1976D2?style=for-the-badge&logo=Material%20Design&logoColor=white)
 
 ### **Backend**
 
-<img src="https://img.shields.io/badge/Java 17-007396?style=for-the-badge&logo=java&logoColor=white"> <img src="https://img.shields.io/badge/SpringBoot 3.4.4-6DB33F?style=for-the-badge&logo=Spring Boot&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI 0.95.2-009688?style=for-the-badge&logo=FastAPI&logoColor=white"> <img src="https://img.shields.io/badge/Python 3.8-3776AB?style=for-the-badge&logo=Python&logoColor=white">
+![Java 17](https://img.shields.io/badge/Java%2017-007396?style=for-the-badge&logo=java&logoColor=white) ![SpringBoot 3.4.4](https://img.shields.io/badge/SpringBoot%203.4.4-6DB33F?style=for-the-badge&logo=Spring%20Boot&logoColor=white) ![FastAPI 0.95.2](https://img.shields.io/badge/FastAPI%200.95.2-009688?style=for-the-badge&logo=FastAPI&logoColor=white) ![Python 3.8](https://img.shields.io/badge/Python%203.8-3776AB?style=for-the-badge&logo=Python&logoColor=white)
 
 ### **Database**
 
-<img src="https://img.shields.io/badge/MySQL 8.0.41-4479A1?style=for-the-badge&logo=MySQL&logoColor=white"> <img src="https://img.shields.io/badge/Redis 8.0.0-DC382D?style=for-the-badge&logo=Redis&logoColor=white"> <img src="https://img.shields.io/badge/MongoDB 8.0.9-47A248?style=for-the-badge&logo=MongoDB&logoColor=white">
+![MySQL 8.0.41](https://img.shields.io/badge/MySQL%208.0.41-4479A1?style=for-the-badge&logo=MySQL&logoColor=white) ![Redis 8.0.0](https://img.shields.io/badge/Redis%208.0.0-DC382D?style=for-the-badge&logo=Redis&logoColor=white) ![MongoDB 8.0.9](https://img.shields.io/badge/MongoDB%208.0.9-47A248?style=for-the-badge&logo=MongoDB&logoColor=white)
 
 ### **Infrastructure**
 
-<img src="https://img.shields.io/badge/Ubuntu 20.04-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white"> <img src="https://img.shields.io/badge/Docker 26.1.3-2496ED?style=for-the-badge&logo=Docker&logoColor=white"> <img src="https://img.shields.io/badge/Jenkins 2.504.1-D24939?style=for-the-badge&logo=Jenkins&logoColor=white"> <img src="https://img.shields.io/badge/Nginx 1.27.5-009639?style=for-the-badge&logo=NGINX&logoColor=white">
+![Ubuntu 20.04](https://img.shields.io/badge/Ubuntu%2020.04-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white) ![Docker 26.1.3](https://img.shields.io/badge/Docker%2026.1.3-2496ED?style=for-the-badge&logo=Docker&logoColor=white) ![Jenkins 2.504.1](https://img.shields.io/badge/Jenkins%202.504.1-D24939?style=for-the-badge&logo=Jenkins&logoColor=white) ![Nginx 1.27.5](https://img.shields.io/badge/Nginx%201.27.5-009639?style=for-the-badge&logo=NGINX&logoColor=white)
 
 ### **Monitoring**
 
-<img src="https://img.shields.io/badge/Prometheus 3.3.1-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white"> <img src="https://img.shields.io/badge/Loki 2.9.3-F7B93E?style=for-the-badge&logo=Loki&logoColor=white"> <img src="https://img.shields.io/badge/Grafana 12.0.0-F46800?style=for-the-badge&logo=Grafana&logoColor=white"> <img src="https://img.shields.io/badge/ELK 8.7.0-005571?style=for-the-badge&logo=Elastic&logoColor=white">
+![Prometheus 3.3.1](https://img.shields.io/badge/Prometheus%203.3.1-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white) ![Loki 2.9.3](https://img.shields.io/badge/Loki%202.9.3-F7B93E?style=for-the-badge&logo=Loki&logoColor=white) ![Grafana 12.0.0](https://img.shields.io/badge/Grafana%2012.0.0-F46800?style=for-the-badge&logo=Grafana&logoColor=white) ![ELK 8.7.0](https://img.shields.io/badge/ELK%208.7.0-005571?style=for-the-badge&logo=Elastic&logoColor=white)
 
 ## 3. 주요 기능
 
